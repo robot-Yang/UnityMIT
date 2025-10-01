@@ -25,6 +25,8 @@ public class SceneSelectorScript : MonoBehaviour
     [HideInInspector] public string CollectibleTPV = "TDVCollectibles";
     [HideInInspector] public string CollectibleTPV1 = "TDVCollectibles_1";
 
+    [HideInInspector] public string AudioGymFPV = "FPVAudioGym";
+
     [HideInInspector] public string assetPathTraining = "Assets/Scenes/TrainingFinal";
 
 
@@ -139,6 +141,7 @@ public class SceneSelectorScript : MonoBehaviour
         //scenesPlayed.Clear();
 
         addStudyScene();
+        print("ScenePlayed: "+scenesPlayed.Count);
 
 
         experimentNumber = -1;
@@ -156,7 +159,7 @@ public class SceneSelectorScript : MonoBehaviour
             scenesPlayed.Add(ObstacleFPV1);
             tutorialPlayed.Add(scenesPlayed.Count - 1);
 
-          //  scenesPlayed.Add(ObstacleFPV);
+         //  scenesPlayed.Add(ObstacleFPV);
             scenesPlayed.Add(ObstacleTPV);
             tutorialPlayed.Add(scenesPlayed.Count - 1);
 
@@ -165,7 +168,7 @@ public class SceneSelectorScript : MonoBehaviour
 
             scenesPlayed.Add(CollectibleFPV);
 
-         //   scenesPlayed.Add(ObstacleTPV);
+        //   scenesPlayed.Add(ObstacleTPV);
             scenesPlayed.Add(CollectibleFPV1);
             tutorialPlayed.Add(scenesPlayed.Count - 1);
 
@@ -177,6 +180,8 @@ public class SceneSelectorScript : MonoBehaviour
             tutorialPlayed.Add(scenesPlayed.Count - 1);
 
         //    scenesPlayed.Add(CollectibleTPV);
+            scenesPlayed.Add(AudioGymFPV);
+            tutorialPlayed.Add(scenesPlayed.Count - 1);
         }
         else
         {
@@ -204,6 +209,8 @@ public class SceneSelectorScript : MonoBehaviour
             tutorialPlayed.Add(scenesPlayed.Count - 1);
 
             //   scenesPlayed.Add(CollectibleFPV);
+            scenesPlayed.Add(AudioGymFPV);
+            tutorialPlayed.Add(scenesPlayed.Count - 1);
         }
     }
 

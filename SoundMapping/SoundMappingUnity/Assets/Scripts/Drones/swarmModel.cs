@@ -520,11 +520,11 @@ public class swarmModel : MonoBehaviour
                 string joined = string.Join(", ", forceStrings);
 
                 // ③ 一次性打印
-                Debug.Log($"SwarmObstacleForces ({swarmObstacleForces.Count}): {joined}");
+                //Debug.Log($"SwarmObstacleForces ({swarmObstacleForces.Count}): {joined}");
             }
             else
             {
-                Debug.Log("SwarmObstacleForces: (none)");
+                //Debug.Log("SwarmObstacleForces: (none)");
             }
             
             swarmOlfatiForces = ForceClusterer.getOlfatiForces(allForcesOlfati, 35f, (int)network.largestComponent.Count / 5, 1);
@@ -890,11 +890,11 @@ public class swarmModel : MonoBehaviour
 
 
 
-            Debug.Log($"Velocity Missmatch: {velMissmatch}" +
-                      $"  Energy Deviation: {energyDev}" +
-                      $"  Relative Connectivity: {relativeConnectivity}" +
-                      $"  Cohesion Radius: {cohesionRadius}" +
-                      $"   Computing scores for " + networkToCompute.drones.Count);
+            //Debug.Log($"Velocity Missmatch: {velMissmatch}" +
+            //          $"  Energy Deviation: {energyDev}" +
+            //          $"  Relative Connectivity: {relativeConnectivity}" +
+            //          $"  Cohesion Radius: {cohesionRadius}" +
+            //          $"   Computing scores for " + networkToCompute.drones.Count);
             //drones number
 
 

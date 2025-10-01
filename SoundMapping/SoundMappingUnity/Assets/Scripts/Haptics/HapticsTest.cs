@@ -164,6 +164,7 @@ public class HapticsTest : MonoBehaviour
 
     private void HighlightClosestDrone()
     {
+        
         // IReadOnlyList<Transform> drones = swarmModel.dronesTransforms;   // adjust if your list has a different name
         var drones = FindObjectsOfType<DroneController>()
              .Select(d => d.transform).ToList();
@@ -180,13 +181,14 @@ public class HapticsTest : MonoBehaviour
         {
             // float sq = (t.position - centre).sqrMagnitude;   // cheaper than magnitude
             float sq = (new Vector2(t.position.x, t.position.z) - centre2D).sqrMagnitude; // 2D distance
-            if (sq < bestSq) { bestSq = sq; closest = t; }
+            if (sq < bestSq) {bestSq = sq; closest = t; }
         }
         if (closest == null) { return; }
 
         // 3) if it changed, restore the old one and tint the new one
         if (_highlightedDrone != null && _highlightedDrone != closest)
         {
+            print("Closest drone: "+ closest);
             SetDroneTint(_highlightedDrone, Color.white);    // or whatever the default is
         }
         _highlightedDrone = closest;
@@ -521,24 +523,24 @@ public class HapticsTest : MonoBehaviour
 
         bool muteTargetRow = (_sizeStableTimer >= SIZE_STABLE_FOR);
 
-        Debug.Log($"_lastHalfW01: {_lastHalfW01:F3}, Current halfW01: {halfW01:F3}, Difference: {sizeDiff01:F3}");
+        // Debug.Log($"_lastHalfW01: {_lastHalfW01:F3}, Current halfW01: {halfW01:F3}, Difference: {sizeDiff01:F3}");
 
         _lastHalfW01 = halfW01;
 
-        Debug.Log($"halfW = {halfW:F2} m, halfH = {halfH:F2} m " +
-                  $"(norm {halfW01:F3}, Δ {sizeDiff01:F3}, " +
-                  $"{_sizeStableTimer:F2}s stable, " +
-                  $"{(muteTargetRow ? "MUTING" : "active")})");
+        //Debug.Log($"halfW = {halfW:F2} m, halfH = {halfH:F2} m " +
+        //          $"(norm {halfW01:F3}, Δ {sizeDiff01:F3}, " +
+        //          $"{_sizeStableTimer:F2}s stable, " +
+        //          $"{(muteTargetRow ? "MUTING" : "active")})");
 
         if (initial_actuator_W / initial_actuator_H > halfW / halfH)
         {
             actuator_W = initial_actuator_H * halfW / halfH; // make it 4:3 aspect ratio
-            Debug.Log($"actuator_W = {actuator_W:F2} (halfW {halfW:F2}, halfH {halfH:F2})");
+            //Debug.Log($"actuator_W = {actuator_W:F2} (halfW {halfW:F2}, halfH {halfH:F2})");
         }
         else
         {
             actuator_H = initial_actuator_W * halfH / halfW; // make it 4:3 aspect ratio
-            Debug.Log($"actuator_H = {actuator_H:F2} (halfW {halfW:F2}, halfH {halfH:F2})");
+            //Debug.Log($"actuator_H = {actuator_H:F2} (halfW {halfW:F2}, halfH {halfH:F2})");
         }
 
         // ③ zero-out per-vibrator accumulators
@@ -693,7 +695,7 @@ public class HapticsTest : MonoBehaviour
             if (collapsed > maxDuty) { maxDuty = collapsed; maxCol = col; maxAddr = addr; }
         }
 
-        Debug.Log($"[WidthBar] max duty = {maxDuty} at col {maxCol} (addr {maxAddr})");
+        //Debug.Log($"[WidthBar] max duty = {maxDuty} at col {maxCol} (addr {maxAddr})");
 
 
 
@@ -783,8 +785,8 @@ public class HapticsTest : MonoBehaviour
             dutyByTile[(rowE * (Mathf.RoundToInt(initial_actuator_W) + 1)) + colE] = dutyVal;
 
 
-            Debug.Log($"embodiedDrone addr {addrE} " +
-            $"(duty {duty[addrE]})");
+            //Debug.Log($"embodiedDrone addr {addrE} " +
+            //$"(duty {duty[addrE]})");
         }
 
         // generate motion pattern when disconnection happens
@@ -1323,13 +1325,13 @@ public class HapticsTest : MonoBehaviour
 
                 if (diff < 40 || diff > 320)
                 {
-                    Debug.Log("forcesDir: " + forcesDir + " angle: " + angle + " diff: " + diff);
+                    //Debug.Log("forcesDir: " + forcesDir + " angle: " + angle + " diff: " + diff);
                     float threshold = forcesDir.magnitude > 3.5f ? 0.3f : 0.7f;
                     if (Vector3.Dot(MigrationPointController.alignementVector.normalized, -forcesDir.normalized) > threshold)
                     { // if col with velocity
                         actuator.UpdateValue(forcesDir.magnitude);
                         duty[actuator.Adresse] = actuator.dutyIntensity; // update the duty for visualization
-                        Debug.Log("duty: " + actuator.dutyIntensity + " actuator.Adresse" + actuator.Adresse);
+                        //Debug.Log("duty: " + actuator.dutyIntensity + " actuator.Adresse" + actuator.Adresse);
                         return;
                     }
 

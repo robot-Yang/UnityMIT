@@ -17,7 +17,7 @@ public class ObstacleTactorVisualizer : MonoBehaviour
         for (int i = 0; i < cells.Length && i < addr.Length; i++)
         {
             int d = duty[addr[i]];                  // 0‥14
-            Debug.Log($"Cell {i}: Addr = {addr[i]}, Duty = {d}");
+            //Debug.Log($"Cell {i}: Addr = {addr[i]}, Duty = {d}");
             float t = d / 14f;                      // 0‥1
             cells[i].color = d == 0
                            ? idleColor
