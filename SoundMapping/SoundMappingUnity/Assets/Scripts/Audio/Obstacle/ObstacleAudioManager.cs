@@ -46,8 +46,8 @@ public class ObstacleAudioManager : MonoBehaviour
     public static ObstacleAudioManager Instance { get; private set; }
 
     // Profiles
-    private const string PROFILE_BEEP = "BeepProfile";
-    private const string PROFILE_CONT = "ContinuousProfile";
+    private const string PROFILE_BEEP = "BeepAudioProfile";
+    private const string PROFILE_CONT = "ContinuousAudioProfile";
 
     private class Runtime
     {
@@ -92,7 +92,11 @@ public class ObstacleAudioManager : MonoBehaviour
 
         // Auto-register obstacles etc.
         foreach (var o in FindObjectsOfType<ObstacleAudio>())
+        {
+            print("Found obstacle");
             Register(o);
+            print("End of register");
+        }
 
         WarnIfMissing(PROFILE_BEEP);
         WarnIfMissing(PROFILE_CONT);
@@ -302,33 +306,40 @@ public class ObstacleAudioManager : MonoBehaviour
         }
     }
 
-
     private ObstacleAudioProfileBase DecideProfileFor(ObstacleAudio obstacle)
     {
         if (TryGetProfile(PROFILE_BEEP, out var beep))
+        {
+            print("Assigned beep");
             return beep;
-
-        // fallback in case Beep profile not found
-        foreach (var kv in _profilesByName) return kv.Value; // fallback to "any" loaded
+        }
+        print("Assign condition does not work");
         return null;
     }
 
     //private ObstacleAudioProfileBase DecideProfileFor(ObstacleAudio obstacle)
     //{
     //    float dist = ComputeDistanceToObstacle(obstacle.transform);
+    //    print("Obstacle distance:" + dist);
 
     //    // If close enough → Continuous
     //    if (dist <= continuousSwitchDistance && TryGetProfile(PROFILE_CONT, out var cont))
+    //    {
+    //        print("Assigned Continuous");
     //        return cont;
+    //    }
 
-    //    // Otherwise → Beep
-    //    if (TryGetProfile(PROFILE_BEEP, out var beep))
+    //    else if (TryGetProfile(PROFILE_BEEP, out var beep))
+    //    {
+    //        print("Assigned beep");
     //        return beep;
+    //    }
 
-    //    // Fallback → any loaded profile
-    //    foreach (var kv in _profilesByName)
-    //        return kv.Value;
+    //    else print("Error assigning profile for obstacle");
 
+    //    print("Assign condition does not work");
+    //    // fallback in case Beep profile not found
+    //    foreach (var kv in _profilesByName) return kv.Value; // fallback to "any" loaded
     //    return null;
     //}
 

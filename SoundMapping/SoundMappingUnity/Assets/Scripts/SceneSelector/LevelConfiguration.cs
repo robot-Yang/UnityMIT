@@ -34,6 +34,7 @@ public class LevelConfiguration : MonoBehaviour
     [Header("Audio Settings")]
     [SerializeField] public bool audioIsolation = true;
     [SerializeField] public bool audioSpreadness = true;
+    [SerializeField] public bool obstacleDistance = true;
 
     [Header("Spawn Settings")]
     [SerializeField] public bool needToSpawn = true;

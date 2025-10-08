@@ -13,6 +13,7 @@ public class textInfo : MonoBehaviour
     public TextMeshProUGUI SpreadnessSwarmScore;
     public TextMeshProUGUI textTutorial;
     public TextMeshProUGUI errorText;
+    public TextMeshProUGUI ObstacleDistanceText;
 
     public Image deathImage;
 
@@ -24,6 +25,7 @@ public class textInfo : MonoBehaviour
     public bool showSpreadness = false;
     public bool showIsolation = false;
     public bool showDroneCrash = false;
+    public bool showObstacleDistance = false;
 
 
     void Start()
@@ -49,6 +51,7 @@ public class textInfo : MonoBehaviour
         showSpreadness = config.audioSpreadness;
         showIsolation = config.audioIsolation;
         showDroneCrash = config.hapticsCrash;
+        showObstacleDistance = config.obstacleDistance;
 
     }
     void Update()
@@ -61,7 +64,9 @@ public class textInfo : MonoBehaviour
             DroneCrashText.text = showDroneCrash ? "Drone Crash : " + swarmModel.numberOfDroneCrashed.ToString() : "";
             //SpreadnessSwarmScore.text = showSpreadness ? "Swarm spreadness : " + getOneDecimal(swarmModel.swarmAskingSpreadness) : "";
             SpreadnessSwarmScore.text = "";
-        }else
+            //ObstacleDistanceText.text = showObstacleDistance ? "Obstacle Distance : " + 0 : "";
+        }
+        else
         {
             connexionText.text = "";
             SpreadnessText.text = "";
