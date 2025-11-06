@@ -699,8 +699,8 @@ public class HapticsTest : MonoBehaviour
 
         // 带迟滞的开关
         // static bool disconnActive; // 放到类字段更好（避免每帧重新置 false）
-        if (!disconnActive && _discScoreSmooth >= DISC_ON && swarmModel.avgDist < 2.5f) disconnActive = true;
-        if (disconnActive && (swarmModel.avgDist >= 2.5f || _discScoreSmooth <= DISC_OFF)) disconnActive = false;
+        if (!disconnActive && _discScoreSmooth >= DISC_ON && swarmModel.avgDist < 4.0f) disconnActive = true;
+        if (disconnActive && (swarmModel.avgDist >= 4.0f || _discScoreSmooth <= DISC_OFF)) disconnActive = false;
 
         // 2) if size changed obviously
         bool sizeActive = !muteTargetRow;
