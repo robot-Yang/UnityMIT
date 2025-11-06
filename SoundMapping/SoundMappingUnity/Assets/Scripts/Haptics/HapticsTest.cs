@@ -408,6 +408,8 @@ public class HapticsTest : MonoBehaviour
     float _lastHalfW01 = -1f;
     float _sizeStableTimer = 0f;
 
+    private const float max_half_width= 4.1f; //4f;
+
     // —— 断连提示（中间两列动态条）——
     [SerializeField] float disconnectTau = 0.25f;   // 分数平滑时间常数(s)
     [SerializeField] float flowSpeedHz   = 6f;      // 高亮条向下“流”的速度(Hz)
@@ -467,7 +469,7 @@ public class HapticsTest : MonoBehaviour
     {
         // your swarm width is normalized by 4.5f above, and you center it with +center_W
         // let's reuse that logic but keep it continuous
-        float u = Mathf.Clamp(-xLocal / 4.5f * 1.5f + center_W, 0f, COLS_MINUS1);
+        float u = Mathf.Clamp(-xLocal / max_half_width * 1.5f + center_W, 0f, COLS_MINUS1);
         return u;
     }
 
@@ -475,7 +477,7 @@ public class HapticsTest : MonoBehaviour
     {
         // float t = (x + halfW) / (2f * halfW);      // → [0..1]
         // return Mathf.Clamp(Mathf.RoundToInt(t * actuator_W + center_W - actuator_W / 2f), 0, Mathf.RoundToInt(initial_actuator_W));
-        float t = x / 4.5f * 1.5f;      // → [0..1]
+        float t = x / max_half_width * 1.5f;      // → [0..1]
         return Mathf.Clamp(Mathf.RoundToInt(-t + center_W), 0, Mathf.RoundToInt(initial_actuator_W));
         return Mathf.Clamp(Mathf.RoundToInt(t + center_W), 0, Mathf.RoundToInt(initial_actuator_W));
         // return Mathf.Clamp(Mathf.RoundToInt(t *  3f), 0, 3);
@@ -485,7 +487,7 @@ public class HapticsTest : MonoBehaviour
     {
         // float t = (-y + halfH) / (2f * halfH);      // → [0..1]
         // return Mathf.Clamp(Mathf.RoundToInt(t * actuator_H + center_H - actuator_H / 2f), 0, Mathf.RoundToInt(initial_actuator_H));
-        float t = -y / 4.5f * 1.5f;      // → [0..1]
+        float t = -y / max_half_width * 1.5f;      // → [0..1]
         return Mathf.Clamp(Mathf.RoundToInt(- t + center_H), 0, Mathf.RoundToInt(initial_actuator_H));
         // return Mathf.Clamp(Mathf.RoundToInt(t * 4f), 0, 4);
     }
@@ -567,6 +569,7 @@ public class HapticsTest : MonoBehaviour
         float dt = Time.deltaTime; // we’ll reuse dt later as well
         float halfW01 = Mathf.Clamp01(halfW / refWorldHalfW);     // normalize width to [0,1]
         Debug.Log($"halfW01: {halfW01:F3}");
+        Debug.Log($"halfW: {halfW:F3}");
         float sizeDiff01 = (_lastHalfW01 < 0f) ? 1f : Mathf.Abs(halfW01 - _lastHalfW01);
 
         // hysteresis on size: must stay “small change” for a while
@@ -619,12 +622,12 @@ public class HapticsTest : MonoBehaviour
             Vector3 local = _swarmFrame.InverseTransformPoint(d.position);
 
             // ---- 连续坐标（0..W-1 / 0..H-1），保证在边界内 ----
-            // float u = Mathf.Clamp01((local.x*2f) / (4.5f)) * COLS_MINUS1;
-            // float v = Mathf.Clamp01((local.z + halfH) / (4.5f)) * ROWS_MINUS1;
+            // float u = Mathf.Clamp01((local.x*2f) / (max_half_width)) * COLS_MINUS1;
+            // float v = Mathf.Clamp01((local.z + halfH) / (max_half_width)) * ROWS_MINUS1;
 
-            // float t = local.x / 4.5f * 2f;      // → [0..1]
-            float u = Mathf.Clamp(local.x / 4.5f * 1.5f + center_W, 0, Mathf.RoundToInt(initial_actuator_W));
-            float v = Mathf.Clamp(-local.z / 4.5f * 1.5f + center_H, 0, Mathf.RoundToInt(initial_actuator_H));
+            // float t = local.x / max_half_width * 2f;      // → [0..1]
+            float u = Mathf.Clamp(local.x / max_half_width * 1.5f + center_W, 0, Mathf.RoundToInt(initial_actuator_W));
+            float v = Mathf.Clamp(-local.z / max_half_width * 1.5f + center_H, 0, Mathf.RoundToInt(initial_actuator_H));
 
             // find the nearest grid cell locations
             int c0 = Mathf.FloorToInt(u);
