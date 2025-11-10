@@ -5,10 +5,6 @@ using System.Linq;
 
 public class ObstacleAudioManager : MonoBehaviour
 {
-    [Header("References")]
-    [Tooltip("Transform of the drone (or camera) that holds the main AudioListener.")]
-    public Transform listenerTransform;
-
     [Header("Scheduling")]
     [Tooltip("Update rate for audio parameter refresh, in Hz.")]
     [Range(5f, 90f)] public float updateRate = 30f;
@@ -26,16 +22,18 @@ public class ObstacleAudioManager : MonoBehaviour
 
     [Header("Mode Switching")]
     [Tooltip("Below this distance, switch from Beep to Continuous (car-like solid tone).")]
-    [Min(0f)] public float continuousSwitchDistance = 1.2f;
+    [Min(0f)] public float continuousSwitchDistance = 1.5f;
 
     [Tooltip("Hysteresis band to avoid rapid toggling (meters). " +
              "Profile switches to Continuous at (threshold - hysteresis), " +
              "and back to Beep at (threshold + hysteresis).")]
-    [Min(0f)] public float switchHysteresis = 0.2f;
+    [Min(0f)] public float switchThreshold = 0.2f;
 
-
+    [Tooltip("Smooth follow speed of the listener toward the swarm center.")]
+    public float listenerFollowSpeed = 20f;
 
     // ===== Runtime containers =====
+    private Transform listenerTransform;
     private readonly List<ObstacleAudio> _obstacles = new List<ObstacleAudio>();
     private readonly Dictionary<ObstacleAudio, Runtime> _rt = new Dictionary<ObstacleAudio, Runtime>();
 
@@ -48,6 +46,9 @@ public class ObstacleAudioManager : MonoBehaviour
     // Profiles
     private const string PROFILE_BEEP = "BeepAudioProfile";
     private const string PROFILE_CONT = "ContinuousAudioProfile";
+
+    private Transform closestDrone;
+
 
     private class Runtime
     {
@@ -73,10 +74,14 @@ public class ObstacleAudioManager : MonoBehaviour
 
     private void Start()
     {
+        // Automatically find the AudioListener among this GameObject's children
         if (listenerTransform == null)
         {
-            var listener = FindObjectOfType<AudioListener>();
-            if (listener != null) listenerTransform = listener.transform;
+            var listener = GetComponentInChildren<AudioListener>();
+            if (listener != null)
+                listenerTransform = listener.transform;
+            else
+                Debug.LogWarning("[ObstacleAudioManager] No AudioListener found among children!");
         }
 
         _profilesByName = new Dictionary<string, ObstacleAudioProfileBase>(System.StringComparer.OrdinalIgnoreCase);
@@ -106,6 +111,22 @@ public class ObstacleAudioManager : MonoBehaviour
     {
         if (listenerTransform == null || _obstacles.Count == 0) return;
 
+        // Listener follows the center of the swarm
+        List<DroneFake> drones = swarmModel.dronesInMainNetwork;
+        if (drones != null && drones.Count > 0)
+        {
+            Vector3 center = Vector3.zero;
+            foreach (DroneFake drone in drones)
+                center += drone.position;
+            center /= drones.Count;
+
+            listenerTransform.position = Vector3.Lerp(
+                listenerTransform.position,
+                center,
+                Time.deltaTime * listenerFollowSpeed
+            );
+        }
+
         step_count += Time.deltaTime;
         var step = 1f / Mathf.Max(1f, updateRate);
         if (step_count < step) return;
@@ -121,17 +142,44 @@ public class ObstacleAudioManager : MonoBehaviour
             if (perFrameBudget > 0 && processed >= perFrameBudget) break;
             processed++;
 
-            if (!_rt.TryGetValue(o, out var r) || r.profile == null)
+            if (!_rt.TryGetValue(o, out var r))
+                continue;
+
+            float dist = ComputeDistanceToObstacle(o.transform);
+
+            // Check switch conditions
+            if (r.profile is BeepAudioProfile && dist <= (continuousSwitchDistance - switchThreshold))
             {
-                AssignProfile(o);
-                _rt.TryGetValue(o, out r);
-                if (r == null || r.profile == null) continue;
+                if (TryGetProfile(PROFILE_CONT, out var cont))
+                {
+                    // Stop any currently playing continuous loop
+                    if (o.source != null && o.source.isPlaying)
+                        o.source.Stop();
+
+                    r.profile = cont;
+                    r.isLoopingStarted = false;
+                    print($"Switched to CONT (dist={dist:F2})");
+                }
+            }
+
+            else if (r.profile is ContinuousAudioProfile && dist >= (continuousSwitchDistance + switchThreshold))
+            {
+                if (TryGetProfile(PROFILE_BEEP, out var beep))
+                {
+                    // Stop any currently playing continuous loop
+                    if (o.source != null && o.source.isPlaying)
+                        o.source.Stop();
+
+                    r.profile = beep;
+                    r.isLoopingStarted = false;
+                    print($"Switched to BEEP (dist={dist:F2})");
+                }
             }
 
             var ctx = new AudioCtx
             {
                 dt = dt,
-                distance = ComputeDistanceToObstacle(o.transform),
+                distance = dist,
                 size = o.sizeScalar
             };
 
@@ -316,32 +364,6 @@ public class ObstacleAudioManager : MonoBehaviour
         print("Assign condition does not work");
         return null;
     }
-
-    //private ObstacleAudioProfileBase DecideProfileFor(ObstacleAudio obstacle)
-    //{
-    //    float dist = ComputeDistanceToObstacle(obstacle.transform);
-    //    print("Obstacle distance:" + dist);
-
-    //    // If close enough → Continuous
-    //    if (dist <= continuousSwitchDistance && TryGetProfile(PROFILE_CONT, out var cont))
-    //    {
-    //        print("Assigned Continuous");
-    //        return cont;
-    //    }
-
-    //    else if (TryGetProfile(PROFILE_BEEP, out var beep))
-    //    {
-    //        print("Assigned beep");
-    //        return beep;
-    //    }
-
-    //    else print("Error assigning profile for obstacle");
-
-    //    print("Assign condition does not work");
-    //    // fallback in case Beep profile not found
-    //    foreach (var kv in _profilesByName) return kv.Value; // fallback to "any" loaded
-    //    return null;
-    //}
 
 
     private bool TryGetProfile(string name, out ObstacleAudioProfileBase profile)

@@ -283,7 +283,7 @@ public class DroneState
         layer.Add(drone.layer);
 
         addNetwork(connected);
-        addPredictrion(pred, drone);
+        // addPredictrion(pred, drone);
     }
 
     private void addPredictrion(Prediction pred, DroneFake drone)

@@ -26,6 +26,7 @@ public class SceneSelectorScript : MonoBehaviour
     [HideInInspector] public string CollectibleTPV1 = "TDVCollectibles_1";
 
     [HideInInspector] public string AudioGymFPV = "FPVAudioGym";
+    [HideInInspector] public string ObstacleFPV2 = "FPVObs_2";
 
     [HideInInspector] public string assetPathTraining = "Assets/Scenes/TrainingFinal";
 
@@ -182,6 +183,9 @@ public class SceneSelectorScript : MonoBehaviour
         //    scenesPlayed.Add(CollectibleTPV);
             scenesPlayed.Add(AudioGymFPV);
             tutorialPlayed.Add(scenesPlayed.Count - 1);
+
+            scenesPlayed.Add(ObstacleFPV2);
+            tutorialPlayed.Add(scenesPlayed.Count - 1);
         }
         else
         {
@@ -210,6 +214,9 @@ public class SceneSelectorScript : MonoBehaviour
 
             //   scenesPlayed.Add(CollectibleFPV);
             scenesPlayed.Add(AudioGymFPV);
+            tutorialPlayed.Add(scenesPlayed.Count - 1);
+
+            scenesPlayed.Add(ObstacleFPV2);
             tutorialPlayed.Add(scenesPlayed.Count - 1);
         }
     }
