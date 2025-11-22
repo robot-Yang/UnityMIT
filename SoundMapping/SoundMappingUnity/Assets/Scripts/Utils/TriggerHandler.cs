@@ -83,7 +83,7 @@ public class TriggerHandlerWithCallback : MonoBehaviour
                        //     XboxScreenRecorder.StopRecordingAndSave();
                             print("Level Finished from trigger");
                             SwarmTrajectoryRecorder.MarkTrialStop("Run");
-                           saveInfoToJSON.exportData(false);
+                        //    saveInfoToJSON.exportData(false);
                             //  gm.GetComponent<Timer>().StopTimer();
                         }else{
                             swarmModel.restart();
