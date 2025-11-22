@@ -2,6 +2,7 @@
 // Records swarm trajectories into JSON, labels "main group" per sample using your runtime network,
 // supports adjustable recording frequency, safely saves on scene changes / quit, and
 // stores a single "Run" timing window (start/stop) for downstream analysis.
+// NOW also labels the embodied drone both in-file (embodiedId/embodiedName) and per-drone (DroneTraj.embodied).
 //
 // Call from other scripts:
 //   SwarmTrajectoryRecorder.MarkTrialStart("Run");  // level/timer starts
@@ -89,6 +90,17 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
     [Tooltip("If true, only one 'Run' window (start->stop) will be recorded per file.")]
     public bool singleRunMode = true;
 
+    [Header("Embodied drone labeling")]
+    [Tooltip("If set, this transform is treated as the embodied drone.")]
+    public Transform embodiedDroneOverride;
+    [Tooltip("Fallback: try to find an object with this tag.")]
+    public string embodiedTag = "Embodied";
+    [Tooltip("Fallback: try to find an object with this exact name.")]
+    public string embodiedName = "EmbodiedDrone";
+    [Tooltip("If your drone component (e.g., DroneController) has a bool flag like 'isEmbodied'/'IsEmbodied', we'll use it.")]
+    public string embodiedFlagFieldOrProperty = "isEmbodied";
+    public string embodiedFlagAltProperty = "IsEmbodied";
+
     // -------------------- Internals --------------------
     public Transform swarmRoot;
     private readonly Dictionary<int, DroneTraj> _trajById = new Dictionary<int, DroneTraj>();
@@ -119,6 +131,10 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
     // --- Single-run state ---
     private bool _runFinalized = false;     // a 'Run' window has been closed in this file
 
+    // --- Embodied detection cache ---
+    private Transform _embodiedTransform;
+    private int _embodiedStableId = int.MinValue;
+
     // -------------------- Data types --------------------
     [Serializable]
     public struct TrajFrame
@@ -133,6 +149,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
     {
         public int id;
         public string name;
+        public bool embodied; // <--- NEW: true if this drone is the embodied drone
         public List<TrajFrame> frames = new List<TrajFrame>(4096);
     }
 
@@ -156,6 +173,10 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         public float sampleHz; // sampling cadence (record cadence implied by data)
         public List<DroneTraj> trajectories = new List<DroneTraj>();
         public List<TrialWindow> trials = new List<TrialWindow>(); // timing windows
+
+        // --- NEW: embodied metadata written once per file ---
+        public int embodiedId;        // -2147483648 (int.MinValue) if unknown
+        public string embodiedName;   // empty if unknown
     }
 
     // Trial buffers
@@ -188,6 +209,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
     {
         TryFindSwarmRootNow();
         CollectDrones();
+        RefreshEmbodiedLabeling();
         _samplingEnabled = !waitForDronesToStart || _droneTransforms.Count > 0;
     }
 
@@ -233,6 +255,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
             if (swarmRoot)
             {
                 CollectDrones();
+                RefreshEmbodiedLabeling();
                 _samplingEnabled = !waitForDronesToStart || _droneTransforms.Count > 0;
             }
         }
@@ -245,7 +268,11 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
                 _discoverTimer = 0f;
                 int before = _droneTransforms.Count;
                 CollectDrones();
-                if (_droneTransforms.Count > before) _samplingEnabled = true;
+                if (_droneTransforms.Count > before)
+                {
+                    RefreshEmbodiedLabeling();
+                    _samplingEnabled = true;
+                }
             }
         }
 
@@ -259,6 +286,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
                 {
                     _lastChildCount = swarmRoot.childCount;
                     CollectDrones();
+                    RefreshEmbodiedLabeling();
                 }
             }
         }
@@ -380,6 +408,9 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         _runFinalized = false;
         _trialsBuffer.Clear();
         _openTrial = null;
+
+        // also refresh embodied at scene begin
+        RefreshEmbodiedLabeling();
     }
 
     private void ClearBuffers()
@@ -393,6 +424,9 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         _justClearedForNewScene = true;
         _finalized = false; // allow a final save for the new scene
         _runFinalized = false; // new file can have its own single run
+
+        _embodiedTransform = null;
+        _embodiedStableId = int.MinValue;
     }
 
     private System.Collections.IEnumerator EnsureSwarmAvailable()
@@ -430,6 +464,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
             if (swarmRoot)
             {
                 CollectDrones();
+                RefreshEmbodiedLabeling();
                 if (_droneTransforms.Count > 0)
                 {
                     _samplingEnabled = true;
@@ -448,6 +483,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
                     if (swarmRoot)
                     {
                         CollectDrones();
+                        RefreshEmbodiedLabeling();
                         if (_droneTransforms.Count > 0)
                         {
                             _samplingEnabled = true;
@@ -551,7 +587,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
     {
         int id = GetStableId(tr);
         if (!_trajById.ContainsKey(id))
-            _trajById[id] = new DroneTraj { id = id, name = tr.name };
+            _trajById[id] = new DroneTraj { id = id, name = tr.name, embodied = false };
     }
 
     private static Type GetTypeByName(string typeName)
@@ -576,10 +612,98 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
                 var f = compType.GetField("Id") ?? compType.GetField("DroneId");
                 if (f != null && f.FieldType == typeof(int)) return (int)f.GetValue(comp);
                 var p = compType.GetProperty("Id") ?? compType.GetProperty("DroneId");
-                if (p != null && p.PropertyType == typeof(int)) return (int)p.GetValue(comp);
+                if (p != null && p.PropertyType == typeof(int)) return (int)p.GetValue(comp, null);
             }
         }
         return t.GetInstanceID();
+    }
+
+    // -------------------- Embodied detection & labeling --------------------
+    private void RefreshEmbodiedLabeling()
+    {
+        _embodiedTransform = TryFindEmbodiedTransform();
+        _embodiedStableId = (_embodiedTransform != null) ? GetStableId(_embodiedTransform) : int.MinValue;
+
+        // push the embodied flag into known trajectories
+        foreach (var kv in _trajById)
+        {
+            kv.Value.embodied = (kv.Key == _embodiedStableId);
+        }
+    }
+
+    private Transform TryFindEmbodiedTransform()
+    {
+        // 1) Inspector override
+        if (embodiedDroneOverride) return embodiedDroneOverride;
+
+        // 2) Tag
+        if (!string.IsNullOrEmpty(embodiedTag))
+        {
+            try
+            {
+                var go = GameObject.FindWithTag(embodiedTag);
+                if (go) return go.transform;
+            }
+            catch { /* tag may not exist */ }
+        }
+
+        // 3) Name
+        if (!string.IsNullOrEmpty(embodiedName))
+        {
+            var byName = GameObject.Find(embodiedName);
+            if (byName) return byName.transform;
+        }
+
+        // 4) HapticsTest.embodiedDrone (field or property), if present
+        var htType = GetTypeByName("HapticsTest");
+        if (htType != null)
+        {
+            var objs = UnityEngine.Object.FindObjectsOfType(htType);
+            foreach (var o in objs)
+            {
+                Transform t = null;
+                var f = htType.GetField("embodiedDrone");
+                if (f != null && typeof(Transform).IsAssignableFrom(f.FieldType)) t = (Transform)f.GetValue(o);
+                if (t == null)
+                {
+                    var p = htType.GetProperty("embodiedDrone");
+                    if (p != null && typeof(Transform).IsAssignableFrom(p.PropertyType)) t = (Transform)p.GetValue(o, null);
+                }
+                if (t) return t;
+            }
+        }
+
+        // 5) Look for a bool flag on the drone component type (e.g., DroneController.isEmbodied/IsEmbodied)
+        var dcType = GetTypeByName(droneComponentTypeName);
+        if (dcType != null && swarmRoot)
+        {
+            var comps = swarmRoot.GetComponentsInChildren(dcType, true);
+            foreach (var c in comps)
+            {
+                bool isEmb = false;
+                var f = dcType.GetField(embodiedFlagFieldOrProperty);
+                if (f != null && f.FieldType == typeof(bool)) isEmb = (bool)f.GetValue(c);
+                if (!isEmb)
+                {
+                    var p = dcType.GetProperty(embodiedFlagFieldOrProperty);
+                    if (p != null && p.PropertyType == typeof(bool)) isEmb = (bool)p.GetValue(c, null);
+                }
+                if (!isEmb && !string.IsNullOrEmpty(embodiedFlagAltProperty))
+                {
+                    var p2 = dcType.GetProperty(embodiedFlagAltProperty);
+                    if (p2 != null && p2.PropertyType == typeof(bool)) isEmb = (bool)p2.GetValue(c, null);
+                    if (!isEmb)
+                    {
+                        var f2 = dcType.GetField(embodiedFlagAltProperty);
+                        if (f2 != null && f2.FieldType == typeof(bool)) isEmb = (bool)f2.GetValue(c);
+                    }
+                }
+
+                if (isEmb) return ((Component)c).transform;
+            }
+        }
+
+        return null; // not found
     }
 
     // -------------------- Sampling --------------------
@@ -600,8 +724,20 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
             if (!tr) continue;
             positions[i] = tr.position;
             ids[i] = GetStableId(tr);
-            if (!_trajById.TryGetValue(ids[i], out _))
-                _trajById[ids[i]] = new DroneTraj { id = ids[i], name = tr.name };
+            if (!_trajById.TryGetValue(ids[i], out var _))
+                _trajById[ids[i]] = new DroneTraj { id = ids[i], name = tr.name, embodied = false };
+        }
+
+        // keep embodied flags fresh
+        if (_embodiedTransform == null) RefreshEmbodiedLabeling();
+        for (int i = 0; i < n; i++)
+        {
+            if (_trajById.TryGetValue(ids[i], out var traj))
+            {
+                traj.embodied = (ids[i] == _embodiedStableId);
+                // if name changed at runtime (rare), keep it updated
+                traj.name = _droneTransforms[i] ? _droneTransforms[i].name : traj.name;
+            }
         }
 
         var inMain = new bool[n];
@@ -749,6 +885,9 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
             _openTrial = null;
         }
 
+        // Make sure embodied flags are up-to-date right before write
+        RefreshEmbodiedLabeling();
+
         var log = new TrajectoryLog
         {
             scene = SceneManager.GetActiveScene().name,  // for reference
@@ -757,7 +896,11 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
             order = ResolveOrder(),
             sampleHz = sampleHz <= 0 ? -1f : sampleHz,
             trajectories = new List<DroneTraj>(_trajById.Values),
-            trials = new List<TrialWindow>(_trialsBuffer)
+            trials = new List<TrialWindow>(_trialsBuffer),
+
+            // NEW: embodied metadata
+            embodiedId = _embodiedStableId,
+            embodiedName = _embodiedTransform ? _embodiedTransform.name : string.Empty
         };
 
         string root;
@@ -861,13 +1004,4 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         }
         return null;
     }
-
-#if UNITY_EDITOR
-    // Optional tiny HUD for debugging
-    private void OnGUI()
-    {
-        GUI.Label(new Rect(8, 8, 1000, 20),
-            $"Recorder: sampling={_samplingEnabled} drones={_droneTransforms.Count} trajs={_trajById.Count} sceneLabel={_sceneLabelForThisRun} trials={_trialsBuffer.Count}{(_openTrial!=null?"(open)":"")} runFinalized={_runFinalized}");
-    }
-#endif
 }
