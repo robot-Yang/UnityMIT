@@ -473,7 +473,7 @@ public class HapticsTest : MonoBehaviour
     {
         // your swarm width is normalized by 4.5f above, and you center it with +center_W
         // let's reuse that logic but keep it continuous
-        float u = Mathf.Clamp(-xLocal / max_half_width * 1.5f + center_W, 0f, COLS_MINUS1);
+        float u = Mathf.Clamp(xLocal / max_half_width * 1.5f + center_W, 0f, COLS_MINUS1);
         return u;
     }
 
@@ -482,7 +482,7 @@ public class HapticsTest : MonoBehaviour
         // float t = (x + halfW) / (2f * halfW);      // → [0..1]
         // return Mathf.Clamp(Mathf.RoundToInt(t * actuator_W + center_W - actuator_W / 2f), 0, Mathf.RoundToInt(initial_actuator_W));
         float t = x / max_half_width * 1.5f;      // → [0..1]
-        return Mathf.Clamp(Mathf.RoundToInt(-t + center_W), 0, Mathf.RoundToInt(initial_actuator_W));
+        // return Mathf.Clamp(Mathf.RoundToInt(-t + center_W), 0, Mathf.RoundToInt(initial_actuator_W));
         return Mathf.Clamp(Mathf.RoundToInt(t + center_W), 0, Mathf.RoundToInt(initial_actuator_W));
         // return Mathf.Clamp(Mathf.RoundToInt(t *  3f), 0, 3);
     }
