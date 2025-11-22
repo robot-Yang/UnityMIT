@@ -647,7 +647,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &252539631
 RectTransform:
   m_ObjectHideFlags: 0
@@ -701,10 +701,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 391635715}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 60.115784}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 1619.2434, y: -32.05789}
+  m_SizeDelta: {x: 315.61188, y: 60.115784}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &344539069
 MonoBehaviour:
@@ -753,7 +753,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 8.93
+  m_fontSize: 25.4
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -819,7 +819,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &391635715
 RectTransform:
   m_ObjectHideFlags: 0
@@ -911,7 +911,7 @@ AudioSource:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 424206312}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: b526d5de9ddaaeb448a20d2b9d651f3a, type: 3}
@@ -1104,7 +1104,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 10
+  m_fontSize: 20
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -2063,7 +2063,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 10.25
+  m_fontSize: 20
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -2279,10 +2279,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 391635715}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 60.115784}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 488.3578, y: -32.05789}
+  m_SizeDelta: {x: 319.75186, y: 60.115784}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1179672693
 MonoBehaviour:
@@ -2331,7 +2331,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 8.93
+  m_fontSize: 25.4
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -2607,10 +2607,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 391635715}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 60.115784}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 159.24094, y: -32.05789}
+  m_SizeDelta: {x: 298.48187, y: 60.115784}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1258187011
 MonoBehaviour:
@@ -2659,7 +2659,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 8.93
+  m_fontSize: 25.4
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -2724,7 +2724,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1278118079
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2834,7 +2834,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1339964291
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2901,7 +2901,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 12.85
+  m_fontSize: 20
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -3117,10 +3117,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 391635715}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 60.115784}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 869.3097, y: -32.05789}
+  m_SizeDelta: {x: 402.15186, y: 60.115784}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1368261001
 MonoBehaviour:
@@ -3169,7 +3169,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 8.93
+  m_fontSize: 25.4
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -3766,6 +3766,8 @@ MonoBehaviour:
   groupRefreshInterval: 0.5
   allowManualSelection: 0
   allowManualEmbodiment: 0
+  frontLeadThreshold: 0.5
+  maxCandidateLateral: 0
   alignHeadingToEmbodied: 1
   yawOnly: 1
   alignSlerpSpeed: 8
@@ -3786,16 +3788,18 @@ MonoBehaviour:
   distanceDetection: 2
   embodiedDrone: {fileID: 0}
   refWorldHalfW: 4.5
-  SIZE_EPS01: 0.004
-  SIZE_STABLE_FOR: 1.3
+  SIZE_EPS01: 0.0015
+  SIZE_STABLE_FOR: 1
   disconnectTau: 0.25
-  flowSpeedHz: 4
+  flowSpeedHz: 3.5
   baseDuty: 0
   peakDuty: 8
   overlayMode: 1
   DISC_ON: 0.2
   DISC_OFF: 0.15
-  sendEvery: 100
+  drawDisconnectedInSwarmFrame: 1
+  disconnectedColor: {r: 1, g: 0, b: 0, a: 1}
+  sendEvery: 50
 --- !u!114 &1573697198
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3917,15 +3921,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f0e7b71b3e89e74ea2bd3ce519fac9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  connexionText: {fileID: 1258187011}
-  SpreadnessText: {fileID: 1179672693}
-  IsolationText: {fileID: 2071752031}
-  DroneCrashText: {fileID: 344539069}
-  SpreadnessSwarmScore: {fileID: 1368261001}
+  connexionText: {fileID: 0}
+  SpreadnessText: {fileID: 0}
+  IsolationText: {fileID: 0}
+  DroneCrashText: {fileID: 0}
+  SpreadnessSwarmScore: {fileID: 0}
   textTutorial: {fileID: 638460716}
   errorText: {fileID: 1361596481}
   deathImage: {fileID: 701908406}
-  CollectibleText: {fileID: 1339964292}
+  CollectibleText: {fileID: 0}
   showConnexion: 0
   showSpreadness: 0
   showIsolation: 0
@@ -4002,13 +4006,13 @@ MonoBehaviour:
   swarmRootName: Swarm
   rescanChildrenEverySec: 1
   droneComponentTypeName: DroneController
-  sampleHz: 30
+  sampleHz: 20
   waitForDronesToStart: 1
-  recordHz: 5
+  recordHz: 20
   recordEveryNthSample: 1
   dontDestroyOnLoad: 1
-  lazyDiscover: 1
-  outSubfolder: Trajectories_1022
+  lazyDiscover: 0
+  outSubfolder: test
   pidOverride: 
   sceneLabelOverride: 
   setupSceneName: Scene_Selector
@@ -4019,6 +4023,13 @@ MonoBehaviour:
   linkDistance: 3
   minMainGroupSize: 3
   useXZDistance: 1
+  runLabelName: Run
+  singleRunMode: 1
+  embodiedDroneOverride: {fileID: 0}
+  embodiedTag: Embodied
+  embodiedName: EmbodiedDrone
+  embodiedFlagFieldOrProperty: isEmbodied
+  embodiedFlagAltProperty: IsEmbodied
   swarmRoot: {fileID: 1547257216}
 --- !u!1 &1645719226
 GameObject:
@@ -4254,7 +4265,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 18.3
+  m_fontSize: 20
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -4357,14 +4368,14 @@ Camera:
   far clip plane: 1000
   field of view: 30
   orthographic: 1
-  orthographic size: 10
+  orthographic size: 15
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
+  m_TargetDisplay: 1
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
@@ -4669,7 +4680,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1892515273
 Transform:
   m_ObjectHideFlags: 0
@@ -4714,7 +4725,7 @@ Camera:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1
+    width: 0
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
@@ -5458,10 +5469,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 391635715}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 60.115784}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 1265.9116, y: -32.05789}
+  m_SizeDelta: {x: 351.05188, y: 60.115784}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2071752031
 MonoBehaviour:
@@ -5510,7 +5521,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 8.93
+  m_fontSize: 25.4
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -5709,7 +5720,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2141461181
 RectTransform:
   m_ObjectHideFlags: 0
