@@ -793,7 +793,7 @@ public class HapticsTest : MonoBehaviour
             float t = u - c0;          // 0..1, how far to the right
 
             // 3) fixed row = 1
-            int row = 1;
+            int row = 0;
 
             // 4) weights (left gets 1-t, right gets t)
             float w0 = 1f - t;
