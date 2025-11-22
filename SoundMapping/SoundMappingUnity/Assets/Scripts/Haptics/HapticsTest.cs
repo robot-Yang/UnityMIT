@@ -437,6 +437,10 @@ public class HapticsTest : MonoBehaviour
     private string logFilePath;
     private bool enableLogging = true;  // can toggle if needed
 
+    [Header("Debug / Disconnected")]
+    [SerializeField] bool drawDisconnectedInSwarmFrame = true;
+    [SerializeField] Color disconnectedColor = Color.red;
+
     private static void GetDynamicExtents(IReadOnlyList<Transform> drones,
                                     Transform swarmFrame,
                                     out float halfWidth,
@@ -561,6 +565,18 @@ public class HapticsTest : MonoBehaviour
             Quaternion.LookRotation(embodiedDrone.forward, embodiedDrone.up)
         );
 
+        // --- (Optional) visualize disconnected drones in the swarm frame ---
+        if (drawDisconnectedInSwarmFrame)
+        {
+            var list = GetDisconnectedDronesLocal();
+            foreach (var (go, local) in list)
+            {
+                Vector3 world = _swarmFrame.TransformPoint(local);
+                Debug.DrawLine(_swarmFrame.position, world, disconnectedColor, 0f, false);
+                // If you prefer a dot:
+                // Debug.DrawRay(world, Vector3.up * 0.15f, disconnectedColor, 0f, false);
+            }
+        }
 
         // ② measure current half-sizes
         GetDynamicExtents(drones, _swarmFrame, out halfW, out halfH);
@@ -707,13 +723,14 @@ public class HapticsTest : MonoBehaviour
         // 注意：这里不再“静音某行”，而是：只有在 sizeActive==true 时才渲染 size bar
 
         // render according to priority
-        const int TARGET_ROW = 0;
+        const int TARGET_ROW = 2;
         float Compress = 1f / ROWS; // 列合并用平均，避免饱和
 
         if (disconnActive)
         {
             // ① Disconnection（最高优先级）：只渲染中间两列的 motion
-            RenderDisconnectMotion(_discScoreSmooth, dt);  // 内部用 Max 叠加已被清零的缓冲即可
+            // RenderDisconnectMotion(_discScoreSmooth, dt);  // 内部用 Max 叠加已被清零的缓冲即可
+            RenderDisconnectedDirectionsToTiles(10);  // choose the intensity you like (e.g., 8–12)
             Debug.Log("[MODE] Disconnection");
         }
         else if (sizeActive)
@@ -887,6 +904,62 @@ public class HapticsTest : MonoBehaviour
                 duty[addrR]      = val;
                 dutyByTile[tileR]= val;
             }
+        }
+    }
+
+    // World → Swarm-Local positions for all disconnected drones
+    List<(GameObject go, Vector3 local)> GetDisconnectedDronesLocal()
+    {
+        var res = new List<(GameObject, Vector3)>();
+        if (_swarmFrame == null || swarmModel.swarmHolder == null || swarmModel.network == null)
+            return res;
+
+        var W2L = _swarmFrame.worldToLocalMatrix;
+
+        foreach (Transform t in swarmModel.swarmHolder.transform)
+        {
+            var dc = t.GetComponent<DroneController>();
+            var df = (dc != null) ? dc.droneFake : null;
+            if (df == null) continue;
+
+            // “Disconnected” = not in the main (largest/leader) component
+            if (!swarmModel.network.IsInMainNetwork(df))
+            {
+                // Use df.position (simulation state) or t.position (Transform) – both fine
+                Vector3 local = W2L.MultiplyPoint(df.position);
+                res.Add((t.gameObject, local));
+            }
+        }
+        return res;
+    }
+
+    // Light one tile in the 4x4 matrix in the direction of each disconnected drone
+    void RenderDisconnectedDirectionsToTiles(int dutyVal)
+    {
+        var disc = GetDisconnectedDronesLocal();
+        if (disc == null || disc.Count == 0) return;
+
+        foreach (var (_, local) in disc)
+        {
+            // Only direction from center (ignore distance)
+            Vector2 dir = new Vector2(local.x, local.z);
+            if (dir.sqrMagnitude < 1e-6f) continue;
+            dir.Normalize();
+
+            // Convert direction to continuous grid coords centered at panel center
+            // Keep the sign conventions consistent with your Col/Row mapping
+            float u = Mathf.Clamp( dir.x * center_W + center_W, 0f, COLS - 1); // // columns (X)
+            float v = Mathf.Clamp(-dir.y * center_H + center_H, 0f, ROWS - 1); // rows (Z)
+
+
+            int col = Mathf.RoundToInt(u);
+            int row = Mathf.RoundToInt(v);
+
+            int addr = matrix[row, col];
+
+            // Overlay: take max with existing buffer this frame
+            duty[addr] = Mathf.Max(duty[addr], dutyVal);
+            dutyByTile[row * COLS + col] = Mathf.Max(dutyByTile[row * COLS + col], dutyVal);
         }
     }
 
