@@ -377,7 +377,7 @@ public class HapticsTest : MonoBehaviour
     const float EPS          = 0.9f;   // 变化阈值：≈“1架无人机变动”
     const float STABLE_FOR   = 2f;   // 连续稳定多久后开始衰减（秒）
     const float DECAY_PER_S  = 8f;     // 衰减速度（每秒减少的 duty “格数”）
-    const int   DUTY_GAIN    = 3;      // 密度→强度：每架无人机 +2
+    const int   DUTY_GAIN    = 3;      // 密度→强度, 3 for num=9, 
     const int   DUTY_MAX     = 14;     // 上限
 
     // —— 状态缓存 —— 按你的地址空间大小分配
@@ -387,7 +387,7 @@ public class HapticsTest : MonoBehaviour
     float[] rawByAddr    = new float[256]; // 本帧密度（临时）
 
     // —— 可调参数 ——
-    const float GAIN_PER_DRONE = 12f;   // 一架无人机贡献的总强度（等价于你原来的 +2）
+    const float GAIN_PER_DRONE = 12f / 20 * 9; //6f; //12f;   // 一架无人机贡献的总强度 12f for num=9
     const float TAU_SMOOTH     = 0.20f;// 时间平滑常数(秒)，越大越稳
 
     // —— 状态缓存 ——
@@ -401,8 +401,8 @@ public class HapticsTest : MonoBehaviour
 
     // --- Size-change gate config ---
     [SerializeField] float refWorldHalfW = 4.5f;  // reference half-width (meters)
-    [SerializeField] float SIZE_EPS01 = 0.004f;    // “small change” threshold in normalized units
-    [SerializeField] float SIZE_STABLE_FOR = 1.30f; // must stay small for this long (s)
+    [SerializeField] float SIZE_EPS01 = 0.001f;    // “small change” threshold in normalized units
+    [SerializeField] float SIZE_STABLE_FOR = 1.00f; // must stay small for this long (s)
 
     // --- Size-change gate state ---
     float _lastHalfW01 = -1f;
@@ -752,7 +752,7 @@ public class HapticsTest : MonoBehaviour
             // ③ Embodied blink (but blended to 2 nearest actuators in row=1)
             const float blinkRate = 3f; // Hz
             bool blinkOn = (Mathf.FloorToInt(Time.time * blinkRate) & 1) == 0;
-            int baseDuty = blinkOn ? 7 : 0;
+            int baseDuty = blinkOn ? 10 : 0;
 
             Vector3 localE = _swarmFrame.InverseTransformPoint(embodiedDrone.position);
 
