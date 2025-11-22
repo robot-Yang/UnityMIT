@@ -745,6 +745,17 @@ public class HapticsTest : MonoBehaviour
                 dutyByTile[TARGET_ROW * COLS + col] = collapsed;
             }
             // Debug.Log("[MODE] Size bar");
+            // ② Size rendering: divide by 4 rows
+            // for (int row = 0; row < ROWS; row++)
+            // {
+            //     for (int col = 0; col < COLS; col++)
+            //     {
+            //         int addr = matrix[row, col];
+            //         int cellDuty = Mathf.Min(DUTY_MAX, Mathf.RoundToInt(smoothDuty[addr]));
+            //         duty[addr] = cellDuty;
+            //         dutyByTile[row * COLS + col] = cellDuty;
+            //     }
+            // }
         }
         // else
         // {
