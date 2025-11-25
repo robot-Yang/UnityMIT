@@ -71,11 +71,11 @@ public class TriggerHandlerWithCallback : MonoBehaviour
                 }
                 else
                 {
-                    if(!allDronesConnected)
-                    {
-                        textInfo.setTextErrorStatic("No drones must be left behind", 2);
-                        return;
-                    }
+                    // if(!allDronesConnected)
+                    // {
+                    //     textInfo.setTextErrorStatic("No drones must be left behind", 2);
+                    //     return;
+                    // }
                     if (allCollectiblesCollected)
                     {
                         if(Timer.isValidTime())
@@ -83,8 +83,8 @@ public class TriggerHandlerWithCallback : MonoBehaviour
                        //     XboxScreenRecorder.StopRecordingAndSave();
                             print("Level Finished from trigger");
                             SwarmTrajectoryRecorder.MarkTrialStop("Run");
-                        //    saveInfoToJSON.exportData(false);
-                            //  gm.GetComponent<Timer>().StopTimer();
+                            // saveInfoToJSON.exportData(false);
+                            gm.GetComponent<Timer>().StopTimer();
                         }else{
                             swarmModel.restart();
                         }
