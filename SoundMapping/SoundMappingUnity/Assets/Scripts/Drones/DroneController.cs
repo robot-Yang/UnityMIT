@@ -197,7 +197,7 @@ public class DroneController : MonoBehaviour
                 }
                 else
                 {
-                    setMaterial(notConnectedColor);
+                    // setMaterial(notConnectedColor);
                 }
             }
         }
