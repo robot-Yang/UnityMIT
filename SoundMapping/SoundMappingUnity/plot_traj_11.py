@@ -16,7 +16,7 @@ REF_STEPS = [
 ]
 
 # ---------------- Coverage Config ----------------
-SENSING_RADIUS = 0.3         # [same units as trajectories] effective sensing radius per drone
+SENSING_RADIUS = 0.25 #0.3         # [same units as trajectories] effective sensing radius per drone
 
 # Segment indices (0-based) in REF_STEPS
 SEG_IDX_1 = 0   # first line of REF_STEPS
@@ -25,7 +25,7 @@ SEG_IDX_4 = 3   # fourth line
 
 # Per-segment workspace widths in *world meters*, scaled by REF_SCALE to match ref_poly units
 SEG_WIDTHS = {
-    SEG_IDX_1: 16.0 * REF_SCALE,  # originally 16 m wide
+    SEG_IDX_1: 14.0 * REF_SCALE,  # originally 16 m wide
     SEG_IDX_2: 18.0 * REF_SCALE,  # 18 m wide
     SEG_IDX_4: 20.0 * REF_SCALE,  # 20 m wide
 }
@@ -171,6 +171,25 @@ candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/So
 candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251117_150041_traj.json"), key=os.path.getmtime, reverse=True)
 candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251117_230430_traj.json"), key=os.path.getmtime, reverse=True)
 # candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251117_230556_traj.json"), key=os.path.getmtime, reverse=True)
+
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_145905_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_145801_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_153858_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_154049_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_154624_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_154752_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_155005_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_161600_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_161708_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_161815_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_161939_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_162034_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_162126_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_162216_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_221320_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_221723_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_222732_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_223312_traj.json"), key=os.path.getmtime, reverse=True)
 
 # coverage test no haptic
 # candidates = sorted(glob.glob("..."), key=os.path.getmtime, reverse=True)
@@ -537,6 +556,137 @@ run_total_spent_time_s = float(t1 - t0) if (t0 is not None and t1 is not None) e
 avg_interagent_main_overall  = float(np.nanmean(avg_interagent[mask_inter_main]))   if avg_interagent.size else float("nan")
 avg_interagent_swarm_overall = float(np.nanmean(avg_interagent_swarm[mask_inter_swarm])) if avg_interagent_swarm.size else float("nan")
 
+# ---------- Midpoint-line crossing for a given reference segment ----------
+def _segment_endpoints(poly, seg_idx_1based):
+    i = int(seg_idx_1based) - 1  # convert to 0-based
+    if i < 0 or i >= (len(poly) - 1):
+        raise IndexError(f"Segment {seg_idx_1based} out of range (valid 1..{len(poly)-1})")
+    a = np.asarray(poly[i], dtype=float)      # [x, z]
+    b = np.asarray(poly[i+1], dtype=float)    # [x, z]
+    ab = b - a
+    L2 = float(ab[0]*ab[0] + ab[1]*ab[1])
+    if L2 == 0.0:
+        raise ValueError("Zero-length segment.")
+    L = math.sqrt(L2)
+    t_hat = ab / L                            # unit direction along segment
+    # n_hat = np.array([-t_hat[1], t_hat[0]])   # unit perpendicular (left-hand)
+    n_hat = np.array([t_hat[1], -t_hat[0]])   # unit perpendicular
+    print (f"Segment {seg_idx_1based}: a={a}, b={b}, L={L}, t̂={t_hat}, n̂={n_hat}")
+    m = 0.5 * (a + b)                         # midpoint
+    return a, b, ab, L, L2, t_hat, n_hat, m
+
+def _time_array_for_track(track, sample_hz):
+    if track.get("t") is not None and len(track["t"]) > 0:
+        return np.asarray(track["t"], dtype=float)
+    n = len(track.get("x", []))
+    return np.arange(n, dtype=float) / float(sample_hz)
+
+def count_midline_crossings_by_side(seg_idx_1based=10, eps=1e-6):
+    """
+    For each drone, detect the FIRST crossing of the midpoint line of the given segment.
+    Classify by:
+      - side_at_cross: 'up' if (P_cross - a)·n̂ > 0, 'down' if < 0   (side of segment line at crossing)
+      - from_side:     side sign at the sample just BEFORE the crossing (approach side)
+
+    Returns:
+      {
+        'segment_1based': int,
+        'upper_count': int, 'down_count': int,
+        'from_upper_count': int, 'from_down_count': int,
+        'split_metric': int,               # based on upper/down at the crossing
+        'split_metric_approach': int,      # based on approach side
+        'per_drone': [(name, t_cross, side_at_cross, from_side, n_cross), ...]
+      }
+    """
+    a, b, ab, L, L2, t_hat, n_hat, M = _segment_endpoints(ref_poly, seg_idx_1based)
+
+    per_drone = []
+    upper_count = down_count = 0
+    from_upper_count = from_down_count = 0
+
+    for name, tr in drone_tracks.items():
+        xs = np.asarray(tr.get("x", []), dtype=float)
+        zs = np.asarray(tr.get("z", []), dtype=float)
+        if xs.size < 2:
+            continue
+
+        ts = _time_array_for_track(tr, sample_hz)
+        P  = np.column_stack([xs, zs])            # (N,2)
+
+        # s = signed coord along segment relative to midpoint (midline is s==0)
+        s  = (P - M) @ t_hat
+        s0 = s[:-1]
+        s1 = s[ 1:]
+
+        # robust zero tolerance
+        s0c = np.where(np.abs(s0) <= eps, 0.0, s0)
+        s1c = np.where(np.abs(s1) <= eps, 0.0, s1)
+
+        # crossing if sign flips or touches zero between samples
+        cross_mask = (s0c * s1c < 0.0) | ((s0c == 0.0) & (s1c != 0.0)) | ((s0c != 0.0) & (s1c == 0.0))
+        if not np.any(cross_mask):
+            continue
+
+        k = int(np.argmax(cross_mask))  # first crossing index (between k and k+1)
+
+        # interpolation fraction of zero of s between k and k+1
+        denom = abs(s0[k]) + abs(s1[k])
+        alpha = 0.0 if denom == 0.0 else (abs(s0[k]) / denom)
+
+        # crossing time and position
+        t0, t1 = ts[k], ts[k+1]
+        t_cross = float(t0 + (t1 - t0) * alpha)
+        P_cross = P[k] + alpha * (P[k+1] - P[k])
+
+        # side of segment at crossing and just before (using perpendicular n̂)
+        n_cross  = float((P_cross - a) @ n_hat)
+        n_before = float((P[k]    - a) @ n_hat)
+
+        side_at_cross = 'up'   if n_cross  > +eps else ('down' if n_cross  < -eps else 'on')
+        from_side     = 'up'   if n_before > +eps else ('down' if n_before < -eps else 'on')
+
+        if side_at_cross == 'up':   upper_count += 1
+        elif side_at_cross == 'down': down_count += 1
+
+        if from_side == 'up':     from_upper_count += 1
+        elif from_side == 'down': from_down_count += 1
+
+        per_drone.append((name, t_cross, side_at_cross, from_side, n_cross))
+
+    per_drone.sort(key=lambda x: x[1])
+
+    # --- Split metrics ---
+    # Your example implies using floor(|diff|/2) to measure how many would have to switch
+    # to get as even as possible.
+    split_metric = int(abs(upper_count - down_count) // 2)
+    split_metric_approach = int(abs(from_upper_count - from_down_count) // 2)
+
+    return {
+        'segment_1based': seg_idx_1based,
+        'upper_count': upper_count,
+        'down_count': down_count,
+        'from_upper_count': from_upper_count,
+        'from_down_count': from_down_count,
+        'split_metric': split_metric,
+        'split_metric_approach': split_metric_approach,
+        'per_drone': per_drone
+    }
+
+
+res = count_midline_crossings_by_side(seg_idx_1based=10, eps=1e-6)
+print(f"\n[Midpoint-line crossings @ segment {res['segment_1based']}]")
+print(f"  Crossed ON upper side: {res['upper_count']}")
+print(f"  Crossed ON down  side: {res['down_count']}")
+print(f"  Came FROM upper side (approach): {res['from_upper_count']}")
+print(f"  Came FROM down  side (approach): {res['from_down_count']}")
+print(f"  Split metric (at crossing): {res['split_metric']}   "
+      f"[upper={res['upper_count']}, down={res['down_count']}]")
+print(f"  Split metric (approach):    {res['split_metric_approach']}   "
+      f"[from_upper={res['from_upper_count']}, from_down={res['from_down_count']}]")
+# for name, tc, side_at, from_side, nval in res['per_drone']:
+#     print(f"    {name:>12s}  t={tc:.3f}s  at={side_at:>4s}  from={from_side:>4s}  n={nval:+.3f}")
+
+
 # -------- Geometric area coverage helpers --------
 def compute_segment_coverage(seg_index, workspace_poly, workspace_area):
     """
@@ -763,6 +913,19 @@ legend_endpoints = [
 ]
 h0, l0 = plt.gca().get_legend_handles_labels()
 plt.legend(handles=legend_path + legend_endpoints + h0, loc="best")
+
+# --- draw midpoint line of segment 10 for visualization ---
+a, b, ab, L, L2, t_hat, n_hat, M = _segment_endpoints(ref_poly, 10)
+
+# pick a display length based on reference extents
+xmin, xmax = np.min(ref_poly[:,0]), np.max(ref_poly[:,0])
+zmin, zmax = np.min(ref_poly[:,1]), np.max(ref_poly[:,1])
+disp_len = 0.6 * max(xmax - xmin, zmax - zmin)
+
+p1 = M - n_hat * disp_len
+p2 = M + n_hat * disp_len
+plt.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle=":", linewidth=2.0, color="k", label="Midpoint line (seg 10)")
+
 
 plt.tight_layout(); plt.savefig(OUT_TRAJ_PNG, dpi=150)
 
