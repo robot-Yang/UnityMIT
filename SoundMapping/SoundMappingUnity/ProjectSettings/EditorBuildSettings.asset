@@ -66,15 +66,12 @@ EditorBuildSettings:
     path: Assets/Scenes/SceneStudy/FPVObs_1.unity
     guid: 147cc51fb3cda4147bd505281c942c76
   - enabled: 1
+    path: Assets/Scenes/SceneStudy/FPVObs_2.unity
+    guid: 4c425c391548e458fa709cd452df78e4
+  - enabled: 1
     path: Assets/Scenes/SceneStudy/TDVCollectibles_1.unity
     guid: 5ecc77ba7e7922145bcd39f9859cf89e
   - enabled: 1
     path: Assets/Scenes/SceneStudy/FPVCollectibles_1.unity
     guid: 66120afd4c0ad6c498427499b1b16fcd
-  - enabled: 1
-    path: Assets/Scenes/SceneStudy/FPVAudioGym.unity
-    guid: bda6d1739368449a9b3c881fe3c2f792
-  - enabled: 1
-    path: Assets/Scenes/SceneStudy/FPVObs_2.unity
-    guid: e4ef62d71d0cb47709c846ca7eced763
   m_configObjects: {}

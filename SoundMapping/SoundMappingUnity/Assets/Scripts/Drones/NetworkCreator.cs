@@ -199,8 +199,9 @@ public class NetworkCreator
     {
         float distance = Vector3.Distance(a.position, b.position);
         if (distance > DroneFake.neighborRadius) return false;
-        bool visible = ClosestPointCalculator.IsLineIntersecting(a.position, b.position);
-        return !visible;
+        // bool visible = ClosestPointCalculator.IsLineIntersecting(a.position, b.position);
+        // return !visible;
+        return true; // ← add this line so the function always returns
     }
 
     public List<DroneFake> GetNeighbors(DroneFake drone)
@@ -403,36 +404,86 @@ public class NetworkCreator
     // 4. Normalized Deviation Energy (~E(q)):
     //    Here we use a simple proxy: for every unique pair of drones, compare the actual distance with the desired separation.
     //    We average the squared error and then normalize by desiredSeparation^2.
-    public float ComputeNormalizedDeviationEnergy()
+    // public float ComputeNormalizedDeviationEnergy()
+    // {
+    //     int n = drones.Count;
+    //     if (n < 2) return 0;
+    //     float sumSquaredError = 0;
+    //     int pairCount = 0;
+    //     for (int i = 0; i < n; i++)
+    //     {
+    //         for (int j = i + 1; j < n; j++)
+    //         {
+    //             float distance = Vector3.Distance(drones[i].position, drones[j].position);
+    //             float error = distance - DroneFake.desiredSeparation;
+    //             sumSquaredError += error * error;
+    //             pairCount++;
+    //         }
+    //     }
+    //     if (pairCount == 0) return 0;
+
+    //     //check if there is a drone that is not in the main network
+    //     foreach (var drone in drones)
+    //     {
+    //         if (!IsInMainNetwork(drone))
+    //         {
+    //             return 1;
+    //         }
+    //     }
+
+    //     float avgSquaredError = sumSquaredError / pairCount;
+    //     float score = Mathf.Clamp01((avgSquaredError / (DroneFake.desiredSeparation * DroneFake.desiredSeparation)-0.3f)/(0.7f-0.22f));
+    //     return Mathf.Clamp01(score-0.1f);
+    // }
+
+    public float ComputeNormalizedDeviationEnergy(out float averageDistance)
     {
+        averageDistance = 0f;
+
         int n = drones.Count;
-        if (n < 2) return 0;
-        float sumSquaredError = 0;
+        if (n < 2) return 0f;
+
+        float sumSquaredError = 0f;
+        float sumDistance = 0f;     // NEW: accumulate raw pairwise distances
         int pairCount = 0;
+
         for (int i = 0; i < n; i++)
         {
             for (int j = i + 1; j < n; j++)
             {
                 float distance = Vector3.Distance(drones[i].position, drones[j].position);
                 float error = distance - DroneFake.desiredSeparation;
+
                 sumSquaredError += error * error;
+                sumDistance += distance;   // NEW
                 pairCount++;
             }
         }
-        if (pairCount == 0) return 0;
 
-        //check if there is a drone that is not in the main network
-        foreach (var drone in drones)
-        {
-            if (!IsInMainNetwork(drone))
-            {
-                return 1;
-            }
-        }
+        if (pairCount == 0) return 0f;
+
+        // If any drone isn't in the main network, keep previous behavior (score=1)
+        // foreach (var drone in drones)
+        // {
+        //     if (!IsInMainNetwork(drone))
+        //     {
+        //         averageDistance = sumDistance / pairCount; // still report the average distance we computed
+        //         return 1f;
+        //     }
+        // }
+
+        // averageDistance = sumDistance / pairCount; // NEW: report average pairwise distance
+        averageDistance = sumDistance / pairCount / DroneFake.desiredSeparation; // NEW: report average pairwise distance
 
         float avgSquaredError = sumSquaredError / pairCount;
-        float score = Mathf.Clamp01((avgSquaredError / (DroneFake.desiredSeparation * DroneFake.desiredSeparation)-0.3f)/(0.7f-0.22f));
-        return Mathf.Clamp01(score-0.1f);
+        float score = Mathf.Clamp01(
+            (avgSquaredError / (DroneFake.desiredSeparation * DroneFake.desiredSeparation) - 0.3f)
+            / (0.7f - 0.22f)
+        );
+
+        // averageDistance = avgSquaredError / (DroneFake.desiredSeparation * DroneFake.desiredSeparation); // NEW: replace averageDistance temporarily with normalized metric
+
+        return Mathf.Clamp01(score - 0.1f);
     }
 
     // 5. Normalized Velocity Mismatch (~K(v)):
@@ -476,7 +527,8 @@ public class NetworkCreator
         float cohesionError = Mathf.Clamp01(cohesionRadius / DroneFake.neighborRadius);
 
         // Deviation energy error: already normalized.
-        float deviationEnergyError = ComputeNormalizedDeviationEnergy();
+        float avgDist;
+        float deviationEnergyError = ComputeNormalizedDeviationEnergy(out avgDist);
 
         // Velocity mismatch error: already normalized.
         float velocityMismatchError = ComputeNormalizedVelocityMismatch();

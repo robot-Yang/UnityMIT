@@ -95,7 +95,7 @@ public class MakePrediction : MonoBehaviour
     {   
         if(shortPred.donePrediction)
         {
-            this.GetComponent<HapticsTest>().HapticsPrediction(shortPred);
+            // this.GetComponent<HapticsTest>().HapticsPrediction(shortPred);
             UpdateTubes(shortPred);
             shortPred.donePrediction = false;
             launchPreditionThread(shortPred);

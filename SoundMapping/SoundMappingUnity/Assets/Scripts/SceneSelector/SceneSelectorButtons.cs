@@ -121,30 +121,15 @@ public class SceneSelectorScriptEditor : Editor
 
         EditorGUILayout.EndHorizontal();
 
-        EditorGUILayout.BeginHorizontal();
-
-        if (GUILayout.Button("Audio Gym"))
-        {
-            // Tell our script to load this scene (unload the previous one if any)
-            myScript.SelectTrainingFromButton(myScript.AudioGymFPV);
-        }
-
-        EditorGUILayout.EndHorizontal();
-
-        EditorGUILayout.BeginHorizontal();
-
-        if (GUILayout.Button("Obstacles FPV 2 Yang"))
-        {
-            // Tell our script to load this scene (unload the previous one if any)
-            myScript.SelectTrainingFromButton(myScript.ObstacleFPV2);
-        }
-
-        EditorGUILayout.EndHorizontal();
-
         //button unload all scenes
 
         //end vertical layout
         EditorGUILayout.EndVertical();
+
+
+
+
+
         //
 
 

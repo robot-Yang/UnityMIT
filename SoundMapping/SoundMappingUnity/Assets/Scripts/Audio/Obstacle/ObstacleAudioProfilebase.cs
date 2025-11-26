@@ -23,10 +23,11 @@ public abstract class ObstacleAudioProfileBase : ScriptableObject
     [Tooltip("Additional pitch multiplier by obstacle 'size' (arbitrary scalar per obstacle).")]
     public AnimationCurve pitchBySize = AnimationCurve.Linear(0.5f, 0.9f, 3f, 1.1f);
 
-    //[Header("Optional Low-Pass")]
-    //[Tooltip("Cutoff (Hz) as a function of distance. Set to 0 to disable.")]
-    //public AnimationCurve lowpassCutoffByDistance = new AnimationCurve(
-    //    new Keyframe(0f, 18000f),
-    //    new Keyframe(60f, 3000f)
-    //);
+    public virtual float GetPulseRate(float distance)
+    {
+        // Default: profiles that do not override use a simple curve
+        Debug.Log("default pulse no override");
+        return 1f;
+    }
+
 }

@@ -334,7 +334,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.020000001, y: 0.8785351}
   m_AnchorMax: {x: 0.20449424, y: 0.96500003}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -61.8}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &133616922
@@ -1654,7 +1654,7 @@ Light:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 823177243}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
@@ -1665,7 +1665,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 50
   m_Shadows:
-    m_Type: 2
+    m_Type: 0
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -3624,6 +3624,8 @@ GameObject:
   - component: {fileID: 1573697209}
   - component: {fileID: 1573697210}
   - component: {fileID: 1573697211}
+  - component: {fileID: 1573697212}
+  - component: {fileID: 1573697213}
   m_Layer: 0
   m_Name: Gamemanager
   m_TagString: GameManager
@@ -3644,10 +3646,10 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 667147175}
   - {fileID: 823177245}
   - {fileID: 1317829137}
   - {fileID: 807694079}
+  - {fileID: 667147175}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1573697194
@@ -3663,13 +3665,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dronePrefab: {fileID: 2904365767565868958, guid: 8665b86975cd58e49a996d130ca17994, type: 3}
-  lastObstacleAvoidance: -1
   maxSpeed: 8
   maxForce: 17
   alpha: 3.5
   beta: 10
   delta: 1
-  cVm: 1.5
+  cVm: 2
   avoidanceRadius: 0.8
   avoidanceRadiusFeedback: 3
   desiredSeparationObs: 0.8
@@ -3688,6 +3689,30 @@ MonoBehaviour:
   showDroneAllignementForces: 0
   showSwarmObstacleForces: 1
   showSwarmOlfati: 0
+  showActuatorRays: 1
+  gizmoLowColor: {r: 0.2, g: 0.6, b: 1, a: 0.8}
+  gizmoHighColor: {r: 0.1, g: 1, b: 0.2, a: 0.95}
+  gizmoForcePreviewFallback: 1
+  gizmoShowHUD: 1
+  gizmoArrowScale: 1.2
+  gizmoArrowHead: 0.2
+  gizmoLineThickness: 8
+  gizmoVisualMin: 0.02
+  axisScale: {x: 1, y: 1, z: 1}
+  axisFloor: {x: 0.75, y: 0.5, z: 0.75}
+  intensityClamp01: {x: 0, y: 1}
+  intensityGamma: 1
+  maxObstacleDistance: 0
+  actuatorDirections: []
+  actuatorIntensities: []
+  actuatorUseMax: 1
+  swarmActivationRadius: 5
+  activationHorizontalOnly: 0
+  activationUseSmoothStep: 1
+  activationGamma: 1
+  spawnCenterWorld: {x: 0, y: 0, z: 0}
+  spawnCenterAnchor: {fileID: 0}
+  extraDistanceNeighboorRuntime: 5
 --- !u!114 &1573697195
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3697,7 +3722,27 @@ MonoBehaviour:
   m_GameObject: {fileID: 1573697189}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7851a5bb2f5c142969504226f9e80510, type: 3}
+  m_Script: {fileID: 11500000, guid: ef2cd8d0369ba0f4fa6fa4d562ab426d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  camMinimap: {fileID: 1892515272}
+  minimap: {fileID: 1840378215}
+  swarmHolder: {fileID: 1547257216}
+  heightCamera: 15
+  rotationSpeed: 80
+  lastEmbodiedDrone: {fileID: 0}
+  initialCamRotation: {x: 0, y: 0, z: 0, w: 0}
+  listener: {fileID: 667147176}
+--- !u!114 &1573697196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1573697189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9ec3e7984d64f74faca64b109c82f5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 1746773646}
@@ -3719,30 +3764,17 @@ MonoBehaviour:
   checkInterval: 0.15
   maxViewAngleDeg: 360
   minForwardDist: 0.01
-  minHoldTime: 1.5
+  minHoldTime: 0.5
   minSwitchCooldown: 1
+  restrictToMainGroup: 1
+  groupRefreshInterval: 0.5
+  allowManualSelection: 0
+  allowManualEmbodiment: 0
+  frontLeadThreshold: 0.5
+  maxCandidateLateral: 0
   alignHeadingToEmbodied: 1
   yawOnly: 1
   alignSlerpSpeed: 8
---- !u!114 &1573697196
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1573697189}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e95a5d7dd03a146929789d997bab0f57, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  camMinimap: {fileID: 1892515272}
-  minimap: {fileID: 1840378215}
-  swarmHolder: {fileID: 1547257216}
-  heightCamera: 15
-  rotationSpeed: 80
-  lastEmbodiedDrone: {fileID: 0}
-  initialCamRotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!114 &1573697197
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3762,6 +3794,13 @@ MonoBehaviour:
   refWorldHalfW: 4.5
   SIZE_EPS01: 0.004
   SIZE_STABLE_FOR: 1.3
+  disconnectTau: 0.25
+  flowSpeedHz: 4
+  baseDuty: 0
+  peakDuty: 8
+  overlayMode: 1
+  DISC_ON: 0.2
+  DISC_OFF: 0.15
   sendEvery: 100
 --- !u!114 &1573697198
 MonoBehaviour:
@@ -3845,7 +3884,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90d764cdd6ca6ca46b4bc1c9043db4ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  saveEvery: 100
+  saveEvery: 1000
 --- !u!114 &1573697207
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3891,14 +3930,12 @@ MonoBehaviour:
   SpreadnessSwarmScore: {fileID: 1368261001}
   textTutorial: {fileID: 638460716}
   errorText: {fileID: 1361596481}
-  ObstacleDistanceText: {fileID: 0}
   deathImage: {fileID: 701908406}
   CollectibleText: {fileID: 1339964292}
   showConnexion: 0
   showSpreadness: 0
   showIsolation: 0
   showDroneCrash: 0
-  showObstacleDistance: 0
 --- !u!114 &1573697209
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3918,7 +3955,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1573697189}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: be9f4e44c80124f6282efcd3a02e889d, type: 3}
   m_Name: 
@@ -3964,18 +4001,76 @@ MonoBehaviour:
   m_GameObject: {fileID: 1573697189}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ed76c7f38dac498aabb7143a7cf6bc8, type: 3}
+  m_Script: {fileID: 11500000, guid: 4f086c779c2b3490dac525b5fdb14350, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1573697212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1573697189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04cc2f6545a3640f6b1183c8e42e997f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   updateRate: 30
   perFrameBudget: 0
   largeSizeThreshold: 2
   profiles:
-  - {fileID: 11400000, guid: bc5ad24e854f5485db501e3bc50f67b7, type: 2}
-  - {fileID: 11400000, guid: 0ec7a03d807e94460a876062a9d5fa7d, type: 2}
-  continuousSwitchDistance: 1.2
-  switchHysteresis: 0.2
+  - {fileID: 11400000, guid: 94dd27a974d734803a4e0769403bb104, type: 2}
+  - {fileID: 11400000, guid: c01e8a2dcbba64ff6b1e5cfe1363f13d, type: 2}
+  continuousSwitchDistance: 2.3
+  switchThreshold: 0.2
   listenerFollowSpeed: 20
+  mpc: {fileID: 0}
+  useDirectionalAttenuation: 1
+  minDirectionalVolume: 0.25
+  maxDirectionalVolume: 1
+  facingExponent: 1.5
+  minHighlightDistance: 6
+  baseEnvelopeLength: 1
+  minEnvelopeLength: 30
+  lookEnvelopeLength: 30
+  velocityDirectionThreshold: 1
+--- !u!114 &1573697213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1573697189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 721bbc4e0abbd421caa505600905e1d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  swarmRootTag: Swarm
+  swarmRootName: Swarm
+  rescanChildrenEverySec: 1
+  droneComponentTypeName: DroneController
+  sampleHz: 20
+  waitForDronesToStart: 1
+  recordHz: 20
+  recordEveryNthSample: 1
+  dontDestroyOnLoad: 1
+  lazyDiscover: 0
+  outSubfolder: Trajectories
+  pidOverride: 
+  sceneLabelOverride: 
+  setupSceneName: Scene Selector
+  autosaveEverySec: 0
+  enableHotkeySave: 1
+  useNetworkForMainGroup: 1
+  includeAllUntilNetworkReady: 1
+  linkDistance: 3
+  minMainGroupSize: 3
+  useXZDistance: 1
+  runLabelName: Run
+  singleRunMode: 1
+  swarmRoot: {fileID: 1547257216}
 --- !u!1 &1645719226
 GameObject:
   m_ObjectHideFlags: 0
@@ -5266,6 +5361,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2116089748616051007, guid: 4be8e1a0b414a404a9b0fdf0514749ac, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3280518051135853460, guid: 4be8e1a0b414a404a9b0fdf0514749ac, type: 3}
+      propertyPath: m_Padding.m_Top
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3280518051135853460, guid: 4be8e1a0b414a404a9b0fdf0514749ac, type: 3}
+      propertyPath: m_Padding.m_Left
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3280518051135853460, guid: 4be8e1a0b414a404a9b0fdf0514749ac, type: 3}
+      propertyPath: m_Padding.m_Bottom
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5026775058833471853, guid: 4be8e1a0b414a404a9b0fdf0514749ac, type: 3}

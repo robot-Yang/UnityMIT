@@ -13,4 +13,18 @@ public class BeepAudioProfile : ObstacleAudioProfileBase
     [Header("Clip")]
     [Tooltip("Short beep to be triggered at the pulse rate.")]
     public AudioClip beepClip;
+
+    
+    [Header("Inverse-Square Settings")]
+    public float k = 42f;
+    public float eps = 0f;
+    public float offset = 0.5f;
+
+    public override float GetPulseRate(float distance)
+    {
+        float pulse = (42f/(distance*distance)) + 0.5f;
+        Debug.Log("Distance:"+distance+" pulse:"+pulse);
+        return pulse;
+    }
+
 }

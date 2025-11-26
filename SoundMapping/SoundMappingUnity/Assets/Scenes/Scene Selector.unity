@@ -1988,7 +1988,7 @@ MonoBehaviour:
   isLoading: 0
   scenes: []
   ObstacleFPV: FPVObs
-  ObstacleFPV1: FPVObs_1
+  ObstacleFPV1: FPVObs_2
   ObstacleTPV: TDVObs
   ObstacleTPV1: TDVObs_1
   CollectibleFPV: FPVCollectibles
@@ -1997,6 +1997,8 @@ MonoBehaviour:
   CollectibleTPV1: TDVCollectibles_1
   assetPathTraining: Assets/Scenes/TrainingFinal
   hapticsEnabled: 1
+  autoLoadOnStart: 1
+  autoLoadSceneName: FPVObs_2
 --- !u!1 &1166913635
 GameObject:
   m_ObjectHideFlags: 0

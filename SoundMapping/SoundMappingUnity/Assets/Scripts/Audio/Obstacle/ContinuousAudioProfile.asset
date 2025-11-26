@@ -9,12 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a3b431437963b43a68b6c3e15f40d903, type: 3}
+  m_Script: {fileID: 11500000, guid: a3cff0a4f352f482790cc2de1631ad1d, type: 3}
   m_Name: ContinuousAudioProfile
   m_EditorClassIdentifier: 
-  maxAudibleDistance: 20
+  maxAudibleDistance: 6
   baseVolume: 0.8
-  basePitch: 1
+  basePitch: 0.755
   volumeByDistance:
     serializedVersion: 2
     m_Curve:
@@ -23,16 +23,16 @@ MonoBehaviour:
       value: 1
       inSlope: 0
       outSlope: 0
-      tangentMode: 0
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 60
-      value: 0
+      time: 1
+      value: 1
       inSlope: 0
       outSlope: 0
-      tangentMode: 0
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -44,19 +44,19 @@ MonoBehaviour:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 1.2
+      value: 1
       inSlope: 0
-      outSlope: -0.0066666673
-      tangentMode: 0
+      outSlope: 0
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 60
-      value: 0.8
-      inSlope: -0.0066666673
+      time: 1
+      value: 1
+      inSlope: 0
       outSlope: 0
-      tangentMode: 0
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -67,24 +67,24 @@ MonoBehaviour:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0.5
-      value: 0.9
+      time: 0
+      value: 1
       inSlope: 0
-      outSlope: 0.08000002
-      tangentMode: 0
+      outSlope: 0
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 3
-      value: 1.1
-      inSlope: 0.08000002
+      time: 1
+      value: 1
+      inSlope: 0
       outSlope: 0
-      tangentMode: 0
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  loopClip: {fileID: 8300000, guid: 32138fb25b0aa4c16ad97c5695edc235, type: 3}
+  loopClip: {fileID: 8300000, guid: 43af886c9df264c0ca3d4ba11fea4963, type: 3}

@@ -65,7 +65,8 @@ public class TriggerHandlerWithCallback : MonoBehaviour
                 {
                 //    XboxScreenRecorder.StartRecording();
                     TutorialPlayer.stopVideo();
-           //         print(gm.name);
+                    //         print(gm.name);
+                    SwarmTrajectoryRecorder.MarkTrialStart("Run");
                     gm.GetComponent<Timer>().StartTimer();
                 }
                 else
@@ -81,6 +82,7 @@ public class TriggerHandlerWithCallback : MonoBehaviour
                         {
                        //     XboxScreenRecorder.StopRecordingAndSave();
                             print("Level Finished from trigger");
+                            SwarmTrajectoryRecorder.MarkTrialStop("Run");
                            saveInfoToJSON.exportData(false);
                             //  gm.GetComponent<Timer>().StopTimer();
                         }else{

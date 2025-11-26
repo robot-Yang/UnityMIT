@@ -22,6 +22,8 @@ public class DroneController : MonoBehaviour
     public Material selectedColor;
     public Material embodiedColor;
 
+    [System.NonSerialized] public bool audioHighlight;
+
     private List<GameObject> bodyParts = new List<GameObject>();
     public bool showGuizmos = false;
     public bool prediction = false;
@@ -152,7 +154,7 @@ public class DroneController : MonoBehaviour
             transform.position = positionDrome;
             updateColor();
             // updateSound();
-            droneAnimate();
+            // droneAnimate();
         }
         catch (Exception e)
         {
@@ -175,6 +177,18 @@ public class DroneController : MonoBehaviour
     }
     void updateColor()
     {
+        if (audioHighlight)
+        {
+            foreach (GameObject bodyPart in bodyParts)
+            {
+                var rend = bodyPart.GetComponent<Renderer>();
+                // Do not replace the material asset; just tint this instance
+                rend.material.color = Color.red;
+            }
+            audioHighlight = false;   // consume flag so it must be set again next frame
+            return;
+        }
+
         if (CameraMovement.embodiedDrone == this.gameObject)
         {
             setMaterial(embodiedColor);
@@ -263,26 +277,26 @@ public class DroneController : MonoBehaviour
         const float SCALE = 0.1f;          // 线段长度放大系数，可调
 
         // ② 遍历列表，逐条画线
-        Gizmos.color = Color.red;
-        for (int i = 0; i < obsForces.Count; i++)
-        {
-            Vector3 f   = obsForces[i];
+        // Gizmos.color = Color.red;
+        // for (int i = 0; i < obsForces.Count; i++)
+        // {
+        //     Vector3 f   = obsForces[i];
 
-            // --- 跳过指向地面的力 ---------------------------------
-            if (f.y != -0.0f) continue;    // 阈值可调
+        //     // --- 跳过指向地面的力 ---------------------------------
+        //     if (f.y != -0.0f) continue;    // 阈值可调
 
-            Vector3 tip = origin + f * SCALE;
-            Gizmos.DrawLine(origin, tip);
+        //     Vector3 tip = origin + f * SCALE;
+        //     Gizmos.DrawLine(origin, tip);
 
-            // 简易箭头
-            Vector3 dir = f.normalized;
-            float len   = f.magnitude * SCALE * 0.2f;
-            Vector3 l = Quaternion.AngleAxis(150, Vector3.up) * dir * len;
-            Vector3 r = Quaternion.AngleAxis(-150,Vector3.up) * dir * len;
-            Gizmos.DrawLine(tip, tip + l);
-            Gizmos.DrawLine(tip, tip + r);
+        //     // 简易箭头
+        //     Vector3 dir = f.normalized;
+        //     float len   = f.magnitude * SCALE * 0.2f;
+        //     Vector3 l = Quaternion.AngleAxis(150, Vector3.up) * dir * len;
+        //     Vector3 r = Quaternion.AngleAxis(-150,Vector3.up) * dir * len;
+        //     Gizmos.DrawLine(tip, tip + l);
+        //     Gizmos.DrawLine(tip, tip + r);
 
-        }
+        // }
     }
     #endif
 

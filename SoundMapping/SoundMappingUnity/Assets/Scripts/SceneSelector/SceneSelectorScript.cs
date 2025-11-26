@@ -25,9 +25,6 @@ public class SceneSelectorScript : MonoBehaviour
     [HideInInspector] public string CollectibleTPV = "TDVCollectibles";
     [HideInInspector] public string CollectibleTPV1 = "TDVCollectibles_1";
 
-    [HideInInspector] public string AudioGymFPV = "FPVAudioGym";
-    [HideInInspector] public string ObstacleFPV2 = "FPVObs_2";
-
     [HideInInspector] public string assetPathTraining = "Assets/Scenes/TrainingFinal";
 
 
@@ -36,6 +33,13 @@ public class SceneSelectorScript : MonoBehaviour
     public static bool _haptics = true;
 
     public bool hapticsEnabled = true;
+
+    // === NEW: autoload toggle ===
+    [Header("Auto-load on Play")]
+    public bool autoLoadOnStart = true;
+
+    // Use the exact scene name (file name without .unity)
+    public string autoLoadSceneName = "FPVObs_2";
 
     void Start()
     {
@@ -53,6 +57,37 @@ public class SceneSelectorScript : MonoBehaviour
             scenes.Add(sceneName);
         }
         #endif
+        
+        // ✅ Use the experiment flow so all flags are set and swarm spawns
+        if (autoLoadOnStart && !string.IsNullOrEmpty(autoLoadSceneName))
+        {
+            AutoSelectThroughExperimentFlow(autoLoadSceneName);  // <— use this
+            // (Remove the direct StartCoroutine(LoadTrainingScene(...)) call.)
+        }
+    }
+
+    private void AutoSelectThroughExperimentFlow(string sceneName)
+    {
+        _haptics = hapticsEnabled;
+
+        // if your GUI disabling is required for state, keep it (guard against missing component)
+        var gui = GetComponent<ExperimentSetupS>();
+        if (gui) gui.GUIIDisable();
+
+        scenesPlayed = new List<string>(scenes);
+        addStudyScene();
+
+        // Position experimentNumber so NextScene() advances to the desired scene
+        experimentNumber = scenesPlayed.IndexOf(sceneName) - 1;
+
+        if (experimentNumber < -1)
+        {
+            Debug.LogWarning($"[SceneSelector] '{sceneName}' not found in scenesPlayed; falling back to direct load.");
+            StartCoroutine(LoadTrainingScene(sceneName)); // last-resort fallback
+            return;
+        }
+
+        NextScene(); // this will call SelectTraining(...) → LoadTrainingScene(...)
     }
 
     public void OnHapticsChanged()
@@ -142,7 +177,6 @@ public class SceneSelectorScript : MonoBehaviour
         //scenesPlayed.Clear();
 
         addStudyScene();
-        print("ScenePlayed: "+scenesPlayed.Count);
 
 
         experimentNumber = -1;
@@ -160,7 +194,7 @@ public class SceneSelectorScript : MonoBehaviour
             scenesPlayed.Add(ObstacleFPV1);
             tutorialPlayed.Add(scenesPlayed.Count - 1);
 
-         //  scenesPlayed.Add(ObstacleFPV);
+          //  scenesPlayed.Add(ObstacleFPV);
             scenesPlayed.Add(ObstacleTPV);
             tutorialPlayed.Add(scenesPlayed.Count - 1);
 
@@ -169,7 +203,7 @@ public class SceneSelectorScript : MonoBehaviour
 
             scenesPlayed.Add(CollectibleFPV);
 
-        //   scenesPlayed.Add(ObstacleTPV);
+         //   scenesPlayed.Add(ObstacleTPV);
             scenesPlayed.Add(CollectibleFPV1);
             tutorialPlayed.Add(scenesPlayed.Count - 1);
 
@@ -181,11 +215,6 @@ public class SceneSelectorScript : MonoBehaviour
             tutorialPlayed.Add(scenesPlayed.Count - 1);
 
         //    scenesPlayed.Add(CollectibleTPV);
-            scenesPlayed.Add(AudioGymFPV);
-            tutorialPlayed.Add(scenesPlayed.Count - 1);
-
-            scenesPlayed.Add(ObstacleFPV2);
-            tutorialPlayed.Add(scenesPlayed.Count - 1);
         }
         else
         {
@@ -213,11 +242,6 @@ public class SceneSelectorScript : MonoBehaviour
             tutorialPlayed.Add(scenesPlayed.Count - 1);
 
             //   scenesPlayed.Add(CollectibleFPV);
-            scenesPlayed.Add(AudioGymFPV);
-            tutorialPlayed.Add(scenesPlayed.Count - 1);
-
-            scenesPlayed.Add(ObstacleFPV2);
-            tutorialPlayed.Add(scenesPlayed.Count - 1);
         }
     }
 

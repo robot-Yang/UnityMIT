@@ -33,6 +33,7 @@ public class CameraMovement : MonoBehaviour
     private Vector3 animStartPos;
     private Vector3 animTargetPos;
 
+    [SerializeField] private AudioListener listener;   // assign in Inspector
     private Transform listenerTransform;
 
     void Start()
@@ -53,10 +54,19 @@ public class CameraMovement : MonoBehaviour
         currentState = CameraState.TDView;
     }
 
+    void Awake()
+    {
+        if (listener == null)
+            Debug.LogError("[CameraMovement] Listener reference not defined.");
+            listener = GetComponentInChildren<AudioListener>();
+
+        listenerTransform = listener.transform;
+    }
+
     void Update()
     {
 
-        //  print("CameraMovement: " + idLeader + " Selected: " + MigrationPointController.idLeader);
+      //  print("CameraMovement: " + idLeader + " Selected: " + MigrationPointController.idLeader);
 
         // Run main loop based on current state.
         switch (currentState)
@@ -172,10 +182,9 @@ public class CameraMovement : MonoBehaviour
 
                 // activate the camera 
                 embodiedDrone.GetComponent<Camera>().enabled = true;
-                // MigrationPointController.selectedDrone = embodiedDrone;
+               // MigrationPointController.selectedDrone = embodiedDrone;
                 cam.enabled = false;
-            }
-            else
+            }else
             {
                 cam.enabled = true;
             }
@@ -211,9 +220,6 @@ public class CameraMovement : MonoBehaviour
         animTimer += Time.deltaTime;
         float t = Mathf.Clamp01(animTimer / animationTime);
 
-        // DELETE this line (don’t rotate the current embodied drone):
-        // embodiedDrone.transform.LookAt(nextEmbodiedDrone.transform);
-
         // Keep the FOV zoom if you like:
         embodiedDrone.GetComponent<Camera>().fieldOfView =
             Mathf.Lerp(embodiedDrone.GetComponent<Camera>().fieldOfView, 20, t);
@@ -223,15 +229,8 @@ public class CameraMovement : MonoBehaviour
             embodiedDrone.GetComponent<Camera>().fieldOfView = startFOV;
             embodiedDrone.GetComponent<Camera>().enabled = false;
 
-            // DELETE the forward copy block entirely
-            // Vector3 forwardDrone = embodiedDrone.transform.forward;
-            // forwardDrone.y = 0;
-
             SetEmbodiedDrone(nextEmbodiedDrone);
             embodiedDrone.GetComponent<Camera>().enabled = true;
-
-            // DELETE this too (don’t force-set new drone yaw)
-            // embodiedDrone.transform.forward = forwardDrone;
 
             currentState = CameraState.DroneView;
         }
@@ -242,7 +241,7 @@ public class CameraMovement : MonoBehaviour
     public static void crashAnimationSetup()
     {
         animTimer = 0f;
-        if (embodiedDrone != null)
+        if(embodiedDrone != null)
         {
             cam.enabled = false;
             embodiedDrone.GetComponent<Camera>().enabled = false;
@@ -271,18 +270,17 @@ public class CameraMovement : MonoBehaviour
 
         Debug.Log(t);
 
-
+        
         if (t >= 1f)
         {
             DroneFake.avoidanceForce = startAvoidanceForce;
             MigrationPointController.InControl = true;
-            if (nextEmbodiedDrone.activeSelf)
+            if(nextEmbodiedDrone.activeSelf)
             {
                 nextEmbodiedDrone.GetComponent<Camera>().enabled = true;
                 SetEmbodiedDrone(nextEmbodiedDrone);
                 currentState = CameraState.DroneView;
-            }
-            else
+            }else
             {
                 crashAnimationSetup();
                 currentState = CameraState.DroneView;
@@ -327,10 +325,9 @@ public class CameraMovement : MonoBehaviour
         if (drone != null)
         {
             SetEmbodiedDrone(drone);
-        }
-        else
+        }else
         {
-            swarmModel.restart();
+           swarmModel.restart();
         }
     }
 
@@ -342,7 +339,7 @@ public class CameraMovement : MonoBehaviour
         //     swarmModel.drones.Find(x => x.id == embodiedDrone.GetComponent<DroneController>().droneFake.id).embodied = false;
         //     swarmModel.drones.Find(x => x.id == embodiedDrone.GetComponent<DroneController>().droneFake.id).embodied = false;
         // }
-
+        
         embodiedDrone = drone;
         idLeader = drone.GetComponent<DroneController>().droneFake.id;
         DroneController controller = drone.GetComponent<DroneController>();
@@ -370,7 +367,7 @@ public class CameraMovement : MonoBehaviour
     }
 
 
-    public static GameObject _this;
+    public static GameObject _this; 
     public static void setNextEmbodiedDrone()
     {
     }
