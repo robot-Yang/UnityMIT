@@ -409,6 +409,7 @@ public class HapticsTest : MonoBehaviour
     float _sizeStableTimer = 0f;
 
     private const float max_half_width= 4.1f; //4f;
+    [SerializeField] float embodiedHorizontalMaxMeters = 2f; // maps edge actuators
 
     // —— 断连提示（中间两列动态条）——
     [SerializeField] float disconnectTau = 0.25f;   // 分数平滑时间常数(s)
@@ -473,10 +474,10 @@ public class HapticsTest : MonoBehaviour
     // returns a continuous column coordinate in [0, COLS-1]
     float ColUFromX(float xLocal)
     {
-        // your swarm width is normalized by 4.5f above, and you center it with +center_W
-        // let's reuse that logic but keep it continuous
-        float u = Mathf.Clamp(xLocal / max_half_width * 1.5f + center_W, 0f, COLS_MINUS1);
-        return u;
+        // Fixed mapping: ±embodiedHorizontalMaxMeters → side actuators
+        float range = Mathf.Max(embodiedHorizontalMaxMeters, 0.01f);
+        float t = Mathf.Clamp01((xLocal + range) / (2f * range)); // -range→0, +range→1
+        return Mathf.Lerp(0f, COLS_MINUS1, t);
     }
 
     int ColFromX(float x, float halfW, float actuator_W)    // halfW ≥ 0.01
