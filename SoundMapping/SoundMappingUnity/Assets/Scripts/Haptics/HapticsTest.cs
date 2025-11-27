@@ -387,7 +387,7 @@ public class HapticsTest : MonoBehaviour
     float[] rawByAddr    = new float[256]; // 本帧密度（临时）
 
     // —— 可调参数 ——
-    const float GAIN_PER_DRONE = 12f / 20 * 9; //6f; //12f;   // 一架无人机贡献的总强度 12f for num=9
+    const float GAIN_PER_DRONE = 12f / 15 * 9; //6f; //12f;   // 一架无人机贡献的总强度 12f for num=9
     const float TAU_SMOOTH     = 0.20f;// 时间平滑常数(秒)，越大越稳
 
     // —— 状态缓存 ——
@@ -402,7 +402,7 @@ public class HapticsTest : MonoBehaviour
     // --- Size-change gate config ---
     [SerializeField] float refWorldHalfW = 4.5f;  // reference half-width (meters)
     [SerializeField] float SIZE_EPS01 = 0.001f;    // “small change” threshold in normalized units
-    [SerializeField] float SIZE_STABLE_FOR = 1.00f; // must stay small for this long (s)
+    [SerializeField] float SIZE_STABLE_FOR = 0.50f; // must stay small for this long (s)
 
     // --- Size-change gate state ---
     float _lastHalfW01 = -1f;
@@ -416,6 +416,8 @@ public class HapticsTest : MonoBehaviour
     [SerializeField] int   baseDuty      = 0;       // 已填充区域的基础强度
     [SerializeField] int   peakDuty      = 8;      // 流动高亮的峰值
     [SerializeField] bool  overlayMode   = true;    // true=与其它图层叠加(取max)，false=覆盖
+    [SerializeField] float disconnectMinDistance = 2f; // meters: min avg distance to trigger
+    [SerializeField] float disconnectMaxDistance = 8f; // meters: max avg distance to trigger
 
     float _discScoreSmooth = 0f;                    // 平滑后的score
 
@@ -713,10 +715,12 @@ public class HapticsTest : MonoBehaviour
         float discA = 1f - Mathf.Exp(-dt / disconnectTau);
         _discScoreSmooth = Mathf.Lerp(_discScoreSmooth, score01, discA);
 
-        // 带迟滞的开关
-        // static bool disconnActive; // 放到类字段更好（避免每帧重新置 false）
-        if (!disconnActive && _discScoreSmooth >= DISC_ON && swarmModel.avgDist < 4.0f) disconnActive = true;
-        if (disconnActive && (swarmModel.avgDist >= 4.0f || _discScoreSmooth <= DISC_OFF)) disconnActive = false;
+        // 计算满足距离阈值的断连无人机（逐个判断，不再用全局 avgDist）
+        var disconnectedWithDistances = GetDisconnectedDronesLocalWithDistance();
+        var filteredDisconnected = disconnectedWithDistances
+            .Where(d => d.avgDistance >= disconnectMinDistance && d.avgDistance <= disconnectMaxDistance)
+            .ToList();
+        disconnActive = filteredDisconnected.Count > 0;
 
         // 2) if size changed obviously
         bool sizeActive = !muteTargetRow;
@@ -730,7 +734,7 @@ public class HapticsTest : MonoBehaviour
         {
             // ① Disconnection（最高优先级）：只渲染中间两列的 motion
             // RenderDisconnectMotion(_discScoreSmooth, dt);  // 内部用 Max 叠加已被清零的缓冲即可
-            RenderDisconnectedDirectionsToTiles(10);  // choose the intensity you like (e.g., 8–12)
+            RenderDisconnectedDirectionsToTiles(filteredDisconnected, 10);  // choose the intensity you like (e.g., 8–12)
             Debug.Log("[MODE] Disconnection");
         }
         else if (sizeActive)
@@ -944,13 +948,56 @@ public class HapticsTest : MonoBehaviour
         return res;
     }
 
-    // Light one tile in the 4x4 matrix in the direction of each disconnected drone
-    void RenderDisconnectedDirectionsToTiles(int dutyVal)
+    // World → Swarm-Local positions for disconnected drones, plus avg distance to main group
+    List<(GameObject go, Vector3 local, float avgDistance)> GetDisconnectedDronesLocalWithDistance()
     {
-        var disc = GetDisconnectedDronesLocal();
+        var res = new List<(GameObject, Vector3, float)>();
+        if (_swarmFrame == null || swarmModel.swarmHolder == null || swarmModel.network == null)
+            return res;
+
+        var W2L = _swarmFrame.worldToLocalMatrix;
+
+        // Collect main-group drones once
+        var mainGroup = new List<DroneFake>();
+        foreach (Transform t in swarmModel.swarmHolder.transform)
+        {
+            var dc = t.GetComponent<DroneController>();
+            var df = (dc != null) ? dc.droneFake : null;
+            if (df != null && swarmModel.network.IsInMainNetwork(df))
+            {
+                mainGroup.Add(df);
+            }
+        }
+        if (mainGroup.Count == 0) return res;
+
+        foreach (Transform t in swarmModel.swarmHolder.transform)
+        {
+            var dc = t.GetComponent<DroneController>();
+            var df = (dc != null) ? dc.droneFake : null;
+            if (df == null) continue;
+
+            // “Disconnected” = not in the main (largest/leader) component
+            if (!swarmModel.network.IsInMainNetwork(df))
+            {
+                float sum = 0f;
+                foreach (var main in mainGroup)
+                {
+                    sum += Vector3.Distance(df.position, main.position) - DroneFake.desiredSeparation;
+                }
+                float avg = sum / mainGroup.Count;
+                Vector3 local = W2L.MultiplyPoint(df.position);
+                res.Add((t.gameObject, local, avg));
+            }
+        }
+        return res;
+    }
+
+    // Light one tile in the 4x4 matrix in the direction of each disconnected drone
+    void RenderDisconnectedDirectionsToTiles(List<(GameObject go, Vector3 local, float avgDistance)> disc, int dutyVal)
+    {
         if (disc == null || disc.Count == 0) return;
 
-        foreach (var (_, local) in disc)
+        foreach (var (_, local, _) in disc)
         {
             // Only direction from center (ignore distance)
             Vector2 dir = new Vector2(local.x, local.z);
