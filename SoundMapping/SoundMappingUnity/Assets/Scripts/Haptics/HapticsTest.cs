@@ -11,6 +11,18 @@ using System.Linq;          // ← ADD THIS
 
 public class HapticsTest : MonoBehaviour
 {
+    public static HapticsTest Instance { get; private set; }
+
+    void Awake()
+    {
+        Instance = this;
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     #region ObstalceInRange
     public int dutyIntensity = 4;
     public int frequencyInit = 1;
@@ -328,6 +340,22 @@ public class HapticsTest : MonoBehaviour
         Vector3 headR = tip + (Quaternion.Euler(0, -160, 0) * (tip - tail).normalized) * (arrowLen * 0.15f);
         Gizmos.DrawLine(tip, headL);
         Gizmos.DrawLine(tip, headR);
+
+        /*---------------------------------------------------------*
+        * 3) horizontal distribution curve (x vs. density)
+        *---------------------------------------------------------*/
+        if (drawHorizontalDistributionCurve && _distributionCurveLocal.Count > 1)
+        {
+            Gizmos.color = distributionCurveColor;
+            for (int i = 0; i < _distributionCurveLocal.Count - 1; i++)
+            {
+                Gizmos.DrawLine(_distributionCurveLocal[i], _distributionCurveLocal[i + 1]);
+            }
+            // mark mean position
+            Gizmos.DrawLine(
+                new Vector3(_distMeanX, 0f, 0f),
+                new Vector3(_distMeanX, distributionCurveHeight * 1.05f, 0f));
+        }
     }
     
     // ------------------------------------------------------------
@@ -338,6 +366,13 @@ public class HapticsTest : MonoBehaviour
 
     private float halfW = 1f;
     private float halfH = 1f;
+    [SerializeField] bool drawHorizontalDistributionCurve = true;
+    [SerializeField] float distributionCurveHeight = 0.5f;
+    [SerializeField] float distributionFixedHalfRange = 4.3f;
+    [SerializeField] float distributionDensityScale = 1f;   // scales with drone count
+    [SerializeField] float distributionMaxYClamp = 0f;      // 0 = no clamp; set >0 to cap
+    [SerializeField] float distributionViewYRange = 10f;    // fixed plot range; set 0 to auto
+    [SerializeField] float distributionCurveDutyGain = 1f;  // overall gain when mapping curve to actuators
 
     private float actuator_W = 3f; //4f;
     private float actuator_H = 3f; //4f; //2f; // 5f;
@@ -387,7 +422,7 @@ public class HapticsTest : MonoBehaviour
     float[] rawByAddr    = new float[256]; // 本帧密度（临时）
 
     // —— 可调参数 ——
-    const float GAIN_PER_DRONE = 12f / 15 * 9; //6f; //12f;   // 一架无人机贡献的总强度 12f for num=9
+    const float GAIN_PER_DRONE = 12f / 12 * 9; //6f; //12f;   // 一架无人机贡献的总强度 12f for num=9
     const float TAU_SMOOTH     = 0.20f;// 时间平滑常数(秒)，越大越稳
 
     // —— 状态缓存 ——
@@ -443,6 +478,22 @@ public class HapticsTest : MonoBehaviour
     [Header("Debug / Disconnected")]
     [SerializeField] bool drawDisconnectedInSwarmFrame = true;
     [SerializeField] Color disconnectedColor = Color.red;
+    [SerializeField] bool logSizeRowDuty = true;
+    [SerializeField] Color distributionCurveColor = Color.cyan;
+    private readonly List<float> _lastLocalXs = new();
+    private readonly List<Vector3> _distributionCurveLocal = new();
+    private float _distMeanX = 0f;
+    private float _distStdX = 0f;
+    private float _distMaxY = 0f;
+
+    public IReadOnlyList<float> LastLocalXs => _lastLocalXs;
+    public IReadOnlyList<Vector3> DistributionCurveLocal => _distributionCurveLocal;
+    public float DistMeanX => _distMeanX;
+    public float DistStdX => _distStdX;
+    public float DistributionFixedHalfRange => distributionFixedHalfRange;
+    public float DistMaxY => _distMaxY;
+    public float DistributionMaxYClamp => distributionMaxYClamp;
+    public float DistributionViewYRange => distributionViewYRange;
 
     private static void GetDynamicExtents(IReadOnlyList<Transform> drones,
                                     Transform swarmFrame,
@@ -635,6 +686,15 @@ public class HapticsTest : MonoBehaviour
         System.Array.Clear(targetDuty, 0, targetDuty.Length);
         System.Array.Clear(dutyByTile, 0, dutyByTile.Length);
 
+        // gather X positions in swarm frame for distribution curve
+        _lastLocalXs.Clear();
+        foreach (Transform d in connectedDrones)
+        {
+            Vector3 local = _swarmFrame.InverseTransformPoint(d.position);
+            _lastLocalXs.Add(local.x);
+        }
+        BuildHorizontalDistributionCurve();
+
         // 2) 每架无人机 -> 对周围4格做双线性分配
         foreach (Transform d in connectedDrones)
         {
@@ -740,27 +800,67 @@ public class HapticsTest : MonoBehaviour
         }
         else if (sizeActive)
         {
-            // ② Size rendering: divide by 4 rows → write into TARGET_ROW
-            for (int col = 0; col < COLS; col++)
+            bool rendered = false;
+
+            // ② Curve-based horizontal distribution → 4 actuators
+            if (_distributionCurveLocal.Count >= 2)
             {
-                int collapsed = Mathf.Min(DUTY_MAX, Mathf.RoundToInt(colSum[col] * Compress));
-                Debug.Log($"[SizeBar] col={col} value={colSum[col] * Compress:F3}");
-                int addr = matrix[TARGET_ROW, col];
-                duty[addr] = collapsed;
-                dutyByTile[TARGET_ROW * COLS + col] = collapsed;
+                float minX = _distributionCurveLocal[0].x;
+                float maxX = _distributionCurveLocal[_distributionCurveLocal.Count - 1].x;
+                float span = Mathf.Max(maxX - minX, 0.001f);
+                float binWidth = span / COLS;
+                float dx = span / (_distributionCurveLocal.Count - 1);
+
+                float[] binArea = new float[COLS];
+                for (int i = 0; i < _distributionCurveLocal.Count; i++)
+                {
+                    var p = _distributionCurveLocal[i];
+                    int bin = Mathf.Clamp((int)((p.x - minX) / binWidth), 0, COLS - 1);
+                    binArea[bin] += p.y * dx; // approximate integral over x
+                }
+
+                float totalArea = binArea.Sum();
+                if (totalArea > 1e-6f)
+                {
+                    float invTotal = 1f / totalArea;
+                    for (int col = 0; col < COLS; col++)
+                    {
+                        float norm = Mathf.Clamp01(binArea[col] * invTotal * distributionCurveDutyGain);
+                        int dutyVal = Mathf.Min(DUTY_MAX, Mathf.RoundToInt(norm * DUTY_MAX));
+                        int addr = matrix[TARGET_ROW, col];
+                        duty[addr] = dutyVal;
+                        dutyByTile[TARGET_ROW * COLS + col] = dutyVal;
+                    }
+                    if (logSizeRowDuty)
+                    {
+                        string duties = string.Join(", ",
+                            Enumerable.Range(0, COLS)
+                                .Select(col => duty[matrix[TARGET_ROW, col]]));
+                        Debug.Log($"[CurveSizeDuty] row={TARGET_ROW} duties=[{duties}] totalArea={totalArea:F3}");
+                    }
+                    rendered = true;
+                }
             }
-            // Debug.Log("[MODE] Size bar");
-            // ② Size rendering: divide by 4 rows
-            // for (int row = 0; row < ROWS; row++)
-            // {
-            //     for (int col = 0; col < COLS; col++)
-            //     {
-            //         int addr = matrix[row, col];
-            //         int cellDuty = Mathf.Min(DUTY_MAX, Mathf.RoundToInt(smoothDuty[addr]));
-            //         duty[addr] = cellDuty;
-            //         dutyByTile[row * COLS + col] = cellDuty;
-            //     }
-            // }
+
+            // Fallback to previous column-sum if curve not ready
+            if (!rendered)
+            {
+                for (int col = 0; col < COLS; col++)
+                {
+                    int collapsed = Mathf.Min(DUTY_MAX, Mathf.RoundToInt(colSum[col] * Compress));
+                    Debug.Log($"[SizeBar] col={col} value={colSum[col] * Compress:F3}");
+                    int addr = matrix[TARGET_ROW, col];
+                    duty[addr] = collapsed;
+                    dutyByTile[TARGET_ROW * COLS + col] = collapsed;
+                }
+                if (logSizeRowDuty)
+                {
+                    string duties = string.Join(", ",
+                        Enumerable.Range(0, COLS)
+                            .Select(col => duty[matrix[TARGET_ROW, col]]));
+                    Debug.Log($"[SizeBarDuty] row={TARGET_ROW} duties=[{duties}]");
+                }
+            }
         }
         // else
         // {
@@ -991,6 +1091,48 @@ public class HapticsTest : MonoBehaviour
             }
         }
         return res;
+    }
+
+    void BuildHorizontalDistributionCurve()
+    {
+        _distributionCurveLocal.Clear();
+        _distMeanX = 0f;
+        _distStdX = 0f;
+        _distMaxY = 0f;
+
+        int n = _lastLocalXs.Count;
+        if (n == 0) return;
+
+        // mean
+        for (int i = 0; i < n; i++) _distMeanX += _lastLocalXs[i];
+        _distMeanX /= n;
+
+        // std (population)
+        float var = 0f;
+        for (int i = 0; i < n; i++)
+        {
+            float d = _lastLocalXs[i] - _distMeanX;
+            var += d * d;
+        }
+        _distStdX = Mathf.Sqrt(var / n);
+        if (_distStdX < 0.05f) _distStdX = 0.05f; // avoid degenerate zero
+
+        // sample Gaussian curve in swarm frame
+        float range = Mathf.Max(distributionFixedHalfRange, 0.1f);
+        int samples = 40;
+        const float SQRT_TWO_PI = 2.50662827463f; // sqrt(2*pi)
+        float amplitude = (distributionDensityScale * n) / (Mathf.Max(_distStdX, 0.05f) * SQRT_TWO_PI); // keeps area constant
+        for (int i = 0; i < samples; i++)
+        {
+            float t = i / (samples - 1f);
+            float x = Mathf.Lerp(-range, range, t);
+            float gaussian = Mathf.Exp(-0.5f * Mathf.Pow((x - _distMeanX) / _distStdX, 2f));
+            float y = amplitude * gaussian; // area stays constant: amplitude * std * sqrt(2pi)
+            if (distributionMaxYClamp > 0f) y = Mathf.Min(y, distributionMaxYClamp);
+            float yScaled = y * distributionCurveHeight;
+            _distMaxY = Mathf.Max(_distMaxY, yScaled);
+            _distributionCurveLocal.Add(new Vector3(x, yScaled, 0f));
+        }
     }
 
     // Light one tile in the 4x4 matrix in the direction of each disconnected drone

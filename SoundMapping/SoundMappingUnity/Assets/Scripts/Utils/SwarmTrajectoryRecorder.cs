@@ -2,7 +2,7 @@
 // Records swarm trajectories into JSON, labels "main group" per sample using your runtime network,
 // supports adjustable recording frequency, safely saves on scene changes / quit, and
 // stores a single "Run" timing window (start/stop) for downstream analysis.
-// NOW also labels the embodied drone both in-file (embodiedId/embodiedName) and per-drone (DroneTraj.embodied).
+// NOW also labels the embodied drone both in-file (embodiedId/embodiedName) and per-frame flag 'e'.
 //
 // Call from other scripts:
 //   SwarmTrajectoryRecorder.MarkTrialStart("Run");  // level/timer starts
@@ -142,6 +142,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         public float t;
         public float x, y, z;
         public byte g; // 0 = not in main group; 1 = in main group
+        public byte e; // 1 = embodied drone at this frame, 0 = not embodied
     }
 
     [Serializable]
@@ -149,7 +150,6 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
     {
         public int id;
         public string name;
-        public bool embodied; // <--- NEW: true if this drone is the embodied drone
         public List<TrajFrame> frames = new List<TrajFrame>(4096);
     }
 
@@ -587,7 +587,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
     {
         int id = GetStableId(tr);
         if (!_trajById.ContainsKey(id))
-            _trajById[id] = new DroneTraj { id = id, name = tr.name, embodied = false };
+            _trajById[id] = new DroneTraj { id = id, name = tr.name };
     }
 
     private static Type GetTypeByName(string typeName)
@@ -624,11 +624,6 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         _embodiedTransform = TryFindEmbodiedTransform();
         _embodiedStableId = (_embodiedTransform != null) ? GetStableId(_embodiedTransform) : int.MinValue;
 
-        // push the embodied flag into known trajectories
-        foreach (var kv in _trajById)
-        {
-            kv.Value.embodied = (kv.Key == _embodiedStableId);
-        }
     }
 
     private Transform TryFindEmbodiedTransform()
@@ -716,6 +711,9 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
 
         if (!writeThisSample) return;
 
+        // Refresh embodied selection every sample so runtime role switches are captured.
+        RefreshEmbodiedLabeling();
+
         var positions = new Vector3[n];
         var ids       = new int[n];
         for (int i = 0; i < n; i++)
@@ -725,16 +723,13 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
             positions[i] = tr.position;
             ids[i] = GetStableId(tr);
             if (!_trajById.TryGetValue(ids[i], out var _))
-                _trajById[ids[i]] = new DroneTraj { id = ids[i], name = tr.name, embodied = false };
+                _trajById[ids[i]] = new DroneTraj { id = ids[i], name = tr.name };
         }
 
-        // keep embodied flags fresh
-        if (_embodiedTransform == null) RefreshEmbodiedLabeling();
         for (int i = 0; i < n; i++)
         {
             if (_trajById.TryGetValue(ids[i], out var traj))
             {
-                traj.embodied = (ids[i] == _embodiedStableId);
                 // if name changed at runtime (rare), keep it updated
                 traj.name = _droneTransforms[i] ? _droneTransforms[i].name : traj.name;
             }
@@ -751,7 +746,8 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
             {
                 t = t,
                 x = p.x, y = p.y, z = p.z,
-                g = (byte)(inMain[i] ? 1 : 0)
+                g = (byte)(inMain[i] ? 1 : 0),
+                e = (byte)((ids[i] == _embodiedStableId) ? 1 : 0)
             });
         }
     }
