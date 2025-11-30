@@ -17,6 +17,7 @@ REF_STEPS = [
 
 # ---------------- Coverage Config ----------------
 SENSING_RADIUS = 0.25 #0.3         # [same units as trajectories] effective sensing radius per drone
+EXCLUDE_COVERAGE_SEGMENTS = [0]  # list of 0-based segment indices to skip in coverage calculations
 
 # Segment indices (0-based) in REF_STEPS
 SEG_IDX_1 = 0   # first line of REF_STEPS
@@ -27,7 +28,7 @@ SEG_IDX_4 = 3   # fourth line
 SEG_WIDTHS = {
     SEG_IDX_1: 14.0 * REF_SCALE,  # originally 16 m wide
     SEG_IDX_2: 18.0 * REF_SCALE,  # 18 m wide
-    SEG_IDX_4: 20.0 * REF_SCALE,  # 20 m wide
+    SEG_IDX_4: 22.0 * REF_SCALE,  # 22 m wide
 }
 
 # Trimming rules (meters along the segment, in world units, then scaled)
@@ -46,6 +47,9 @@ except ImportError:
     Point = Polygon = unary_union = None
     print("WARNING: shapely is not installed; geometric area coverage "
           "will be skipped. Install via `pip install shapely` to enable it.")
+
+# Coverage subtraction: if True, coverage = area inside target − area outside target
+SUBTRACT_OUTSIDE_COVERAGE = True
 
 
 def build_workspace_rect_and_poly(ref_poly, seg_index, width, trim_start=0.0, trim_end=0.0):
@@ -230,6 +234,7 @@ if "trajectories" in data:
         x_arr = [fr.get("x", 0.0) for fr in frames]
         z_arr = [fr.get("z", 0.0) for fr in frames]
         g_arr = [fr.get("g", None) for fr in frames]
+        e_arr = [fr.get("e", None) for fr in frames]
         drone_tracks[name] = {
             "id": traj.get("id", None),
             "embodied": bool(traj.get("embodied", False)),
@@ -237,6 +242,7 @@ if "trajectories" in data:
             "x": np.array(x_arr, dtype=float),
             "z": np.array(z_arr, dtype=float),
             "g": np.array(g_arr, dtype=float) if any(v is not None for v in g_arr) else None,
+            "e": np.array(e_arr, dtype=float) if any(v is not None for v in e_arr) else None,
         }
 elif "swarmState" in data:
     top_time = data.get("time", None)
@@ -249,6 +255,7 @@ elif "swarmState" in data:
         x_arr = [p.get("x", 0.0) for p in pos]
         z_arr = [p.get("z", 0.0) for p in pos]
         g_arr = [p.get("g", None) for p in pos]
+        e_arr = [p.get("e", None) for p in pos]
         t_here = top_time if (top_time is not None and len(top_time) == len(x_arr)) else None
         drone_tracks[name] = {
             "id": entry.get("droneId", None),
@@ -257,6 +264,7 @@ elif "swarmState" in data:
             "x": np.array(x_arr, dtype=float),
             "z": np.array(z_arr, dtype=float),
             "g": np.array(g_arr, dtype=float) if any(v is not None for v in g_arr) else None,
+            "e": np.array(e_arr, dtype=float) if any(v is not None for v in e_arr) else None,
         }
 else:
     raise ValueError("Unrecognized JSON layout (expected 'trajectories' or 'swarmState').")
@@ -274,8 +282,61 @@ def is_embodied_track(name, track, embodied_id_meta, embodied_name_meta):
         return True
     return False
 
+def embodied_name_timeline(times_arr, tracks, use_time, sample_hz):
+    """
+    Return list aligned to times_arr with the embodied drone name at each sample
+    based on per-frame 'e' flags. None if unknown for that time.
+    """
+    if times_arr is None or len(times_arr) == 0:
+        return []
+
+    # Build time->name mapping from per-frame e flags
+    e_lookup = {}
+    for name, tr in tracks.items():
+        e = tr.get("e")
+        if e is None or not len(e):
+            continue
+        t_arr = tr.get("t")
+        if t_arr is None:
+            # use index as time if no real time
+            t_arr = np.arange(len(e), dtype=float) / float(sample_hz) if sample_hz else np.arange(len(e), dtype=float)
+        for ti, ei in zip(t_arr, e):
+            if ei == 1 or ei == 1.0:
+                e_lookup[round(float(ti), 3)] = name
+
+    result = []
+    for t in times_arr:
+        result.append(e_lookup.get(round(float(t), 3)))
+    return result
+
+def _contiguous_true_spans(mask):
+    spans = []
+    if mask.size == 0:
+        return spans
+    start = None
+    for i, val in enumerate(mask):
+        if val and start is None:
+            start = i
+        if (not val or i == len(mask)-1) and start is not None:
+            end = i if val else i-1
+            spans.append((start, end))
+            start = None
+    return spans
+
+def plot_embodied_segments(ax, track, color, linewidth=3.2, alpha=0.95):
+    """Overlay thick segments where e==1."""
+    e = track.get("e")
+    if e is None or not len(e):
+        return
+    xs = np.asarray(track["x"], dtype=float)
+    zs = np.asarray(track["z"], dtype=float)
+    mask = np.asarray(e, dtype=float) >= 0.5
+    spans = _contiguous_true_spans(mask)
+    for s, e_idx in spans:
+        ax.plot(xs[s:e_idx+1], zs[s:e_idx+1], linewidth=linewidth, alpha=alpha, color=color, zorder=4)
+
 # -------- Reference path --------
-pts = [(0.0, 60.0)]
+pts = [(0.0, 50.0)] # start point of reference path
 x, z = 0.0, 0.0
 for dx, dz in REF_STEPS:
     x += dx; z += dz
@@ -536,15 +597,35 @@ if len(centroid_err) > 0:
 else:
     total_time_s = 0.0
 
-# Average centroid→reference distance (run mask) EXCLUDING the 3rd segment (index 2)
-EXCLUDE_SEG_INDEX = 2
+# Average centroid→reference distance (run mask) with optional segment exclusion.
+# - Set EXCLUDE_SEG_INDICES to None or an empty iterable to include all segments.
+# - Set to an int or iterable of 0-based indices to exclude (e.g., [2] to drop segment #3).
+EXCLUDE_SEG_INDICES = [0,1,2,3]
+
+def _exclude_mask(seg_idx_arr, exclude_cfg):
+    """Return boolean mask of samples to drop based on nearest-segment indices."""
+    exclude_set = _normalize_exclude(exclude_cfg)
+    if not exclude_set:
+        return np.zeros_like(seg_idx_arr, dtype=bool)
+    return np.isin(seg_idx_arr, list(exclude_set))
+
+def _normalize_exclude(exclude_cfg):
+    """Normalize exclude config into a set of int indices."""
+    if exclude_cfg is None:
+        return set()
+    if isinstance(exclude_cfg, (int, np.integer)):
+        return {int(exclude_cfg)}
+    return {int(x) for x in exclude_cfg}
+
 if np.any(mask_cte):
-    mask_not_third = (centroid_segidx != EXCLUDE_SEG_INDEX)
-    mask_for_avg = mask_cte & mask_not_third
+    exclude_set = _normalize_exclude(EXCLUDE_SEG_INDICES)
+    mask_exclude = _exclude_mask(centroid_segidx, exclude_set)
+    mask_for_avg = mask_cte & ~mask_exclude
     avg_err_m = float(np.mean(centroid_err[mask_for_avg])) if np.any(mask_for_avg) else float("nan")
-    excluded = int(np.sum(mask_cte & ~mask_not_third))
+    excluded = int(np.sum(mask_cte & mask_exclude))
     total_in_run = int(np.sum(mask_cte))
 else:
+    exclude_set = set()
     avg_err_m = float("nan")
     excluded = 0
     total_in_run = 0
@@ -695,11 +776,41 @@ def compute_segment_coverage(seg_index, workspace_poly, workspace_area):
       - restricted to Run window
       - only when centroid is closest to this segment
       - then intersected with workspace_poly
+      - optionally subtract area outside workspace (still covered by disks)
+      - outside here is defined as spill perpendicular to the segment (width overflow),
+        not along the segment.
     Returns:
-      (union_poly, covered_area, coverage_pct)
+      (union_poly_inside, covered_area_inside, coverage_pct_effective, union_poly_outside, covered_area_outside)
     """
     if Polygon is None or Point is None or unary_union is None:
-        return None, 0.0, float("nan")
+        return None, 0.0, float("nan"), None, 0.0
+
+    # Build a wide strip aligned with the segment to measure perpendicular spillover only.
+    a = np.asarray(ref_poly[seg_index], dtype=float)
+    b = np.asarray(ref_poly[seg_index + 1], dtype=float)
+    ab = b - a
+    seg_len = float(np.hypot(ab[0], ab[1]))
+    if seg_len <= 0:
+        return None, 0.0, float("nan"), None, 0.0
+    t_hat = ab / seg_len
+    n_hat = np.array([-t_hat[1], t_hat[0]])
+    half_w = SEG_WIDTHS[seg_index] / 2.0
+    trim_start = SEG_TRIMS[seg_index].get("trim_start", 0.0)
+    trim_end   = SEG_TRIMS[seg_index].get("trim_end", 0.0)
+    eff_len = max(seg_len - trim_start - trim_end, 0.0)
+
+    # Build strip only over the trimmed workspace portion (plus a tiny buffer).
+    seg_start_trim = a + t_hat * trim_start
+    seg_end_trim   = b - t_hat * trim_end
+    strip_len = eff_len + 2.0 * SENSING_RADIUS
+    p_mid = 0.5 * (seg_start_trim + seg_end_trim)
+    p0 = p_mid - t_hat * (strip_len / 2.0)
+    p1 = p_mid + t_hat * (strip_len / 2.0)
+    s1 = p0 + n_hat * half_w
+    s2 = p0 - n_hat * half_w
+    s3 = p1 - n_hat * half_w
+    s4 = p1 + n_hat * half_w
+    strip_poly = Polygon([s1, s2, s3, s4])
 
     positions = []
 
@@ -736,42 +847,120 @@ def compute_segment_coverage(seg_index, workspace_poly, workspace_area):
             positions.extend(pts_here)
 
     if not positions:
-        return None, 0.0, 0.0
+        return None, 0.0, 0.0, None, 0.0
 
-    disks = []
+    disks_inside = []
+    disks_outside = []
     for (x_p, z_p) in positions:
-        disk = Point(x_p, z_p).buffer(SENSING_RADIUS, resolution=32)
-        if workspace_poly is not None:
-            disk = disk.intersection(workspace_poly)
-        if not disk.is_empty:
-            disks.append(disk)
+        disk_raw = Point(x_p, z_p).buffer(SENSING_RADIUS, resolution=32)
+        inside_piece = disk_raw.intersection(workspace_poly) if workspace_poly is not None else disk_raw
+        # Only subtract lateral spill if projection lies within the segment span (adjacent to workspace).
+        outside_perp = None
+        if SUBTRACT_OUTSIDE_COVERAGE:
+            vec = np.array([x_p, z_p]) - a
+            s_along = float(vec @ t_hat)
+            if (trim_start <= s_along) and (s_along <= (seg_len - trim_end)):
+                outside_perp = disk_raw.difference(strip_poly)
 
-    if not disks:
-        return None, 0.0, 0.0
+        if inside_piece and (not inside_piece.is_empty):
+            disks_inside.append(inside_piece)
+        if outside_perp and (not outside_perp.is_empty):
+            disks_outside.append(outside_perp)
 
-    union_poly = unary_union(disks)
-    covered_area = float(union_poly.area)
-    coverage_pct = 100.0 * covered_area / float(workspace_area) if workspace_area > 0 else float("nan")
-    return union_poly, covered_area, coverage_pct
+    if not disks_inside and not disks_outside:
+        return None, 0.0, 0.0, None, 0.0
+
+    union_inside = unary_union(disks_inside) if disks_inside else None
+    union_outside = unary_union(disks_outside) if disks_outside else None
+
+    area_inside = float(union_inside.area) if union_inside is not None else 0.0
+    area_outside = float(union_outside.area) if (union_outside is not None and SUBTRACT_OUTSIDE_COVERAGE) else 0.0
+
+    effective_area = max(area_inside - area_outside, 0.0) if SUBTRACT_OUTSIDE_COVERAGE else area_inside
+    coverage_pct = 100.0 * effective_area / float(workspace_area) if workspace_area > 0 else float("nan")
+
+    return union_inside, effective_area, coverage_pct, union_outside, area_outside
+
+def compute_segment_coverage_if_needed(seg_index, workspace_poly, workspace_area):
+    if seg_index in set(EXCLUDE_COVERAGE_SEGMENTS):
+        return None, 0.0, float("nan"), None, 0.0, True
+    cov = compute_segment_coverage(seg_index, workspace_poly, workspace_area)
+    return (*cov, False)
 
 # Compute coverage for three segments: 1, 2, and 4
-coverage_poly_seg1, covered_area_seg1, coverage_pct_seg1 = compute_segment_coverage(
+coverage_poly_seg1, covered_area_seg1, coverage_pct_seg1, coverage_out_seg1, covered_out_area_seg1, seg1_excluded = compute_segment_coverage_if_needed(
     SEG_IDX_1, workspace_polys[SEG_IDX_1], workspace_areas[SEG_IDX_1]
 )
-coverage_poly_seg2, covered_area_seg2, coverage_pct_seg2 = compute_segment_coverage(
+coverage_poly_seg2, covered_area_seg2, coverage_pct_seg2, coverage_out_seg2, covered_out_area_seg2, seg2_excluded = compute_segment_coverage_if_needed(
     SEG_IDX_2, workspace_polys[SEG_IDX_2], workspace_areas[SEG_IDX_2]
 )
-coverage_poly_seg4, covered_area_seg4, coverage_pct_seg4 = compute_segment_coverage(
+coverage_poly_seg4, covered_area_seg4, coverage_pct_seg4, coverage_out_seg4, covered_out_area_seg4, seg4_excluded = compute_segment_coverage_if_needed(
     SEG_IDX_4, workspace_polys[SEG_IDX_4], workspace_areas[SEG_IDX_4]
 )
+
+# Overall coverage across the three segments combined (union of coverage + union of workspaces)
+def _union_polys(polys):
+    good = [p for p in polys if p is not None]
+    if not good or unary_union is None:
+        return None
+    return unary_union(good)
+
+included_workspaces = []
+included_coverage = []
+included_coverage_out = []
+if not seg1_excluded:
+    included_workspaces.append(workspace_polys[SEG_IDX_1])
+    included_coverage.append(coverage_poly_seg1)
+    included_coverage_out.append(coverage_out_seg1)
+if not seg2_excluded:
+    included_workspaces.append(workspace_polys[SEG_IDX_2])
+    included_coverage.append(coverage_poly_seg2)
+    included_coverage_out.append(coverage_out_seg2)
+if not seg4_excluded:
+    included_workspaces.append(workspace_polys[SEG_IDX_4])
+    included_coverage.append(coverage_poly_seg4)
+    included_coverage_out.append(coverage_out_seg4)
+
+workspace_poly_overall = _union_polys(included_workspaces)
+coverage_poly_overall  = _union_polys(included_coverage)
+coverage_out_overall   = _union_polys(included_coverage_out)
+if workspace_poly_overall is not None:
+    workspace_area_overall = float(workspace_poly_overall.area)
+else:
+    # fallback to summed rectangle areas (rects don't overlap) for included segments
+    workspace_area_overall = float(
+        (workspace_areas[SEG_IDX_1] if not seg1_excluded else 0.0) +
+        (workspace_areas[SEG_IDX_2] if not seg2_excluded else 0.0) +
+        (workspace_areas[SEG_IDX_4] if not seg4_excluded else 0.0)
+    )
+
+if coverage_poly_overall is not None and workspace_area_overall > 0:
+    covered_area_overall = float(coverage_poly_overall.area)
+    covered_out_area_overall = float(coverage_out_overall.area) if (coverage_out_overall is not None and SUBTRACT_OUTSIDE_COVERAGE) else 0.0
+    effective_overall = max(covered_area_overall - covered_out_area_overall, 0.0) if SUBTRACT_OUTSIDE_COVERAGE else covered_area_overall
+    coverage_pct_overall = 100.0 * effective_overall / workspace_area_overall
+else:
+    covered_area_overall = 0.0 if not math.isnan(workspace_area_overall) else float("nan")
+    covered_out_area_overall = 0.0
+    effective_overall = covered_area_overall
+    coverage_pct_overall = float("nan")
+
+if exclude_set:
+    exclude_label = ", ".join(f"#{idx+1}" for idx in sorted(exclude_set))
+    exclude_phrase = f"excluding segments {exclude_label}"
+    excluded_detail = f"excluded {excluded} of {total_in_run} samples nearest to {exclude_label}"
+else:
+    exclude_label = "none"
+    exclude_phrase = "including all segments"
+    excluded_detail = f"excluded {excluded} of {total_in_run} samples"
 
 print("=== RUN METRICS (averages restricted to Run window) ===")
 if t0 is not None and t1 is not None:
     print(f"Run window (game time): start={t0:.3f}s, stop={t1:.3f}s, total={run_total_spent_time_s:.3f}s")
 else:
     print("No Run window found; using full extent for masks.")
-print(f"Average centroid→reference distance (Run, excluding segment #3): {avg_err_m:.3f} m")
-print(f"  (excluded {excluded} of {total_in_run} samples whose nearest segment was the 3rd)")
+print(f"Average centroid→reference distance (Run, {exclude_phrase}): {avg_err_m:.3f} m")
+print(f"  ({excluded_detail})")
 print(f"Average inter-agent distance (main, Run): {avg_interagent_main_overall:.3f} m")
 print(f"Average inter-agent distance (swarm, Run): {avg_interagent_swarm_overall:.3f} m")
 print(f"Survived drones (present at stop & final g==1): {survivors} / {with_g} (with g-labels), total drones: {len(drone_tracks)}")
@@ -779,15 +968,32 @@ print(f"Survived drones (present at stop & final g==1): {survivors} / {with_g} (
 print("\nCoverage windows:")
 print(f"  Segment 1 (idx {SEG_IDX_1}), length={workspace_lengths[SEG_IDX_1]:.3f} m, "
       f"width={SEG_WIDTHS[SEG_IDX_1]:.3f} m, area={workspace_areas[SEG_IDX_1]:.3f} m²")
-print(f"    coverage: {coverage_pct_seg1:.2f}% (covered {covered_area_seg1:.3f} m²)")
+if seg1_excluded:
+    print("    coverage: excluded")
+else:
+    print(f"    coverage: {coverage_pct_seg1:.2f}% (inside {covered_area_seg1:.3f} m²"
+          f"{' minus outside ' + format(covered_out_area_seg1, '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''})")
 
 print(f"  Segment 2 (idx {SEG_IDX_2}), length={workspace_lengths[SEG_IDX_2]:.3f} m, "
       f"width={SEG_WIDTHS[SEG_IDX_2]:.3f} m, area={workspace_areas[SEG_IDX_2]:.3f} m²")
-print(f"    coverage: {coverage_pct_seg2:.2f}% (covered {covered_area_seg2:.3f} m²)")
+if seg2_excluded:
+    print("    coverage: excluded")
+else:
+    print(f"    coverage: {coverage_pct_seg2:.2f}% (inside {covered_area_seg2:.3f} m²"
+          f"{' minus outside ' + format(covered_out_area_seg2, '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''})")
 
 print(f"  Segment 4 (idx {SEG_IDX_4}), length={workspace_lengths[SEG_IDX_4]:.3f} m, "
       f"width={SEG_WIDTHS[SEG_IDX_4]:.3f} m, area={workspace_areas[SEG_IDX_4]:.3f} m²")
-print(f"    coverage: {coverage_pct_seg4:.2f}% (covered {covered_area_seg4:.3f} m²)")
+if seg4_excluded:
+    print("    coverage: excluded")
+else:
+    print(f"    coverage: {coverage_pct_seg4:.2f}% (inside {covered_area_seg4:.3f} m²"
+          f"{' minus outside ' + format(covered_out_area_seg4, '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''})")
+
+print("\n  Overall (segments 1+2+4 union)")
+print(f"    workspace area={workspace_area_overall:.3f} m²")
+print(f"    coverage: {coverage_pct_overall:.2f}% (inside {covered_area_overall:.3f} m²"
+      f"{' minus outside ' + format(covered_out_area_overall, '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''})")
 
 # Debug: print each drone’s last time and status
 print("\n--- Drone end-state summary ---")
@@ -821,17 +1027,24 @@ metrics_txt.write_text(
     f"seg1_workspace_width_m: {SEG_WIDTHS[SEG_IDX_1]:.6f}\n"
     f"seg1_workspace_area_m2: {workspace_areas[SEG_IDX_1]:.6f}\n"
     f"seg1_covered_area_m2: {covered_area_seg1:.6f}\n"
+    f"seg1_outside_area_m2: {covered_out_area_seg1:.6f}\n"
     f"seg1_coverage_pct: {coverage_pct_seg1:.6f}\n"
     f"seg2_length_m: {workspace_lengths[SEG_IDX_2]:.6f}\n"
     f"seg2_workspace_width_m: {SEG_WIDTHS[SEG_IDX_2]:.6f}\n"
     f"seg2_workspace_area_m2: {workspace_areas[SEG_IDX_2]:.6f}\n"
     f"seg2_covered_area_m2: {covered_area_seg2:.6f}\n"
+    f"seg2_outside_area_m2: {covered_out_area_seg2:.6f}\n"
     f"seg2_coverage_pct: {coverage_pct_seg2:.6f}\n"
     f"seg4_length_m: {workspace_lengths[SEG_IDX_4]:.6f}\n"
     f"seg4_workspace_width_m: {SEG_WIDTHS[SEG_IDX_4]:.6f}\n"
     f"seg4_workspace_area_m2: {workspace_areas[SEG_IDX_4]:.6f}\n"
     f"seg4_covered_area_m2: {covered_area_seg4:.6f}\n"
+    f"seg4_outside_area_m2: {covered_out_area_seg4:.6f}\n"
     f"seg4_coverage_pct: {coverage_pct_seg4:.6f}\n"
+    f"overall_workspace_area_m2: {workspace_area_overall:.6f}\n"
+    f"overall_covered_area_m2: {effective_overall:.6f}\n"
+    f"overall_outside_area_m2: {covered_out_area_overall:.6f}\n"
+    f"overall_coverage_pct: {coverage_pct_overall:.6f}\n"
 )
 
 # -------- Plot helpers --------
@@ -841,6 +1054,39 @@ def game_time_to_axis_x_val(t_game):
 x0_line = game_time_to_axis_x_val(t0)
 x1_line = game_time_to_axis_x_val(t1)
 
+# Build contiguous spans of the same nearest-segment index for banding on the x-axis.
+def _segment_spans(times_arr, seg_idx_arr):
+    """
+    Return [(x_start, x_end, seg_idx), ...] covering the timeline with
+    the nearest reference segment for the centroid.
+    """
+    if len(times_arr) == 0 or len(seg_idx_arr) == 0:
+        return []
+    times_arr = np.asarray(times_arr, dtype=float)
+    seg_idx_arr = np.asarray(seg_idx_arr, dtype=int)
+    if times_arr.shape[0] != seg_idx_arr.shape[0]:
+        return []
+    # Build edges halfway between samples; extend the last edge by median dt (or 1.0 fallback)
+    edges = np.empty(len(times_arr) + 1, dtype=float)
+    if len(times_arr) > 1:
+        midpoints = 0.5 * (times_arr[:-1] + times_arr[1:])
+        edges[1:-1] = midpoints
+        dt = np.median(np.diff(times_arr))
+        edges[-1] = times_arr[-1] + (dt if dt > 0 else 1.0)
+    else:
+        edges[1:-1] = times_arr[0]
+        edges[-1] = times_arr[0] + 1.0
+    edges[0] = times_arr[0]
+
+    spans = []
+    start_idx = 0
+    for i in range(1, len(seg_idx_arr)):
+        if seg_idx_arr[i] != seg_idx_arr[start_idx]:
+            spans.append((edges[start_idx], edges[i], int(seg_idx_arr[start_idx])))
+            start_idx = i
+    spans.append((edges[start_idx], edges[-1], int(seg_idx_arr[start_idx])))
+    return spans
+
 # ----- Color mapping: unique color per drone (kept consistent), embodied emphasized -----
 all_names_sorted = sorted(drone_tracks.keys())
 
@@ -849,6 +1095,7 @@ cmap = plt.get_cmap('tab20')  # falls back gracefully if tab20 exists; widely av
 N = getattr(cmap, 'N', 20)    # number of distinct colors in the map (tab20 -> 20)
 
 name_to_color = {name: cmap(i % N) for i, name in enumerate(all_names_sorted)}
+embodied_timeline = embodied_name_timeline(times, drone_tracks, use_time, sample_hz)
 
 # 1) Trajectories (X-Z)
 plt.figure(figsize=(8, 8))
@@ -858,11 +1105,9 @@ for name in all_names_sorted:
     c = name_to_color[name]
 
     # Path styling
-    if is_emb:
-        # Emphasize embodied by thicker line & stronger alpha but keep its own color
-        plt.plot(d["x"], d["z"], linewidth=3.0, alpha=0.95, color=c, zorder=3, label=None)
-    else:
-        plt.plot(d["x"], d["z"], linewidth=1.8, alpha=0.70, color=c, zorder=1, label=None)
+    plt.plot(d["x"], d["z"], linewidth=1.8, alpha=0.28, color=c, zorder=1, label=None)
+    # Overlay time-varying embodied segments, if present
+    plot_embodied_segments(plt.gca(), d, color=c, linewidth=3.0, alpha=0.95)
 
     # Endpoint marker by status (use the same per-drone color)
     if len(d["x"]) > 0:
@@ -903,7 +1148,7 @@ plt.grid(True, alpha=0.3)
 # Legend entries: endpoint semantics + path styling
 legend_path = [
     Line2D([0],[0], color='k', lw=1.8, alpha=0.7, label='Other drones (various colors)'),
-    Line2D([0],[0], color='k', lw=3.0, label='Embodied drone path'),
+    Line2D([0],[0], color='k', lw=3.0, label='Embodied segments (e==1)'),
 ]
 legend_endpoints = [
     Line2D([0],[0], marker='o', linestyle='None', label='Endpoint: survivor'),
@@ -930,16 +1175,37 @@ plt.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle=":", linewidth=2.0, color="k"
 plt.tight_layout(); plt.savefig(OUT_TRAJ_PNG, dpi=150)
 
 # 2) Centroid cross-track error vs time (with Run shading)
-plt.figure(figsize=(9, 5))
-plt.plot(times, centroid_err, label="Centroid CTE")
+fig_cte, ax_cte = plt.subplots(figsize=(9, 5))
+ax_cte.plot(times, centroid_err, label="Centroid CTE")
 if x0_line is not None and x1_line is not None and x1_line >= x0_line:
-    plt.axvspan(x0_line, x1_line, alpha=0.15, label=f"Run window ({run_total_spent_time_s:.2f}s)")
-    plt.axvline(x0_line, linestyle="--"); plt.axvline(x1_line, linestyle="--")
-plt.xlabel("Time (s)" if use_time else f"Frame index (~{sample_hz:.1f} Hz)")
-plt.ylabel("Centroid cross-track error (m)")
-plt.title("Centroid cross-track error vs time (main group only)")
-plt.grid(True, alpha=0.3); plt.legend(loc="best")
-plt.tight_layout(); plt.savefig(OUT_ERR_PNG, dpi=150)
+    ax_cte.axvspan(x0_line, x1_line, alpha=0.15, label=f"Run window ({run_total_spent_time_s:.2f}s)")
+    ax_cte.axvline(x0_line, linestyle="--"); ax_cte.axvline(x1_line, linestyle="--")
+
+# Mark which reference segment the centroid is closest to along the x-axis with a thin color band.
+seg_spans = _segment_spans(times, centroid_segidx)
+seg_handles = []
+if seg_spans:
+    seg_cmap = plt.get_cmap('tab10')
+    uniq_segs = sorted({seg for _, _, seg in seg_spans})
+    for start, end, seg in seg_spans:
+        col = seg_cmap(seg % seg_cmap.N)
+        ax_cte.axvspan(start, end, ymin=0.0, ymax=0.045, color=col, alpha=0.18, linewidth=0)
+    seg_handles = [
+        Line2D([0],[0], color=seg_cmap(seg % seg_cmap.N), lw=6, label=f"Nearest ref segment #{seg+1}")
+        for seg in uniq_segs
+    ]
+
+ax_cte.set_xlabel("Time (s)" if use_time else f"Frame index (~{sample_hz:.1f} Hz)")
+ax_cte.set_ylabel("Centroid cross-track error (m)")
+ax_cte.set_title("Centroid cross-track error vs time (main group only)")
+ax_cte.grid(True, alpha=0.3)
+h_cte, l_cte = ax_cte.get_legend_handles_labels()
+ax_cte.legend(
+    handles=h_cte + seg_handles,
+    labels=l_cte + [h.get_label() for h in seg_handles],
+    loc="best"
+)
+fig_cte.tight_layout(); fig_cte.savefig(OUT_ERR_PNG, dpi=150)
 
 # 3) Avg inter-agent distance (main vs swarm) with Run shading
 plt.figure(figsize=(9, 5))
@@ -965,16 +1231,30 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 
 # --- Which drone is "embodied"? pull from JSON if recorded; else fallback by name ---
-embodied_names = set()
+embodied_names_static = set()
 if "trajectories" in data:
     for i, traj in enumerate(data["trajectories"]):
         if traj.get("isEmbodied") or traj.get("embodied") or traj.get("is_embodied"):
-            embodied_names.add(traj.get("name", f"id:{traj.get('id', i)}"))
+            embodied_names_static.add(traj.get("name", f"id:{traj.get('id', i)}"))
 # Fallback heuristic
 for n in list(drone_tracks.keys()):
     lo = n.lower()
     if "embodied" in lo or "player" in lo or "ego" in lo:
-        embodied_names.add(n)
+        embodied_names_static.add(n)
+
+def _is_embodied_at_time(track, T, sample_hz):
+    e = track.get("e", None)
+    if e is None or len(e) == 0:
+        return bool(track.get("embodied", False))
+    ts = _time_array_for(track)
+    if len(ts) == 0:
+        return False
+    idx = np.searchsorted(ts, T, side='right') - 1
+    if idx < 0:
+        return False
+    if idx >= len(e):
+        idx = len(e) - 1
+    return bool(np.asarray(e, dtype=float)[idx] >= 0.5)
 
 def _time_array_for(dr):
     """Return per-sample time array for a drone track."""
@@ -1023,15 +1303,21 @@ for idx, seg_idx in enumerate([SEG_IDX_1, SEG_IDX_2, SEG_IDX_4]):
 
 # Coverage patches (initially hidden)
 coverage_patches = []
-for poly in [coverage_poly_seg1, coverage_poly_seg2, coverage_poly_seg4]:
+# First: per-segment coverage in one color, then overall union in another
+coverage_polys_for_plot = [
+    (coverage_poly_seg1, dict(facecolor='C1', edgecolor='none', alpha=0.25, zorder=1)),
+    (coverage_poly_seg2, dict(facecolor='C1', edgecolor='none', alpha=0.25, zorder=1)),
+    (coverage_poly_seg4, dict(facecolor='C1', edgecolor='none', alpha=0.25, zorder=1)),
+    (coverage_out_seg1, dict(facecolor='#ff6666', edgecolor='none', alpha=0.35, zorder=0, label='Outside coverage')),
+    (coverage_out_seg2, dict(facecolor='#ff6666', edgecolor='none', alpha=0.35, zorder=0, label='Outside coverage')),
+    (coverage_out_seg4, dict(facecolor='#ff6666', edgecolor='none', alpha=0.35, zorder=0, label='Outside coverage')),
+    (coverage_poly_overall, dict(facecolor='C2', edgecolor='none', alpha=0.20, zorder=1)),
+]
+for poly, opts in coverage_polys_for_plot:
     if poly is None or Point is None:
         continue
     patches_here = shapely_to_patches(
-        poly,
-        alpha=0.25,
-        facecolor='C1',
-        edgecolor='none',
-        zorder=1
+        poly, **opts
     )
     for p in patches_here:
         p.set_visible(False)
@@ -1041,15 +1327,25 @@ for poly in [coverage_poly_seg1, coverage_poly_seg2, coverage_poly_seg4]:
 # Prepare a colored line for each drone and a per-drone endpoint marker
 drone_lines = {}
 drone_markers = {}
+line_widths = {}
+line_sizes = {}
+line_alphas = {}
 for name, d in drone_tracks.items():
     col = name_to_color.get(name, None)
-    is_emb = name in embodied_names
-    lw  = 3.2 if is_emb else 1.8
-    alp = 1.0 if is_emb else 0.75
-    line, = ax.plot([], [], linewidth=lw, alpha=alp, label=name, color=col)
-    mark = ax.scatter([], [], s=(48 if is_emb else 28), marker='o', color=col if col else None, zorder=3)
+    has_any_emb = (d.get("e") is not None and np.any(np.asarray(d.get("e")) == 1)) or (name in embodied_names_static)
+    lw_base = 1.8
+    lw_emb = 3.2
+    size_base = 28
+    size_emb = 48
+    alpha_base = 0.32
+    alpha_emb = 0.95
+    line, = ax.plot([], [], linewidth=lw_base, alpha=alpha_base, label=name, color=col)
+    mark = ax.scatter([], [], s=size_base, marker='o', color=col if col else None, zorder=3)
     drone_lines[name] = line
     drone_markers[name] = mark
+    line_widths[name] = (lw_base, lw_emb)
+    line_sizes[name] = (size_base, size_emb)
+    line_alphas[name] = (alpha_base, alpha_emb)
 
 # Centroid line up to T + markers
 centroid_line, = ax.plot([], [], linewidth=3.0, color='k', label="Centroid (to T)")
@@ -1091,6 +1387,15 @@ def _update_plot(T):
             drone_markers[name].set_offsets(np.c_[xseg[-1], zseg[-1]])
         else:
             drone_markers[name].set_offsets(np.c_[[], []])  # hide
+
+        # Update styling based on whether this drone is embodied at time T
+        is_emb_now = _is_embodied_at_time(d, T, sample_hz)
+        lw_base, lw_emb = line_widths[name]
+        size_base, size_emb = line_sizes[name]
+        alpha_base, alpha_emb = line_alphas[name]
+        drone_lines[name].set_linewidth(lw_emb if is_emb_now else lw_base)
+        drone_markers[name].set_sizes([size_emb if is_emb_now else size_base])
+        drone_lines[name].set_alpha(alpha_emb if is_emb_now else alpha_base)
 
     # Update centroid up to T
     if len(times) > 0:
