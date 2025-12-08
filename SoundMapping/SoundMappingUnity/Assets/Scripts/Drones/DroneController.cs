@@ -22,8 +22,6 @@ public class DroneController : MonoBehaviour
     public Material selectedColor;
     public Material embodiedColor;
 
-    [System.NonSerialized] public bool audioHighlight;
-
     private List<GameObject> bodyParts = new List<GameObject>();
     public bool showGuizmos = false;
     public bool prediction = false;
@@ -177,18 +175,6 @@ public class DroneController : MonoBehaviour
     }
     void updateColor()
     {
-        if (audioHighlight)
-        {
-            foreach (GameObject bodyPart in bodyParts)
-            {
-                var rend = bodyPart.GetComponent<Renderer>();
-                // Do not replace the material asset; just tint this instance
-                rend.material.color = Color.red;
-            }
-            audioHighlight = false;   // consume flag so it must be set again next frame
-            return;
-        }
-
         if (CameraMovement.embodiedDrone == this.gameObject)
         {
             setMaterial(embodiedColor);
@@ -211,7 +197,7 @@ public class DroneController : MonoBehaviour
                 }
                 else
                 {
-                    setMaterial(notConnectedColor);
+                    // setMaterial(notConnectedColor);
                 }
             }
         }

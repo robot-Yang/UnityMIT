@@ -363,8 +363,8 @@ public class MigrationPointController : MonoBehaviour
             {
                 CameraMovement.nextEmbodiedDrone = _candidateFrontmost;
                 _lastSwitchTime = Time.time;
-                //Debug.Log($"[AutoSwitch] Next embodied (frontmost/main-group): " +
-                //        _candidateFrontmost.GetComponent<DroneController>().droneFake.id);
+                Debug.Log($"[AutoSwitch] Next embodied (frontmost/main-group): " +
+                        _candidateFrontmost.GetComponent<DroneController>().droneFake.id);
             }
             _candidateSinceTime = Time.time;
         }
@@ -684,11 +684,6 @@ public class MigrationPointController : MonoBehaviour
         alignementVector = deltaMigration;
 
         Debug.DrawRay(body.position, alignementVector, Color.red, 0.01f);
-    }
-
-    public Vector3 GetSwarmHeading()
-    {
-        return _swarmHeading.normalized;
     }
 
 }

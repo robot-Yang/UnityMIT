@@ -647,7 +647,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &252539631
 RectTransform:
   m_ObjectHideFlags: 0
@@ -701,10 +701,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 391635715}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 60.115784}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 1619.2434, y: -32.05789}
+  m_SizeDelta: {x: 315.61188, y: 60.115784}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &344539069
 MonoBehaviour:
@@ -819,7 +819,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &391635715
 RectTransform:
   m_ObjectHideFlags: 0
@@ -911,7 +911,7 @@ AudioSource:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 424206312}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: b526d5de9ddaaeb448a20d2b9d651f3a, type: 3}
@@ -1351,7 +1351,7 @@ GameObject:
   - component: {fileID: 667147175}
   - component: {fileID: 667147176}
   m_Layer: 0
-  m_Name: Listener
+  m_Name: Listemer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1365,12 +1365,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 667147174}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0.4099999, y: 24, z: -5.7500005}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 15}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1573697190}
+  m_Father: {fileID: 1746773647}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!81 &667147176
 AudioListener:
@@ -2279,10 +2279,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 391635715}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 60.115784}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 488.3578, y: -32.05789}
+  m_SizeDelta: {x: 319.75186, y: 60.115784}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1179672693
 MonoBehaviour:
@@ -2607,10 +2607,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 391635715}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 60.115784}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 159.24094, y: -32.05789}
+  m_SizeDelta: {x: 298.48187, y: 60.115784}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1258187011
 MonoBehaviour:
@@ -2724,7 +2724,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1278118079
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2834,7 +2834,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1339964291
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3117,10 +3117,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 391635715}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 60.115784}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 869.3097, y: -32.05789}
+  m_SizeDelta: {x: 402.15186, y: 60.115784}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1368261001
 MonoBehaviour:
@@ -3624,8 +3624,6 @@ GameObject:
   - component: {fileID: 1573697209}
   - component: {fileID: 1573697210}
   - component: {fileID: 1573697211}
-  - component: {fileID: 1573697212}
-  - component: {fileID: 1573697213}
   m_Layer: 0
   m_Name: Gamemanager
   m_TagString: GameManager
@@ -3649,7 +3647,6 @@ Transform:
   - {fileID: 823177245}
   - {fileID: 1317829137}
   - {fileID: 807694079}
-  - {fileID: 667147175}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1573697194
@@ -3732,7 +3729,6 @@ MonoBehaviour:
   rotationSpeed: 80
   lastEmbodiedDrone: {fileID: 0}
   initialCamRotation: {x: 0, y: 0, z: 0, w: 0}
-  listener: {fileID: 667147176}
 --- !u!114 &1573697196
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3792,16 +3788,18 @@ MonoBehaviour:
   distanceDetection: 2
   embodiedDrone: {fileID: 0}
   refWorldHalfW: 4.5
-  SIZE_EPS01: 0.004
-  SIZE_STABLE_FOR: 1.3
+  SIZE_EPS01: 0.0015
+  SIZE_STABLE_FOR: 1
   disconnectTau: 0.25
-  flowSpeedHz: 4
+  flowSpeedHz: 3.5
   baseDuty: 0
   peakDuty: 8
   overlayMode: 1
   DISC_ON: 0.2
   DISC_OFF: 0.15
-  sendEvery: 100
+  drawDisconnectedInSwarmFrame: 1
+  disconnectedColor: {r: 1, g: 0, b: 0, a: 1}
+  sendEvery: 50
 --- !u!114 &1573697198
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3923,15 +3921,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f0e7b71b3e89e74ea2bd3ce519fac9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  connexionText: {fileID: 1258187011}
-  SpreadnessText: {fileID: 1179672693}
-  IsolationText: {fileID: 2071752031}
-  DroneCrashText: {fileID: 344539069}
-  SpreadnessSwarmScore: {fileID: 1368261001}
+  connexionText: {fileID: 0}
+  SpreadnessText: {fileID: 0}
+  IsolationText: {fileID: 0}
+  DroneCrashText: {fileID: 0}
+  SpreadnessSwarmScore: {fileID: 0}
   textTutorial: {fileID: 638460716}
   errorText: {fileID: 1361596481}
   deathImage: {fileID: 701908406}
-  CollectibleText: {fileID: 1339964292}
+  CollectibleText: {fileID: 0}
   showConnexion: 0
   showSpreadness: 0
   showIsolation: 0
@@ -4004,49 +4002,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f086c779c2b3490dac525b5fdb14350, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1573697212
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1573697189}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 04cc2f6545a3640f6b1183c8e42e997f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  updateRate: 30
-  perFrameBudget: 0
-  largeSizeThreshold: 2
-  profiles:
-  - {fileID: 11400000, guid: 94dd27a974d734803a4e0769403bb104, type: 2}
-  - {fileID: 11400000, guid: c01e8a2dcbba64ff6b1e5cfe1363f13d, type: 2}
-  continuousSwitchDistance: 2.3
-  switchThreshold: 0.2
-  listenerFollowSpeed: 20
-  mpc: {fileID: 0}
-  useDirectionalAttenuation: 1
-  minDirectionalVolume: 0.25
-  maxDirectionalVolume: 1
-  facingExponent: 1.5
-  minHighlightDistance: 6
-  baseEnvelopeLength: 1
-  minEnvelopeLength: 30
-  lookEnvelopeLength: 30
-  velocityDirectionThreshold: 1
---- !u!114 &1573697213
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1573697189}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 721bbc4e0abbd421caa505600905e1d1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
   swarmRootTag: Swarm
   swarmRootName: Swarm
   rescanChildrenEverySec: 1
@@ -4057,10 +4012,10 @@ MonoBehaviour:
   recordEveryNthSample: 1
   dontDestroyOnLoad: 1
   lazyDiscover: 0
-  outSubfolder: Trajectories
+  outSubfolder: test
   pidOverride: 
   sceneLabelOverride: 
-  setupSceneName: Scene Selector
+  setupSceneName: Scene_Selector
   autosaveEverySec: 0
   enableHotkeySave: 1
   useNetworkForMainGroup: 1
@@ -4070,6 +4025,11 @@ MonoBehaviour:
   useXZDistance: 1
   runLabelName: Run
   singleRunMode: 1
+  embodiedDroneOverride: {fileID: 0}
+  embodiedTag: Embodied
+  embodiedName: EmbodiedDrone
+  embodiedFlagFieldOrProperty: isEmbodied
+  embodiedFlagAltProperty: IsEmbodied
   swarmRoot: {fileID: 1547257216}
 --- !u!1 &1645719226
 GameObject:
@@ -4408,14 +4368,14 @@ Camera:
   far clip plane: 1000
   field of view: 30
   orthographic: 1
-  orthographic size: 10
+  orthographic size: 15
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
+  m_TargetDisplay: 1
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
@@ -4437,6 +4397,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 667147175}
   - {fileID: 1892515273}
   - {fileID: 424206313}
   - {fileID: 853513558}
@@ -4719,7 +4680,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1892515273
 Transform:
   m_ObjectHideFlags: 0
@@ -4764,7 +4725,7 @@ Camera:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1
+    width: 0
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
@@ -5508,10 +5469,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 391635715}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 60.115784}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 1265.9116, y: -32.05789}
+  m_SizeDelta: {x: 351.05188, y: 60.115784}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2071752031
 MonoBehaviour:
@@ -5759,7 +5720,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2141461181
 RectTransform:
   m_ObjectHideFlags: 0

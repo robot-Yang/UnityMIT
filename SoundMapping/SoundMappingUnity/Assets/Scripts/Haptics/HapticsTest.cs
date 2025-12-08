@@ -11,6 +11,18 @@ using System.Linq;          // ← ADD THIS
 
 public class HapticsTest : MonoBehaviour
 {
+    public static HapticsTest Instance { get; private set; }
+
+    void Awake()
+    {
+        Instance = this;
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     #region ObstalceInRange
     public int dutyIntensity = 4;
     public int frequencyInit = 1;
@@ -201,6 +213,38 @@ public class HapticsTest : MonoBehaviour
         return true;
     }
 
+    // Mean (center-of-mass) centroid, optionally restricting to the main connected group.
+    public static Vector3 GetSwarmCentroidMean(IReadOnlyList<Transform> drones, bool mainGroupOnly = true)
+    {
+        if (drones == null || drones.Count == 0) return Vector3.zero;
+
+        int n = 0;
+        Vector3 sum = Vector3.zero;
+
+        for (int i = 0; i < drones.Count; i++)
+        {
+            var t = drones[i];
+            if (t == null) continue;
+
+            var dc = t.GetComponent<DroneController>();
+            var df = dc != null ? dc.droneFake : null;
+            if (df == null) continue;
+
+            if (mainGroupOnly)
+            {
+                // If network not ready yet, skip filtering; otherwise require membership in main group
+                if (swarmModel.network != null && !swarmModel.network.IsInMainNetwork(df))
+                    continue;
+            }
+
+            sum += t.position;
+            n++;
+        }
+
+        return (n > 0) ? (sum / n) : Vector3.zero;
+    }
+
+
 
     // -- Highlight-helper state ---------------------------------------------------
     private Transform _highlightedDrone = null;   // the drone we tinted last frame
@@ -296,6 +340,22 @@ public class HapticsTest : MonoBehaviour
         Vector3 headR = tip + (Quaternion.Euler(0, -160, 0) * (tip - tail).normalized) * (arrowLen * 0.15f);
         Gizmos.DrawLine(tip, headL);
         Gizmos.DrawLine(tip, headR);
+
+        /*---------------------------------------------------------*
+        * 3) horizontal distribution curve (x vs. density)
+        *---------------------------------------------------------*/
+        if (drawHorizontalDistributionCurve && _distributionCurveLocal.Count > 1)
+        {
+            Gizmos.color = distributionCurveColor;
+            for (int i = 0; i < _distributionCurveLocal.Count - 1; i++)
+            {
+                Gizmos.DrawLine(_distributionCurveLocal[i], _distributionCurveLocal[i + 1]);
+            }
+            // mark mean position
+            Gizmos.DrawLine(
+                new Vector3(_distMeanX, 0f, 0f),
+                new Vector3(_distMeanX, distributionCurveHeight * 1.05f, 0f));
+        }
     }
     
     // ------------------------------------------------------------
@@ -306,6 +366,13 @@ public class HapticsTest : MonoBehaviour
 
     private float halfW = 1f;
     private float halfH = 1f;
+    [SerializeField] bool drawHorizontalDistributionCurve = true;
+    [SerializeField] float distributionCurveHeight = 0.5f;
+    [SerializeField] float distributionFixedHalfRange = 4.3f;
+    [SerializeField] float distributionDensityScale = 1f;   // scales with drone count
+    [SerializeField] float distributionMaxYClamp = 0f;      // 0 = no clamp; set >0 to cap
+    [SerializeField] float distributionViewYRange = 10f;    // fixed plot range; set 0 to auto
+    [SerializeField] float distributionCurveDutyGain = 1f;  // overall gain when mapping curve to actuators
 
     private float actuator_W = 3f; //4f;
     private float actuator_H = 3f; //4f; //2f; // 5f;
@@ -345,7 +412,7 @@ public class HapticsTest : MonoBehaviour
     const float EPS          = 0.9f;   // 变化阈值：≈“1架无人机变动”
     const float STABLE_FOR   = 2f;   // 连续稳定多久后开始衰减（秒）
     const float DECAY_PER_S  = 8f;     // 衰减速度（每秒减少的 duty “格数”）
-    const int   DUTY_GAIN    = 3;      // 密度→强度：每架无人机 +2
+    const int   DUTY_GAIN    = 3;      // 密度→强度, 3 for num=9, 
     const int   DUTY_MAX     = 14;     // 上限
 
     // —— 状态缓存 —— 按你的地址空间大小分配
@@ -355,7 +422,7 @@ public class HapticsTest : MonoBehaviour
     float[] rawByAddr    = new float[256]; // 本帧密度（临时）
 
     // —— 可调参数 ——
-    const float GAIN_PER_DRONE = 12f;   // 一架无人机贡献的总强度（等价于你原来的 +2）
+    const float GAIN_PER_DRONE = 12f / 12 * 9; //6f; //12f;   // 一架无人机贡献的总强度 12f for num=9
     const float TAU_SMOOTH     = 0.20f;// 时间平滑常数(秒)，越大越稳
 
     // —— 状态缓存 ——
@@ -369,12 +436,15 @@ public class HapticsTest : MonoBehaviour
 
     // --- Size-change gate config ---
     [SerializeField] float refWorldHalfW = 4.5f;  // reference half-width (meters)
-    [SerializeField] float SIZE_EPS01 = 0.004f;    // “small change” threshold in normalized units
-    [SerializeField] float SIZE_STABLE_FOR = 1.30f; // must stay small for this long (s)
+    [SerializeField] float SIZE_EPS01 = 0.001f;    // “small change” threshold in normalized units
+    [SerializeField] float SIZE_STABLE_FOR = 0.50f; // must stay small for this long (s)
 
     // --- Size-change gate state ---
     float _lastHalfW01 = -1f;
     float _sizeStableTimer = 0f;
+
+    private const float max_half_width= 4.1f; //4f;
+    [SerializeField] float embodiedHorizontalMaxMeters = 2f; // maps edge actuators
 
     // —— 断连提示（中间两列动态条）——
     [SerializeField] float disconnectTau = 0.25f;   // 分数平滑时间常数(s)
@@ -382,6 +452,8 @@ public class HapticsTest : MonoBehaviour
     [SerializeField] int   baseDuty      = 0;       // 已填充区域的基础强度
     [SerializeField] int   peakDuty      = 8;      // 流动高亮的峰值
     [SerializeField] bool  overlayMode   = true;    // true=与其它图层叠加(取max)，false=覆盖
+    [SerializeField] float disconnectMinDistance = 2f; // meters: min avg distance to trigger
+    [SerializeField] float disconnectMaxDistance = 8f; // meters: max avg distance to trigger
 
     float _discScoreSmooth = 0f;                    // 平滑后的score
 
@@ -402,6 +474,26 @@ public class HapticsTest : MonoBehaviour
     private float logStartTime;
     private string logFilePath;
     private bool enableLogging = true;  // can toggle if needed
+
+    [Header("Debug / Disconnected")]
+    [SerializeField] bool drawDisconnectedInSwarmFrame = true;
+    [SerializeField] Color disconnectedColor = Color.red;
+    [SerializeField] bool logSizeRowDuty = true;
+    [SerializeField] Color distributionCurveColor = Color.cyan;
+    private readonly List<float> _lastLocalXs = new();
+    private readonly List<Vector3> _distributionCurveLocal = new();
+    private float _distMeanX = 0f;
+    private float _distStdX = 0f;
+    private float _distMaxY = 0f;
+
+    public IReadOnlyList<float> LastLocalXs => _lastLocalXs;
+    public IReadOnlyList<Vector3> DistributionCurveLocal => _distributionCurveLocal;
+    public float DistMeanX => _distMeanX;
+    public float DistStdX => _distStdX;
+    public float DistributionFixedHalfRange => distributionFixedHalfRange;
+    public float DistMaxY => _distMaxY;
+    public float DistributionMaxYClamp => distributionMaxYClamp;
+    public float DistributionViewYRange => distributionViewYRange;
 
     private static void GetDynamicExtents(IReadOnlyList<Transform> drones,
                                     Transform swarmFrame,
@@ -433,18 +525,18 @@ public class HapticsTest : MonoBehaviour
     // returns a continuous column coordinate in [0, COLS-1]
     float ColUFromX(float xLocal)
     {
-        // your swarm width is normalized by 4.5f above, and you center it with +center_W
-        // let's reuse that logic but keep it continuous
-        float u = Mathf.Clamp(-xLocal / 4.5f * 1.5f + center_W, 0f, COLS_MINUS1);
-        return u;
+        // Fixed mapping: ±embodiedHorizontalMaxMeters → side actuators
+        float range = Mathf.Max(embodiedHorizontalMaxMeters, 0.01f);
+        float t = Mathf.Clamp01((xLocal + range) / (2f * range)); // -range→0, +range→1
+        return Mathf.Lerp(0f, COLS_MINUS1, t);
     }
 
     int ColFromX(float x, float halfW, float actuator_W)    // halfW ≥ 0.01
     {
         // float t = (x + halfW) / (2f * halfW);      // → [0..1]
         // return Mathf.Clamp(Mathf.RoundToInt(t * actuator_W + center_W - actuator_W / 2f), 0, Mathf.RoundToInt(initial_actuator_W));
-        float t = x / 4.5f * 1.5f;      // → [0..1]
-        return Mathf.Clamp(Mathf.RoundToInt(-t + center_W), 0, Mathf.RoundToInt(initial_actuator_W));
+        float t = x / max_half_width * 1.5f;      // → [0..1]
+        // return Mathf.Clamp(Mathf.RoundToInt(-t + center_W), 0, Mathf.RoundToInt(initial_actuator_W));
         return Mathf.Clamp(Mathf.RoundToInt(t + center_W), 0, Mathf.RoundToInt(initial_actuator_W));
         // return Mathf.Clamp(Mathf.RoundToInt(t *  3f), 0, 3);
     }
@@ -453,7 +545,7 @@ public class HapticsTest : MonoBehaviour
     {
         // float t = (-y + halfH) / (2f * halfH);      // → [0..1]
         // return Mathf.Clamp(Mathf.RoundToInt(t * actuator_H + center_H - actuator_H / 2f), 0, Mathf.RoundToInt(initial_actuator_H));
-        float t = -y / 4.5f * 1.5f;      // → [0..1]
+        float t = -y / max_half_width * 1.5f;      // → [0..1]
         return Mathf.Clamp(Mathf.RoundToInt(- t + center_H), 0, Mathf.RoundToInt(initial_actuator_H));
         // return Mathf.Clamp(Mathf.RoundToInt(t * 4f), 0, 4);
     }
@@ -501,21 +593,43 @@ public class HapticsTest : MonoBehaviour
         // _swarmFrame.position = centroid;           // place at the centroid
         // _swarmFrame.rotation = Quaternion.LookRotation(
         //                             embodiedDrone.forward,
-                                    // embodiedDrone.up);
+        // embodiedDrone.up);
         // Debug.Log($"swarmFrame.rotation = {_swarmFrame.rotation.eulerAngles:F2} " +
         //           $"(centroid at {centroid:F2})");
 
-        Vector3 minL, maxL, centroidW;
-        if (BuildSwarmFrameAndLocalBounds(drones, embodiedDrone, out minL, out maxL, out centroidW))
-        {
-            // Place & orient the swarm frame correctly
-            _swarmFrame.SetPositionAndRotation(
-                centroidW,
-                Quaternion.LookRotation(embodiedDrone.forward, embodiedDrone.up)
-            );
+        // Vector3 minL, maxL, centroidW;
+        // if (BuildSwarmFrameAndLocalBounds(drones, embodiedDrone, out minL, out maxL, out centroidW))
+        // {
+        //     // Place & orient the swarm frame correctly
+        //     _swarmFrame.SetPositionAndRotation(
+        //         centroidW,
+        //         Quaternion.LookRotation(embodiedDrone.forward, embodiedDrone.up)
+        //     );
 
-            // minL / maxL are now in the swarm coordinate (centered at the frame)
-            // e.g. minL.x is your local minX, etc.
+        //     // minL / maxL are now in the swarm coordinate (centered at the frame)
+        //     // e.g. minL.x is your local minX, etc.
+        // }
+        
+        // 1) Compute true centroid
+        Vector3 centroid = GetSwarmCentroidMean(drones, mainGroupOnly: true);
+
+        // 2) Place & orient the swarm frame
+        _swarmFrame.SetPositionAndRotation(
+            centroid,
+            Quaternion.LookRotation(embodiedDrone.forward, embodiedDrone.up)
+        );
+
+        // --- (Optional) visualize disconnected drones in the swarm frame ---
+        if (drawDisconnectedInSwarmFrame)
+        {
+            var list = GetDisconnectedDronesLocal();
+            foreach (var (go, local) in list)
+            {
+                Vector3 world = _swarmFrame.TransformPoint(local);
+                Debug.DrawLine(_swarmFrame.position, world, disconnectedColor, 0f, false);
+                // If you prefer a dot:
+                // Debug.DrawRay(world, Vector3.up * 0.15f, disconnectedColor, 0f, false);
+            }
         }
 
         // ② measure current half-sizes
@@ -524,7 +638,8 @@ public class HapticsTest : MonoBehaviour
         // --- measure normalized half-width and gate stability ---
         float dt = Time.deltaTime; // we’ll reuse dt later as well
         float halfW01 = Mathf.Clamp01(halfW / refWorldHalfW);     // normalize width to [0,1]
-        // Debug.Log($"halfW01: {halfW01:F3}");
+        Debug.Log($"halfW01: {halfW01:F3}");
+        Debug.Log($"halfW: {halfW:F3}");
         float sizeDiff01 = (_lastHalfW01 < 0f) ? 1f : Mathf.Abs(halfW01 - _lastHalfW01);
 
         // hysteresis on size: must stay “small change” for a while
@@ -571,18 +686,27 @@ public class HapticsTest : MonoBehaviour
         System.Array.Clear(targetDuty, 0, targetDuty.Length);
         System.Array.Clear(dutyByTile, 0, dutyByTile.Length);
 
+        // gather X positions in swarm frame for distribution curve
+        _lastLocalXs.Clear();
+        foreach (Transform d in connectedDrones)
+        {
+            Vector3 local = _swarmFrame.InverseTransformPoint(d.position);
+            _lastLocalXs.Add(local.x);
+        }
+        BuildHorizontalDistributionCurve();
+
         // 2) 每架无人机 -> 对周围4格做双线性分配
         foreach (Transform d in connectedDrones)
         {
             Vector3 local = _swarmFrame.InverseTransformPoint(d.position);
 
             // ---- 连续坐标（0..W-1 / 0..H-1），保证在边界内 ----
-            // float u = Mathf.Clamp01((local.x*2f) / (4.5f)) * COLS_MINUS1;
-            // float v = Mathf.Clamp01((local.z + halfH) / (4.5f)) * ROWS_MINUS1;
+            // float u = Mathf.Clamp01((local.x*2f) / (max_half_width)) * COLS_MINUS1;
+            // float v = Mathf.Clamp01((local.z + halfH) / (max_half_width)) * ROWS_MINUS1;
 
-            // float t = local.x / 4.5f * 2f;      // → [0..1]
-            float u = Mathf.Clamp(local.x / 4.5f * 1.5f + center_W, 0, Mathf.RoundToInt(initial_actuator_W));
-            float v = Mathf.Clamp(-local.z / 4.5f * 1.5f + center_H, 0, Mathf.RoundToInt(initial_actuator_H));
+            // float t = local.x / max_half_width * 2f;      // → [0..1]
+            float u = Mathf.Clamp(local.x / max_half_width * 1.5f + center_W, 0, Mathf.RoundToInt(initial_actuator_W));
+            float v = Mathf.Clamp(-local.z / max_half_width * 1.5f + center_H, 0, Mathf.RoundToInt(initial_actuator_H));
 
             // find the nearest grid cell locations
             int c0 = Mathf.FloorToInt(u);
@@ -644,45 +768,99 @@ public class HapticsTest : MonoBehaviour
         // const float DISC_ON  = 0.20f;  // 0..1，超过即触发
         // const float DISC_OFF = 0.15f;  // 低于此阈值才关闭
         float score01 = Mathf.Clamp01(swarmModel.swarmConnectionScore);
-        // Debug.Log($"Connection score: {score01:F3}");
-        // Debug.Log($"                   Average distance: {swarmModel.avgDist* DroneFake.desiredSeparation:F3} m");
-        // Debug.Log($"                              Average distance / spreadness: {swarmModel.avgDist:F3} m");
+        Debug.Log($"Connection score: {score01:F3}");
+        Debug.Log($"                   Average distance: {swarmModel.avgDist* DroneFake.desiredSeparation:F3} m");
+        Debug.Log($"                              Average distance / spreadness: {swarmModel.avgDist:F3} m");
 
         // 用你已有的平滑（可选）
         float discA = 1f - Mathf.Exp(-dt / disconnectTau);
         _discScoreSmooth = Mathf.Lerp(_discScoreSmooth, score01, discA);
 
-        // 带迟滞的开关
-        // static bool disconnActive; // 放到类字段更好（避免每帧重新置 false）
-        if (!disconnActive && _discScoreSmooth >= DISC_ON && swarmModel.avgDist < 2.5f) disconnActive = true;
-        if (disconnActive && (swarmModel.avgDist >= 2.5f || _discScoreSmooth <= DISC_OFF)) disconnActive = false;
+        // 计算满足距离阈值的断连无人机（逐个判断，不再用全局 avgDist）
+        var disconnectedWithDistances = GetDisconnectedDronesLocalWithDistance();
+        var filteredDisconnected = disconnectedWithDistances
+            .Where(d => d.avgDistance >= disconnectMinDistance && d.avgDistance <= disconnectMaxDistance)
+            .ToList();
+        disconnActive = filteredDisconnected.Count > 0;
 
         // 2) if size changed obviously
         bool sizeActive = !muteTargetRow;
         // 注意：这里不再“静音某行”，而是：只有在 sizeActive==true 时才渲染 size bar
 
         // render according to priority
-        const int TARGET_ROW = 0;
+        const int TARGET_ROW = 2;
         float Compress = 1f / ROWS; // 列合并用平均，避免饱和
 
         if (disconnActive)
         {
             // ① Disconnection（最高优先级）：只渲染中间两列的 motion
-            RenderDisconnectMotion(_discScoreSmooth, dt);  // 内部用 Max 叠加已被清零的缓冲即可
+            // RenderDisconnectMotion(_discScoreSmooth, dt);  // 内部用 Max 叠加已被清零的缓冲即可
+            RenderDisconnectedDirectionsToTiles(filteredDisconnected, 10);  // choose the intensity you like (e.g., 8–12)
             Debug.Log("[MODE] Disconnection");
         }
         else if (sizeActive)
         {
-            // ② Size rendering: divide by 4 rows → write into TARGET_ROW
-            for (int col = 0; col < COLS; col++)
+            bool rendered = false;
+
+            // ② Curve-based horizontal distribution → 4 actuators
+            if (_distributionCurveLocal.Count >= 2)
             {
-                int collapsed = Mathf.Min(DUTY_MAX, Mathf.RoundToInt(colSum[col] * Compress));
-                // Debug.Log($"[SizeBar] col={col} value={colSum[col] * Compress:F3}");
-                int addr = matrix[TARGET_ROW, col];
-                duty[addr] = collapsed;
-                dutyByTile[TARGET_ROW * COLS + col] = collapsed;
+                float minX = _distributionCurveLocal[0].x;
+                float maxX = _distributionCurveLocal[_distributionCurveLocal.Count - 1].x;
+                float span = Mathf.Max(maxX - minX, 0.001f);
+                float binWidth = span / COLS;
+                float dx = span / (_distributionCurveLocal.Count - 1);
+
+                float[] binArea = new float[COLS];
+                for (int i = 0; i < _distributionCurveLocal.Count; i++)
+                {
+                    var p = _distributionCurveLocal[i];
+                    int bin = Mathf.Clamp((int)((p.x - minX) / binWidth), 0, COLS - 1);
+                    binArea[bin] += p.y * dx; // approximate integral over x
+                }
+
+                float totalArea = binArea.Sum();
+                if (totalArea > 1e-6f)
+                {
+                    float invTotal = 1f / totalArea;
+                    for (int col = 0; col < COLS; col++)
+                    {
+                        float norm = Mathf.Clamp01(binArea[col] * invTotal * distributionCurveDutyGain);
+                        int dutyVal = Mathf.Min(DUTY_MAX, Mathf.RoundToInt(norm * DUTY_MAX));
+                        int addr = matrix[TARGET_ROW, col];
+                        duty[addr] = dutyVal;
+                        dutyByTile[TARGET_ROW * COLS + col] = dutyVal;
+                    }
+                    if (logSizeRowDuty)
+                    {
+                        string duties = string.Join(", ",
+                            Enumerable.Range(0, COLS)
+                                .Select(col => duty[matrix[TARGET_ROW, col]]));
+                        Debug.Log($"[CurveSizeDuty] row={TARGET_ROW} duties=[{duties}] totalArea={totalArea:F3}");
+                    }
+                    rendered = true;
+                }
             }
-            // Debug.Log("[MODE] Size bar");
+
+            // Fallback to previous column-sum if curve not ready
+            if (!rendered)
+            {
+                for (int col = 0; col < COLS; col++)
+                {
+                    int collapsed = Mathf.Min(DUTY_MAX, Mathf.RoundToInt(colSum[col] * Compress));
+                    Debug.Log($"[SizeBar] col={col} value={colSum[col] * Compress:F3}");
+                    int addr = matrix[TARGET_ROW, col];
+                    duty[addr] = collapsed;
+                    dutyByTile[TARGET_ROW * COLS + col] = collapsed;
+                }
+                if (logSizeRowDuty)
+                {
+                    string duties = string.Join(", ",
+                        Enumerable.Range(0, COLS)
+                            .Select(col => duty[matrix[TARGET_ROW, col]]));
+                    Debug.Log($"[SizeBarDuty] row={TARGET_ROW} duties=[{duties}]");
+                }
+            }
         }
         // else
         // {
@@ -707,7 +885,7 @@ public class HapticsTest : MonoBehaviour
             // ③ Embodied blink (but blended to 2 nearest actuators in row=1)
             const float blinkRate = 3f; // Hz
             bool blinkOn = (Mathf.FloorToInt(Time.time * blinkRate) & 1) == 0;
-            int baseDuty = blinkOn ? 7 : 0;
+            int baseDuty = blinkOn ? 10 : 0;
 
             Vector3 localE = _swarmFrame.InverseTransformPoint(embodiedDrone.position);
 
@@ -720,7 +898,7 @@ public class HapticsTest : MonoBehaviour
             float t = u - c0;          // 0..1, how far to the right
 
             // 3) fixed row = 1
-            int row = 1;
+            int row = 0;
 
             // 4) weights (left gets 1-t, right gets t)
             float w0 = 1f - t;
@@ -842,6 +1020,147 @@ public class HapticsTest : MonoBehaviour
                 duty[addrR]      = val;
                 dutyByTile[tileR]= val;
             }
+        }
+    }
+
+    // World → Swarm-Local positions for all disconnected drones
+    List<(GameObject go, Vector3 local)> GetDisconnectedDronesLocal()
+    {
+        var res = new List<(GameObject, Vector3)>();
+        if (_swarmFrame == null || swarmModel.swarmHolder == null || swarmModel.network == null)
+            return res;
+
+        var W2L = _swarmFrame.worldToLocalMatrix;
+
+        foreach (Transform t in swarmModel.swarmHolder.transform)
+        {
+            var dc = t.GetComponent<DroneController>();
+            var df = (dc != null) ? dc.droneFake : null;
+            if (df == null) continue;
+
+            // “Disconnected” = not in the main (largest/leader) component
+            if (!swarmModel.network.IsInMainNetwork(df))
+            {
+                // Use df.position (simulation state) or t.position (Transform) – both fine
+                Vector3 local = W2L.MultiplyPoint(df.position);
+                res.Add((t.gameObject, local));
+            }
+        }
+        return res;
+    }
+
+    // World → Swarm-Local positions for disconnected drones, plus avg distance to main group
+    List<(GameObject go, Vector3 local, float avgDistance)> GetDisconnectedDronesLocalWithDistance()
+    {
+        var res = new List<(GameObject, Vector3, float)>();
+        if (_swarmFrame == null || swarmModel.swarmHolder == null || swarmModel.network == null)
+            return res;
+
+        var W2L = _swarmFrame.worldToLocalMatrix;
+
+        // Collect main-group drones once
+        var mainGroup = new List<DroneFake>();
+        foreach (Transform t in swarmModel.swarmHolder.transform)
+        {
+            var dc = t.GetComponent<DroneController>();
+            var df = (dc != null) ? dc.droneFake : null;
+            if (df != null && swarmModel.network.IsInMainNetwork(df))
+            {
+                mainGroup.Add(df);
+            }
+        }
+        if (mainGroup.Count == 0) return res;
+
+        foreach (Transform t in swarmModel.swarmHolder.transform)
+        {
+            var dc = t.GetComponent<DroneController>();
+            var df = (dc != null) ? dc.droneFake : null;
+            if (df == null) continue;
+
+            // “Disconnected” = not in the main (largest/leader) component
+            if (!swarmModel.network.IsInMainNetwork(df))
+            {
+                float sum = 0f;
+                foreach (var main in mainGroup)
+                {
+                    sum += Vector3.Distance(df.position, main.position) - DroneFake.desiredSeparation;
+                }
+                float avg = sum / mainGroup.Count;
+                Vector3 local = W2L.MultiplyPoint(df.position);
+                res.Add((t.gameObject, local, avg));
+            }
+        }
+        return res;
+    }
+
+    void BuildHorizontalDistributionCurve()
+    {
+        _distributionCurveLocal.Clear();
+        _distMeanX = 0f;
+        _distStdX = 0f;
+        _distMaxY = 0f;
+
+        int n = _lastLocalXs.Count;
+        if (n == 0) return;
+
+        // mean
+        for (int i = 0; i < n; i++) _distMeanX += _lastLocalXs[i];
+        _distMeanX /= n;
+
+        // std (population)
+        float var = 0f;
+        for (int i = 0; i < n; i++)
+        {
+            float d = _lastLocalXs[i] - _distMeanX;
+            var += d * d;
+        }
+        _distStdX = Mathf.Sqrt(var / n);
+        if (_distStdX < 0.05f) _distStdX = 0.05f; // avoid degenerate zero
+
+        // sample Gaussian curve in swarm frame
+        float range = Mathf.Max(distributionFixedHalfRange, 0.1f);
+        int samples = 40;
+        const float SQRT_TWO_PI = 2.50662827463f; // sqrt(2*pi)
+        float amplitude = (distributionDensityScale * n) / (Mathf.Max(_distStdX, 0.05f) * SQRT_TWO_PI); // keeps area constant
+        for (int i = 0; i < samples; i++)
+        {
+            float t = i / (samples - 1f);
+            float x = Mathf.Lerp(-range, range, t);
+            float gaussian = Mathf.Exp(-0.5f * Mathf.Pow((x - _distMeanX) / _distStdX, 2f));
+            float y = amplitude * gaussian; // area stays constant: amplitude * std * sqrt(2pi)
+            if (distributionMaxYClamp > 0f) y = Mathf.Min(y, distributionMaxYClamp);
+            float yScaled = y * distributionCurveHeight;
+            _distMaxY = Mathf.Max(_distMaxY, yScaled);
+            _distributionCurveLocal.Add(new Vector3(x, yScaled, 0f));
+        }
+    }
+
+    // Light one tile in the 4x4 matrix in the direction of each disconnected drone
+    void RenderDisconnectedDirectionsToTiles(List<(GameObject go, Vector3 local, float avgDistance)> disc, int dutyVal)
+    {
+        if (disc == null || disc.Count == 0) return;
+
+        foreach (var (_, local, _) in disc)
+        {
+            // Only direction from center (ignore distance)
+            Vector2 dir = new Vector2(local.x, local.z);
+            if (dir.sqrMagnitude < 1e-6f) continue;
+            dir.Normalize();
+
+            // Convert direction to continuous grid coords centered at panel center
+            // Keep the sign conventions consistent with your Col/Row mapping
+            float u = Mathf.Clamp( dir.x * center_W + center_W, 0f, COLS - 1); // // columns (X)
+            float v = Mathf.Clamp(-dir.y * center_H + center_H, 0f, ROWS - 1); // rows (Z)
+
+
+            int col = Mathf.RoundToInt(u);
+            int row = Mathf.RoundToInt(v);
+
+            int addr = matrix[row, col];
+
+            // Overlay: take max with existing buffer this frame
+            duty[addr] = Mathf.Max(duty[addr], dutyVal);
+            dutyByTile[row * COLS + col] = Mathf.Max(dutyByTile[row * COLS + col], dutyVal);
         }
     }
 

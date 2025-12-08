@@ -12,7 +12,7 @@ public class ObstacleAudioManager : MonoBehaviour
 {
     [Header("Scheduling")]
     [Tooltip("Update rate for audio parameter refresh, in Hz.")]
-    [Range(5f, 90f)] public float updateRate = 30f;
+    [Range(1f, 100f)] public float updateRate = 30f;
 
     [Tooltip("Max obstacles updated per frame. 0 = unlimited.")]
     public int perFrameBudget = 0;
@@ -27,7 +27,7 @@ public class ObstacleAudioManager : MonoBehaviour
 
     [Header("Mode Switching")]
     [Tooltip("Below this distance, switch from Beep to Continuous (car-like solid tone).")]
-    [Min(0f)] public float continuousSwitchDistance = 1.5f;
+    [Min(0f)] public float continuousSwitchDistance = 2.3f;
 
     [Tooltip("Hysteresis band to avoid rapid toggling (meters). " +
              "Profile switches to Continuous at (threshold - hysteresis), " +
@@ -67,10 +67,14 @@ public class ObstacleAudioManager : MonoBehaviour
 
     [Header("Safety Envelope C")]
     [Tooltip("Scale")]
-    public float safetyA = 0.0f;
+    public float safety_radius_scale = 1.0f;
 
     [Tooltip("Offset")]
-    public float safetyB = 10f;
+    public float safety_radius_offset = 2f;
+
+    [Header("Width Safety")]
+    public float envelopeWidthSafety = 2f;   // in meters
+
 
 
 
@@ -94,6 +98,8 @@ public class ObstacleAudioManager : MonoBehaviour
     private const string PROFILE_CONT = "ContinuousAudioProfile";
 
     private Transform closestDrone;
+    private List<Vector3> allPointsP = new List<Vector3>();
+
 
     private class Runtime
     {
@@ -215,6 +221,8 @@ public class ObstacleAudioManager : MonoBehaviour
 
         UpdateSwarmEnvelope(_cachedDrones, dt);
 
+        allPointsP.Clear();
+
         int processed = 0;
         for (int i = 0; i < _obstacles.Count; i++)
         {
@@ -335,7 +343,7 @@ public class ObstacleAudioManager : MonoBehaviour
             if (side < minSide) minSide = side;
             if (side > maxSide) maxSide = side;
         }
-        _envelopeRadius = (Mathf.Max(0.1f, maxSide - minSide)) * 0.5f;
+        _envelopeRadius = (Mathf.Max(0.1f, maxSide - minSide)) * 0.5f + envelopeWidthSafety;
 
         // Length: baseLength scaled by speed, with minimal length so it never collapses
         float rawLength = baseEnvelopeLength * speed;
@@ -381,10 +389,13 @@ public class ObstacleAudioManager : MonoBehaviour
         float forwardCoord = Vector3.Dot(local, _swarmForwardXZ);
         float sideCoord = Vector3.Dot(local, _swarmRightXZ);
 
-        float halfLength = _envelopeLength * 0.5f;
+        float fullLength = _envelopeLength;   // same length as before
 
-        // Rectangle centered on the swarm, oriented with forward, symmetric in front/back
-        return Mathf.Abs(sideCoord) <= _envelopeRadius && Mathf.Abs(forwardCoord) <= halfLength;
+        bool inSide = Mathf.Abs(sideCoord) <= _envelopeRadius;
+        bool inFront = forwardCoord >= 0f && forwardCoord <= fullLength;
+
+        return inSide && inFront;
+
     }
 
     // Check if a world-space point lies inside the look-direction envelope (Rectangle B)
@@ -404,9 +415,13 @@ public class ObstacleAudioManager : MonoBehaviour
         float forwardCoord = Vector3.Dot(local, _lookForwardXZ);
         float sideCoord = Vector3.Dot(local, _lookRightXZ);
 
-        float halfLength = lookEnvelopeLength * 0.5f;
+        float fullLength = lookEnvelopeLength;
 
-        return Mathf.Abs(sideCoord) <= _envelopeRadius && Mathf.Abs(forwardCoord) <= halfLength;
+        bool inSide = Mathf.Abs(sideCoord) <= _envelopeRadius;
+        bool inFront = forwardCoord >= 0f && forwardCoord <= fullLength;
+
+        return inSide && inFront;
+
     }
 
     private bool IsInsideSafetyEnvelope(Vector3 point)
@@ -415,7 +430,7 @@ public class ObstacleAudioManager : MonoBehaviour
             return false;
 
         // radius = a*w + b
-        float radius = safetyA * _envelopeRadius + safetyB;
+        float radius = safety_radius_scale * _envelopeRadius + safety_radius_offset;
 
         Vector3 C = _envelopeCenterXZ;
         C.y = 0f;
@@ -461,24 +476,46 @@ public class ObstacleAudioManager : MonoBehaviour
         if (drones == null || drones.Count == 0)
             return Vector3.Distance(listenerTransform.position, obstacleTf.position);
 
-        // Swarm centroid (from the envelope)
-        Vector3 C = _hasEnvelope ? _envelopeCenterXZ : HapticsTest.GetSwarmCentroid(drones);
-        _lastPointC = C;
-        _hasPointC = true;
-
-        // Closest point P on obstacle collider to C
+        // Get collider
         var col = obstacleTf.GetComponent<Collider>() ?? obstacleTf.GetComponentInParent<Collider>();
-        Vector3 P = (col != null) ? col.ClosestPoint(C) : obstacleTf.position;
-        _lastPointP = P;
-        _hasPointP = true;
+        if (col == null)
+            return float.MaxValue;
 
-        bool insideA = IsPointInsideEnvelope(P);      // velocity rectangle
-        bool insideB = IsInsideLookEnvelope(P);       // look-direction rectangle
-        bool insideC = IsInsideSafetyEnvelope(P);     // NEW safety circle
+        // === 1. Evaluate ALL drones: compute each Pᵢ and distance dᵢ ===
+        Transform bestDrone = null;
+        Vector3 bestPoint = Vector3.zero;
+        float bestDistSqr = float.PositiveInfinity;
+
+        foreach (var d in drones)
+        {
+            // Closest point from THIS drone to the obstacle surface
+            Vector3 Pi = col.ClosestPoint(d.position);
+
+            // Compute squared distance
+            float sq = (d.position - Pi).sqrMagnitude;
+            if (sq < bestDistSqr)
+            {
+                bestDistSqr = sq;
+                bestDrone = d;
+                bestPoint = Pi;
+            }
+        }
+        // Record projection point for gizmos (optional)
+        allPointsP.Add(bestPoint);
+
+        // No drone found (should not happen)
+        if (bestDrone == null)
+            return float.MaxValue;
+
+        float bestDistance = Mathf.Sqrt(bestDistSqr);
+
+        // === 2. Envelope gating (A/B/C) ONLY on XZ using bestPoint ===
+        bool insideA = IsPointInsideEnvelope(bestPoint);
+        bool insideB = IsInsideLookEnvelope(bestPoint);
+        bool insideC = IsInsideSafetyEnvelope(bestPoint);
 
         if (!(insideA || insideB || insideC))
         {
-            // Outside ALL envelopes → silent obstacle
             if (_rt.TryGetValue(o, out var rOutside))
             {
                 rOutside.closestDrone = null;
@@ -494,56 +531,23 @@ public class ObstacleAudioManager : MonoBehaviour
             return cap + 1f;
         }
 
-
-
-        // Nearest drone to P (Euclidean)
-        Transform bestDrone = null;
-        float bestSqr = float.PositiveInfinity;
-        foreach (var d in drones)
-        {
-            float sq = (d.position - P).sqrMagnitude;
-            if (sq < bestSqr)
-            {
-                bestSqr = sq;
-                bestDrone = d;
-            }
-        }
-
-        float distance;
-        if (bestDrone != null)
-        {
-            distance = Mathf.Sqrt(bestSqr);
-        }
-        else
-        {
-            // Fallback: no valid drone found, treat as out of range
-            float cap = 10f;
-            if (_rt.TryGetValue(o, out var rProf2) && rProf2.profile != null)
-                cap = rProf2.profile.maxAudibleDistance;
-            distance = cap + 1f;
-        }
-
-        // Cache per obstacle
+        // === 3. Cache final result for audio ===
         if (_rt.TryGetValue(o, out var rForThis))
         {
             rForThis.closestDrone = bestDrone;
-            rForThis.closestDistance = distance;
+            rForThis.closestDistance = bestDistance;
 
-            if (bestDrone != null)
-            {
-                Vector3 dir = P - bestDrone.position; // drone -> closest point on obstacle
-                dir.y = 0f;
-                rForThis.dirDroneToP_XZ = (dir.sqrMagnitude > 1e-6f) ? dir.normalized : Vector3.zero;
-            }
-            else
-            {
-                rForThis.dirDroneToP_XZ = Vector3.zero;
-            }
+            // Direction drone -> obstacle (XZ)
+            Vector3 dir = bestPoint - bestDrone.position;
+            dir.y = 0f;
+            rForThis.dirDroneToP_XZ = (dir.sqrMagnitude > 1e-6f) ? dir.normalized : Vector3.zero;
+
             _rt[o] = rForThis;
         }
 
-        return distance;
+        return bestDistance;
     }
+
 
     public void Register(ObstacleAudio obstacle)
     {
@@ -713,103 +717,112 @@ public class ObstacleAudioManager : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    private void OnDrawGizmos()
+private void OnDrawGizmos()
+{
+    // ===== Forward-only Velocity Envelope (Yellow) =====
+    if (_hasEnvelope)
     {
-        // Draw swarm envelope rectangle
-        if (_hasEnvelope)
-        {
-            Vector3 center = _envelopeCenterXZ;
-            float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;
-            center.y = y;
+        Vector3 center = _envelopeCenterXZ;
+        float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;
+        center.y = y;
 
-            float halfL = _envelopeLength * 0.5f;
-            float halfW = _envelopeRadius;
+        float fullL = _envelopeLength;      // full forward length
+        float halfW = _envelopeRadius;
 
-            Vector3 f = _swarmForwardXZ.normalized * halfL;
-            Vector3 r = _swarmRightXZ.normalized * halfW;
+        Vector3 f = _swarmForwardXZ.normalized * fullL;
+        Vector3 r = _swarmRightXZ.normalized * halfW;
 
-            Vector3 p0 = center - f - r;
-            Vector3 p1 = center - f + r;
-            Vector3 p2 = center + f + r;
-            Vector3 p3 = center + f - r;
+        // Back edge at the centroid
+        Vector3 p0 = center - r;
+        Vector3 p1 = center + r;
 
-            Handles.color = new Color(1f, 1f, 0f, 0.8f); // thick YELLOW
-            Handles.DrawAAPolyLine(
-                6f,  // thickness (pixels)
-                p0, p1, p2, p3, p0
-            );
-        }
+        // Front edge fullL forward
+        Vector3 front = center + f;
+        Vector3 p2 = front + r;
+        Vector3 p3 = front - r;
 
-        // ===== Draw Look Envelope (Blue) =====
-        if (_hasEnvelope)
-        {
-            Vector3 center = _envelopeCenterXZ;
-            float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;
-            center.y = y;
-
-            float halfL = lookEnvelopeLength * 0.5f;
-            float halfW = _envelopeRadius;
-
-            Vector3 f = _lookForwardXZ.normalized * halfL;
-            Vector3 r = _lookRightXZ.normalized * halfW;
-
-            Vector3 p0b = center - f - r;
-            Vector3 p1b = center - f + r;
-            Vector3 p2b = center + f + r;
-            Vector3 p3b = center + f - r;
-
-            Handles.color = new Color(0f, 0.4f, 1f, 0.8f);
-            Handles.DrawAAPolyLine(
-                6f,  // thickness
-                p0b, p1b, p2b, p3b, p0b
-            );
-        }
-
-        // ===== Safety Envelope (Circle C) =====
-        if (_hasEnvelope)
-        {
-            float radius = safetyA * _envelopeRadius + safetyB;
-
-            Vector3 center = _envelopeCenterXZ;
-            float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;
-            center.y = y;
-
-            Handles.color = new Color(1f, 0.2f, 0.2f, 0.9f);
-
-            const int segments = 64;
-            Vector3[] pts = new Vector3[segments + 1];
-
-            for (int i = 0; i <= segments; i++)
-            {
-                float t = (float)i / segments;
-                float ang = t * Mathf.PI * 2f;
-
-                float x = Mathf.Cos(ang) * radius;
-                float z = Mathf.Sin(ang) * radius;
-
-                pts[i] = center + new Vector3(x, 0f, z);
-            }
-
-            Handles.DrawAAPolyLine(6f, pts);
-        }
-
-        // Optional: draw centroid and last projection point
-        if (_hasPointC)
-        {
-            Gizmos.color = Color.cyan;
-            Vector3 c = _lastPointC;
-            c.y += 0.2f;
-            Gizmos.DrawSphere(c, 0.2f);
-        }
-
-        if (_hasPointP)
-        {
-            Gizmos.color = Color.red;
-            Vector3 p = _lastPointP;
-            p.y += 0.2f;
-            Gizmos.DrawSphere(p, 0.2f);
-        }
-
+        Handles.color = new Color(1f, 1f, 0f, 0.8f); // thick yellow
+        Handles.DrawAAPolyLine(
+            6f,
+            p0, p1, p2, p3, p0
+        );
     }
+
+    // ===== Forward-only Look Envelope (Blue) =====
+    if (_hasEnvelope)
+    {
+        Vector3 center = _envelopeCenterXZ;
+        float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;
+        center.y = y;
+
+        float fullL = lookEnvelopeLength;   // full forward length
+        float halfW = _envelopeRadius;
+
+        Vector3 f = _lookForwardXZ.normalized * fullL;
+        Vector3 r = _lookRightXZ.normalized * halfW;
+
+        // Back edge at centroid
+        Vector3 p0b = center - r;
+        Vector3 p1b = center + r;
+
+        // Front edge
+        Vector3 frontB = center + f;
+        Vector3 p2b = frontB + r;
+        Vector3 p3b = frontB - r;
+
+        Handles.color = new Color(0f, 0.4f, 1f, 0.8f); // blue
+        Handles.DrawAAPolyLine(
+            6f,
+            p0b, p1b, p2b, p3b, p0b
+        );
+    }
+
+    // ===== Safety Envelope (Circle C) =====
+    if (_hasEnvelope)
+    {
+        float radius = safety_radius_scale * _envelopeRadius + safety_radius_offset;
+
+        Vector3 center = _envelopeCenterXZ;
+        float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;
+        center.y = y;
+
+        Handles.color = new Color(1f, 0.2f, 0.2f, 0.9f);
+
+        const int segments = 64;
+        Vector3[] pts = new Vector3[segments + 1];
+
+        for (int i = 0; i <= segments; i++)
+        {
+            float t = (float)i / segments;
+            float ang = t * Mathf.PI * 2f;
+
+            float x = Mathf.Cos(ang) * radius;
+            float z = Mathf.Sin(ang) * radius;
+
+            pts[i] = center + new Vector3(x, 0f, z);
+        }
+
+        Handles.DrawAAPolyLine(6f, pts);
+    }
+
+    // ===== Centroid Debug Marker =====
+    if (_hasPointC)
+    {
+        Gizmos.color = Color.cyan;
+        Vector3 c = _lastPointC;
+        c.y += 0.2f;
+        Gizmos.DrawSphere(c, 0.2f);
+    }
+
+    // ===== Projection Debug Marker =====
+    Gizmos.color = Color.red;
+    foreach (var p in allPointsP)
+    {
+        Vector3 pos = p;
+        pos.y += 0.2f;
+        Gizmos.DrawSphere(pos, 0.2f);
+    }
+
+}
 #endif
 }

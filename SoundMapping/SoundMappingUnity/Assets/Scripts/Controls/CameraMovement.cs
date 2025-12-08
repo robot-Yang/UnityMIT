@@ -33,8 +33,7 @@ public class CameraMovement : MonoBehaviour
     private Vector3 animStartPos;
     private Vector3 animTargetPos;
 
-    [SerializeField] private AudioListener listener;   // assign in Inspector
-    private Transform listenerTransform;
+    
 
     void Start()
     {
@@ -46,21 +45,8 @@ public class CameraMovement : MonoBehaviour
         heightCamera = DEFAULT_HEIGHT_CAMERA;
         initialCamRotation = cam.transform.rotation;
 
-        var listener = FindObjectOfType<AudioListener>();
-        if (listener != null)
-            listenerTransform = listener.transform;
-
         // Begin in top-down view mode
         currentState = CameraState.TDView;
-    }
-
-    void Awake()
-    {
-        if (listener == null)
-            Debug.LogError("[CameraMovement] Listener reference not defined.");
-            listener = GetComponentInChildren<AudioListener>();
-
-        listenerTransform = listener.transform;
     }
 
     void Update()
@@ -146,11 +132,6 @@ public class CameraMovement : MonoBehaviour
             cam.transform.position = new Vector3(embodiedDrone.transform.position.x, heightCamera, embodiedDrone.transform.position.z);
         }
 
-        if (listenerTransform != null)
-        {
-            listenerTransform.rotation = embodiedDrone.transform.rotation;
-        }
-
         // Update minimap camera if enabled.
         camMinimap.GetComponent<Camera>().orthographicSize = swarmModel.desiredSeparation * 3;
     }
@@ -169,7 +150,7 @@ public class CameraMovement : MonoBehaviour
         animTimer += Time.deltaTime;
         float t = Mathf.Clamp01(animTimer / animationTime);
         cam.transform.position = Vector3.Lerp(animStartPos, animTargetPos, t);
-        cam.GetComponent<Camera>().orthographicSize = Mathf.Lerp(cam.GetComponent<Camera>().orthographicSize, 5, t);
+        cam.GetComponent<Camera>().orthographicSize = Mathf.Lerp(cam.GetComponent<Camera>().orthographicSize, 15, t);
 
         // When the animation completes, update the embodied drone’s forward direction and switch to DroneView.
         if (t >= 1f)
@@ -183,7 +164,7 @@ public class CameraMovement : MonoBehaviour
                 // activate the camera 
                 embodiedDrone.GetComponent<Camera>().enabled = true;
                // MigrationPointController.selectedDrone = embodiedDrone;
-                cam.enabled = false;
+                cam.enabled = true; //false;
             }else
             {
                 cam.enabled = true;
