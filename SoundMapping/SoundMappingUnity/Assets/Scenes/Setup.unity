@@ -1351,7 +1351,7 @@ GameObject:
   - component: {fileID: 667147175}
   - component: {fileID: 667147176}
   m_Layer: 0
-  m_Name: Listemer
+  m_Name: Listener
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1365,12 +1365,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 667147174}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 15}
+  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 0.4099999, y: 24, z: -5.7500005}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1746773647}
+  m_Father: {fileID: 1573697190}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!81 &667147176
 AudioListener:
@@ -3624,6 +3624,8 @@ GameObject:
   - component: {fileID: 1573697209}
   - component: {fileID: 1573697210}
   - component: {fileID: 1573697211}
+  - component: {fileID: 1573697212}
+  - component: {fileID: 1573697213}
   m_Layer: 0
   m_Name: Gamemanager
   m_TagString: GameManager
@@ -3647,6 +3649,7 @@ Transform:
   - {fileID: 823177245}
   - {fileID: 1317829137}
   - {fileID: 807694079}
+  - {fileID: 667147175}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1573697194
@@ -3787,18 +3790,30 @@ MonoBehaviour:
   frequencyInit: 1
   distanceDetection: 2
   embodiedDrone: {fileID: 0}
+  drawHorizontalDistributionCurve: 1
+  distributionCurveHeight: 0.5
+  distributionFixedHalfRange: 4.3
+  distributionDensityScale: 1
+  distributionMaxYClamp: 0
+  distributionViewYRange: 10
+  distributionCurveDutyGain: 1
   refWorldHalfW: 4.5
   SIZE_EPS01: 0.0015
   SIZE_STABLE_FOR: 1
+  embodiedHorizontalMaxMeters: 2
   disconnectTau: 0.25
   flowSpeedHz: 3.5
   baseDuty: 0
   peakDuty: 8
   overlayMode: 1
+  disconnectMinDistance: 2
+  disconnectMaxDistance: 8
   DISC_ON: 0.2
   DISC_OFF: 0.15
   drawDisconnectedInSwarmFrame: 1
   disconnectedColor: {r: 1, g: 0, b: 0, a: 1}
+  logSizeRowDuty: 1
+  distributionCurveColor: {r: 0, g: 1, b: 1, a: 1}
   sendEvery: 50
 --- !u!114 &1573697198
 MonoBehaviour:
@@ -4031,6 +4046,80 @@ MonoBehaviour:
   embodiedFlagFieldOrProperty: isEmbodied
   embodiedFlagAltProperty: IsEmbodied
   swarmRoot: {fileID: 1547257216}
+--- !u!114 &1573697212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1573697189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3aa8b06dd39de4dc498539f2732cd097, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  updateRate: 30
+  perFrameBudget: 0
+  largeSizeThreshold: 2
+  profiles:
+  - {fileID: 11400000, guid: 30c4afbbde4884682960011119f8eed7, type: 2}
+  - {fileID: 11400000, guid: 443079fb5934843579d58c8c0bf5e71a, type: 2}
+  continuousSwitchDistance: 2.3
+  switchThreshold: 0.2
+  listenerFollowSpeed: 20
+  useDirectionalAttenuation: 1
+  minDirectionalVolume: 0.1
+  maxDirectionalVolume: 1
+  facingExponent: 1
+  minHighlightDistance: 6
+  baseEnvelopeLength: 1
+  minEnvelopeLength: 30
+  lookEnvelopeLength: 30
+  velocityDirectionThreshold: 1
+  safety_radius_scale: 1
+  safety_radius_offset: 0.5
+  envelopeWidthSafety: 0.5
+--- !u!114 &1573697213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1573697189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa0e31f654db146ef9b250d918784baa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  swarmRootTag: Swarm
+  swarmRootName: Swarm
+  rescanChildrenEverySec: 1
+  droneComponentTypeName: DroneController
+  sampleHz: 30
+  waitForDronesToStart: 1
+  recordHz: 0
+  recordEveryNthSample: 1
+  dontDestroyOnLoad: 1
+  lazyDiscover: 1
+  outSubfolder: Trajectories
+  pidOverride: 
+  sceneLabelOverride: 
+  setupSceneName: Scene Selector
+  autosaveEverySec: 0
+  enableHotkeySave: 1
+  useNetworkForMainGroup: 1
+  includeAllUntilNetworkReady: 1
+  linkDistance: 3
+  minMainGroupSize: 3
+  useXZDistance: 1
+  runLabelName: Run
+  singleRunMode: 1
+  embodiedDroneOverride: {fileID: 0}
+  embodiedTag: Embodied
+  embodiedName: EmbodiedDrone
+  embodiedFlagFieldOrProperty: isEmbodied
+  embodiedFlagAltProperty: IsEmbodied
+  swarmRoot: {fileID: 0}
 --- !u!1 &1645719226
 GameObject:
   m_ObjectHideFlags: 0
@@ -4397,7 +4486,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 667147175}
   - {fileID: 1892515273}
   - {fileID: 424206313}
   - {fileID: 853513558}

@@ -686,4 +686,8 @@ public class MigrationPointController : MonoBehaviour
         Debug.DrawRay(body.position, alignementVector, Color.red, 0.01f);
     }
 
+    public Vector3 GetSwarmHeading()
+    {
+        return _swarmHeading;
+    }
 }

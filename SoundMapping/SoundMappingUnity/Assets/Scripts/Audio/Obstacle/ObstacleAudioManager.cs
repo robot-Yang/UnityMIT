@@ -37,18 +37,19 @@ public class ObstacleAudioManager : MonoBehaviour
     [Tooltip("Smooth follow speed of the listener toward the swarm center.")]
     public float listenerFollowSpeed = 20f;
 
-    [SerializeField] private MigrationPointController mpc;
+    [HideInInspector]
+    private MigrationPointController mpc;
 
     [Header("Directional Attenuation")]
     public bool useDirectionalAttenuation = true;
 
-    [Range(0f, 1f)] public float minDirectionalVolume = 0f;  // mul = 0 → this
-    [Range(0f, 1f)] public float maxDirectionalVolume = 1f;  // mul = 1 → this
+    [Range(0f, 1f)] public float minDirectionalVolume = 0.1f;
+    [Range(0f, 1f)] public float maxDirectionalVolume = 1f;
 
-    [Min(0.01f)] public float facingExponent = 1.0f;         // optional shaping of mul in [0,1]
+    [Min(0.01f)] public float facingExponent = 1.0f;
 
     [Header("Debug Highlight")]
-    [Min(0f)] public float minHighlightDistance = 6f;   // "minimalrange"
+    [Min(0f)] public float minHighlightDistance = 6f;
 
     [Header("Swarm Envelope")]
     [Tooltip("Base length used before scaling by swarm speed.")]
@@ -63,21 +64,18 @@ public class ObstacleAudioManager : MonoBehaviour
 
     [Header("Velocity Envelope Tuning")]
     [Tooltip("If speed is below this, keep the last velocity direction (freeze).")]
-    public float velocityDirectionThreshold = 1f;   // adjust as needed
+    public float velocityDirectionThreshold = 1f;
 
     [Header("Safety Envelope C")]
     [Tooltip("Scale")]
     public float safety_radius_scale = 1.0f;
 
     [Tooltip("Offset")]
-    public float safety_radius_offset = 2f;
+    public float safety_radius_offset = 0.5f;
 
     [Header("Width Safety")]
-    public float envelopeWidthSafety = 2f;   // in meters
-
-
-
-
+    public float envelopeWidthSafety = 0.5f;
+    
 
     // ===== Runtime containers =====
     private Transform listenerTransform;
@@ -106,10 +104,10 @@ public class ObstacleAudioManager : MonoBehaviour
         public ObstacleAudio obstacle;
         public ObstacleAudioProfileBase profile;
         public bool isLoopingStarted;
-        public float pulseTimer; // used only for Beep profiles
+        public float pulseTimer;
         public Transform closestDrone;
         public float closestDistance = -1;
-        public Vector3 dirDroneToP_XZ = Vector3.zero; // normalized, XZ
+        public Vector3 dirDroneToP_XZ = Vector3.zero;
     }
 
     private struct AudioCtx
@@ -178,9 +176,7 @@ public class ObstacleAudioManager : MonoBehaviour
         // Auto-register obstacles etc.
         foreach (var o in FindObjectsOfType<ObstacleAudio>())
         {
-            print("Found obstacle");
             Register(o);
-            print("End of register");
         }
 
         WarnIfMissing(PROFILE_BEEP);
@@ -210,7 +206,7 @@ public class ObstacleAudioManager : MonoBehaviour
         step_count += Time.deltaTime;
         var step = 1f / Mathf.Max(1f, updateRate);
         if (step_count < step) return;
-        float dt = step_count;   // accumulated dt for timer stability
+        float dt = step_count;
         step_count = 0f;
 
         // === Swarm envelope update (based on DroneController transforms) ===
@@ -248,7 +244,7 @@ public class ObstacleAudioManager : MonoBehaviour
 
                     r.profile = cont;
                     r.isLoopingStarted = false;
-                    print($"Switched to CONT (dist={dist:F2})");
+                    // print($"Switched to CONT (dist={dist:F2})");
                 }
             }
 
@@ -262,7 +258,7 @@ public class ObstacleAudioManager : MonoBehaviour
 
                     r.profile = beep;
                     r.isLoopingStarted = false;
-                    print($"Switched to BEEP (dist={dist:F2})");
+                    // print($"Switched to BEEP (dist={dist:F2})");
                 }
             }
 
@@ -275,14 +271,14 @@ public class ObstacleAudioManager : MonoBehaviour
 
             ApplyProfile(r, ctx);
 
-            if (r.closestDrone != null && r.closestDistance >= 0f)
-            {
-                var ctrl = r.closestDrone.GetComponent<DroneController>();
-                if (ctrl != null)
-                {
-                    ctrl.audioHighlight = (r.closestDistance <= minHighlightDistance);
-                }
-            }
+            // if (r.closestDrone != null && r.closestDistance >= 0f)
+            // {
+            //     var ctrl = r.closestDrone.GetComponent<DroneController>();
+            //     if (ctrl != null)
+            //     {
+            //         ctrl.audioHighlight = (r.closestDistance <= minHighlightDistance);
+            //     }
+            // }
         }
     }
 
@@ -599,7 +595,6 @@ public class ObstacleAudioManager : MonoBehaviour
     {
         if (TryGetProfile(PROFILE_BEEP, out var beep))
         {
-            print("Assigned beep");
             return beep;
         }
         print("Assign condition does not work");

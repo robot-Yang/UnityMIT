@@ -241,7 +241,7 @@ public class LevelConfiguration : MonoBehaviour
         
         showText = !SceneSelectorScript._haptics;
 
-        showText = true;
+        showText = false;
 
         if(SoftStart)
         {

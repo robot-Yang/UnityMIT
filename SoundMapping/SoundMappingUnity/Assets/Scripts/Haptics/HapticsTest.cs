@@ -575,7 +575,7 @@ public class HapticsTest : MonoBehaviour
 
         if (current == null)
         {
-            Debug.LogWarning("No embodied drone in scene – skipping swarm-frame update.");
+            // Debug.LogWarning("No embodied drone in scene – skipping swarm-frame update.");
             return;
         }
 
@@ -594,7 +594,7 @@ public class HapticsTest : MonoBehaviour
         // _swarmFrame.rotation = Quaternion.LookRotation(
         //                             embodiedDrone.forward,
         // embodiedDrone.up);
-        // Debug.Log($"swarmFrame.rotation = {_swarmFrame.rotation.eulerAngles:F2} " +
+        // // Debug.Log($"swarmFrame.rotation = {_swarmFrame.rotation.eulerAngles:F2} " +
         //           $"(centroid at {centroid:F2})");
 
         // Vector3 minL, maxL, centroidW;
@@ -638,8 +638,8 @@ public class HapticsTest : MonoBehaviour
         // --- measure normalized half-width and gate stability ---
         float dt = Time.deltaTime; // we’ll reuse dt later as well
         float halfW01 = Mathf.Clamp01(halfW / refWorldHalfW);     // normalize width to [0,1]
-        Debug.Log($"halfW01: {halfW01:F3}");
-        Debug.Log($"halfW: {halfW:F3}");
+        // Debug.Log($"halfW01: {halfW01:F3}");
+        // Debug.Log($"halfW: {halfW:F3}");
         float sizeDiff01 = (_lastHalfW01 < 0f) ? 1f : Mathf.Abs(halfW01 - _lastHalfW01);
 
         // hysteresis on size: must stay “small change” for a while
@@ -648,11 +648,11 @@ public class HapticsTest : MonoBehaviour
 
         bool muteTargetRow = (_sizeStableTimer >= SIZE_STABLE_FOR);
 
-        // Debug.Log($"_lastHalfW01: {_lastHalfW01:F3}, Current halfW01: {halfW01:F3}, Difference: {sizeDiff01:F3}");
+        // // Debug.Log($"_lastHalfW01: {_lastHalfW01:F3}, Current halfW01: {halfW01:F3}, Difference: {sizeDiff01:F3}");
 
         _lastHalfW01 = halfW01;
 
-        // Debug.Log($"halfW = {halfW:F2} m, halfH = {halfH:F2} m " +
+        // // Debug.Log($"halfW = {halfW:F2} m, halfH = {halfH:F2} m " +
         //           $"(norm {halfW01:F3}, Δ {sizeDiff01:F3}, " +
         //           $"{_sizeStableTimer:F2}s stable, " +
         //           $"{(muteTargetRow ? "MUTING" : "active")})");
@@ -660,12 +660,12 @@ public class HapticsTest : MonoBehaviour
         if (initial_actuator_W / initial_actuator_H > halfW / halfH)
         {
             actuator_W = initial_actuator_H * halfW / halfH; // make it 4:3 aspect ratio
-            // Debug.Log($"actuator_W = {actuator_W:F2} (halfW {halfW:F2}, halfH {halfH:F2})");
+            // // Debug.Log($"actuator_W = {actuator_W:F2} (halfW {halfW:F2}, halfH {halfH:F2})");
         }
         else
         {
             actuator_H = initial_actuator_W * halfH / halfW; // make it 4:3 aspect ratio
-            // Debug.Log($"actuator_H = {actuator_H:F2} (halfW {halfW:F2}, halfH {halfH:F2})");
+            // // Debug.Log($"actuator_H = {actuator_H:F2} (halfW {halfW:F2}, halfH {halfH:F2})");
         }
 
         // ③ zero-out per-vibrator accumulators
@@ -768,9 +768,9 @@ public class HapticsTest : MonoBehaviour
         // const float DISC_ON  = 0.20f;  // 0..1，超过即触发
         // const float DISC_OFF = 0.15f;  // 低于此阈值才关闭
         float score01 = Mathf.Clamp01(swarmModel.swarmConnectionScore);
-        Debug.Log($"Connection score: {score01:F3}");
-        Debug.Log($"                   Average distance: {swarmModel.avgDist* DroneFake.desiredSeparation:F3} m");
-        Debug.Log($"                              Average distance / spreadness: {swarmModel.avgDist:F3} m");
+        // Debug.Log($"Connection score: {score01:F3}");
+        // Debug.Log($"                   Average distance: {swarmModel.avgDist* DroneFake.desiredSeparation:F3} m");
+        // Debug.Log($"                              Average distance / spreadness: {swarmModel.avgDist:F3} m");
 
         // 用你已有的平滑（可选）
         float discA = 1f - Mathf.Exp(-dt / disconnectTau);
@@ -796,7 +796,7 @@ public class HapticsTest : MonoBehaviour
             // ① Disconnection（最高优先级）：只渲染中间两列的 motion
             // RenderDisconnectMotion(_discScoreSmooth, dt);  // 内部用 Max 叠加已被清零的缓冲即可
             RenderDisconnectedDirectionsToTiles(filteredDisconnected, 10);  // choose the intensity you like (e.g., 8–12)
-            Debug.Log("[MODE] Disconnection");
+            // Debug.Log("[MODE] Disconnection");
         }
         else if (sizeActive)
         {
@@ -836,7 +836,7 @@ public class HapticsTest : MonoBehaviour
                         string duties = string.Join(", ",
                             Enumerable.Range(0, COLS)
                                 .Select(col => duty[matrix[TARGET_ROW, col]]));
-                        Debug.Log($"[CurveSizeDuty] row={TARGET_ROW} duties=[{duties}] totalArea={totalArea:F3}");
+                        // Debug.Log($"[CurveSizeDuty] row={TARGET_ROW} duties=[{duties}] totalArea={totalArea:F3}");
                     }
                     rendered = true;
                 }
@@ -848,7 +848,7 @@ public class HapticsTest : MonoBehaviour
                 for (int col = 0; col < COLS; col++)
                 {
                     int collapsed = Mathf.Min(DUTY_MAX, Mathf.RoundToInt(colSum[col] * Compress));
-                    Debug.Log($"[SizeBar] col={col} value={colSum[col] * Compress:F3}");
+                    // Debug.Log($"[SizeBar] col={col} value={colSum[col] * Compress:F3}");
                     int addr = matrix[TARGET_ROW, col];
                     duty[addr] = collapsed;
                     dutyByTile[TARGET_ROW * COLS + col] = collapsed;
@@ -858,7 +858,7 @@ public class HapticsTest : MonoBehaviour
                     string duties = string.Join(", ",
                         Enumerable.Range(0, COLS)
                             .Select(col => duty[matrix[TARGET_ROW, col]]));
-                    Debug.Log($"[SizeBarDuty] row={TARGET_ROW} duties=[{duties}]");
+                    // Debug.Log($"[SizeBarDuty] row={TARGET_ROW} duties=[{duties}]");
                 }
             }
         }
@@ -878,7 +878,7 @@ public class HapticsTest : MonoBehaviour
         //     duty[addrE] = dutyVal;
         //     dutyByTile[rowE * COLS + colE] = dutyVal;
 
-        //     // Debug.Log("[MODE] Embodied blink");
+        //     // // Debug.Log("[MODE] Embodied blink");
         // }
         else
         {
@@ -1316,7 +1316,7 @@ public class HapticsTest : MonoBehaviour
         currentGamepad = Gamepad.current;
         if (currentGamepad == null)
         {
-            Debug.LogWarning("No gamepad connected.");
+            // Debug.LogWarning("No gamepad connected.");
         }
         else
         {
@@ -1364,12 +1364,12 @@ public class HapticsTest : MonoBehaviour
             switch (change)
             {
                 case InputDeviceChange.Added:
-                    Debug.Log("Controller Connected: " + gamepad.name);
+                    // Debug.Log("Controller Connected: " + gamepad.name);
                     currentGamepad = gamepad;
                     break;
 
                 case InputDeviceChange.Removed:
-                    Debug.Log("Controller Disconnected!");
+                    // Debug.Log("Controller Disconnected!");
                     
                     // Check if the removed device was the active gamepad
                     if (currentGamepad == gamepad)
@@ -1477,7 +1477,7 @@ public class HapticsTest : MonoBehaviour
         {
             actuator.UpdateValue(mag);
             dutyObstacle[actuator.Adresse] = _assignedDuty[actuator.Adresse]; // for visualization
-            // Debug.Log($"[CloseToWallrefresherFunction] addr={actuator.Adresse} assigned mag={mag:F3} duty={_assignedDuty[actuator.Adresse]}");
+            // // Debug.Log($"[CloseToWallrefresherFunction] addr={actuator.Adresse} assigned mag={mag:F3} duty={_assignedDuty[actuator.Adresse]}");
 
             return;
         }
@@ -1542,7 +1542,7 @@ public class HapticsTest : MonoBehaviour
             float mag = f.magnitude;
             // int vizDuty = (int)(mag / 8.0f);
             int vizDuty = (int)(mag * 10.0f);
-            // Debug.Log($"[PrepareObstacleAssignments] addr={best.Adresse} mag={mag:F3} forceAngle={forceAngle:F1} bestAbsDelta={bestAbsDelta:F1} vizDuty={vizDuty}");
+            // // Debug.Log($"[PrepareObstacleAssignments] addr={best.Adresse} mag={mag:F3} forceAngle={forceAngle:F1} bestAbsDelta={bestAbsDelta:F1} vizDuty={vizDuty}");
 
             // one actuator per force; if multiple forces target same actuator, keep the strongest
             if (_assignedMagnitude.TryGetValue(best.Adresse, out float existing))
@@ -1752,7 +1752,7 @@ public class HapticsTest : MonoBehaviour
             }
         }
 
-        Debug.Log($"[HapticsTest] Saved size rendering log ({logTime.Count} samples) → {logFilePath}");
+        // Debug.Log($"[HapticsTest] Saved size rendering log ({logTime.Count} samples) → {logFilePath}");
     }
     #endregion
 }
@@ -1917,7 +1917,7 @@ public class Actuators
             
             lastSendDuty = duty;
             lastSendFrequency = frequency;
-    //      Debug.Log("Send Command: " + Adresse + " Duty: " + duty + " Frequency: " + frequency);
+    //      // Debug.Log("Send Command: " + Adresse + " Duty: " + duty + " Frequency: " + frequency);
         }
 
         // VibraForge.SendCommand(Adresse, (int)duty == 0 ? 0:1, (int)duty, (int)frequency);
@@ -1956,10 +1956,10 @@ public class Actuators
 //             switch (change)
 //             {
 //                 case InputDeviceChange.Added:
-//                     Debug.Log("Gamepad Connected: " + device.name);
+//                     // Debug.Log("Gamepad Connected: " + device.name);
 //                     break;
 //                 case InputDeviceChange.Removed:
-//                     Debug.Log("Gamepad Disconnected!");
+//                     // Debug.Log("Gamepad Disconnected!");
 //                     break;
 //             }
 //         }

@@ -9,12 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e43ede7de23774f0cb66616521500dbe, type: 3}
+  m_Script: {fileID: 11500000, guid: e0bd70207a56c4a45ad75495bc96956b, type: 3}
   m_Name: BeepAudioProfile
   m_EditorClassIdentifier: 
   maxAudibleDistance: 15
   baseVolume: 0.8
-  basePitch: 0.7
+  basePitch: 0.755
   volumeByDistance:
     serializedVersion: 2
     m_Curve:
@@ -23,7 +23,7 @@ MonoBehaviour:
       value: 1
       inSlope: 0
       outSlope: 0
-      tangentMode: 34
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -32,7 +32,7 @@ MonoBehaviour:
       value: 1
       inSlope: 0
       outSlope: 0
-      tangentMode: 34
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -87,32 +87,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  pulseRateByDistance:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 4
-      inSlope: 0
-      outSlope: -0.058333334
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 60
-      value: 0.5
-      inSlope: -0.058333334
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  pulseRateClamp: {x: 0.1, y: 10}
-  beepClip: {fileID: 8300000, guid: 9f992628fc2024db5b2c93ab73cedafa, type: 3}
-  k: 41
-  eps: 0.5
+  pulseRateClamp: {x: 1, y: 6}
+  beepClip: {fileID: 8300000, guid: 6b6ead017fb2c4e62afbfd96caf040a8, type: 3}
+  k: 120
+  eps: 2
   offset: 1

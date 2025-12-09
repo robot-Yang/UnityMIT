@@ -1,0 +1,9 @@
+file: Setup_H_NO_20251209_195104_traj.json
+scene: Scene Selector
+total_time_s: 13.376
+avg_centroid_ref_dist_m: 2.427346
+survivors_final_g1_present_at_stop: 13
+total_drones: 15
+run_total_spent_time_s: 7.740000
+avg_interagent_main_overall_m: 4.423595
+avg_interagent_swarm_overall_m: 4.454061

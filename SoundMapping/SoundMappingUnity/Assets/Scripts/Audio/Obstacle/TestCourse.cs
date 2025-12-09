@@ -153,7 +153,6 @@ public class TestCourse : MonoBehaviour
         #endif
     }
 
-
     // -------------------------------
     // BUTTON FUNCTION 1 — Place Start / End
     // -------------------------------
@@ -172,6 +171,12 @@ public class TestCourse : MonoBehaviour
 
         // Basic scale for Y only
         groundTile.localScale = groundScale;
+
+        // Align ground tile X position with the GapController
+        Vector3 gp = groundTile.localPosition;
+        gp.x = gc_position.x;
+        gp.z = gc_position.z + (NB_GAPS-1) * 50f / 2f;
+        groundTile.localPosition = gp;
 
         Debug.Log("[TestCourse] Start & End fully positioned (pos+rot+scale).");
     }

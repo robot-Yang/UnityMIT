@@ -50,7 +50,8 @@ except ImportError:
 
 # Coverage subtraction: if True, coverage = area inside target − area outside target
 SUBTRACT_OUTSIDE_COVERAGE = True
-
+# SUBTRACT_OUTSIDE_COVERAGE = False
+# 
 
 def build_workspace_rect_and_poly(ref_poly, seg_index, width, trim_start=0.0, trim_end=0.0):
     """
@@ -134,6 +135,9 @@ OUT_DIR = Path("outputs"); OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_TRAJ_PNG = str(OUT_DIR / "one_script_trajectories.png")
 OUT_ERR_PNG  = str(OUT_DIR / "one_script_centroid_error.png")
 OUT_INTERDIST_BOTH_PNG = str(OUT_DIR / "average_interagent_distance_both.png")
+OUT_WIDTH_EMB_PNG = str(OUT_DIR / "swarm_width_embodied.png")
+OUT_WIDTH_SEG_PNG = str(OUT_DIR / "swarm_width_segment.png")
+OUT_SWEEP_METRICS = str(OUT_DIR / "swarm_sweep_coverage.txt")
 
 # -------- Select input JSON (edit as needed) --------
 candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Trajectories_1022/Setup_H_NO_20251031_232835_traj.json"), key=os.path.getmtime, reverse=True)
@@ -194,8 +198,77 @@ candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/So
 candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_221723_traj.json"), key=os.path.getmtime, reverse=True)
 # candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_222732_traj.json"), key=os.path.getmtime, reverse=True)
 # candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251124_223312_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251125_115724_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251125_120350_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251125_120634_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251125_121349_traj.json"), key=os.path.getmtime, reverse=True)
 
-# coverage test no haptic
+# shuhang11_26 without haptic
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_26/Setup_H_NO_20251126_193152_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_26/Setup_H_NO_20251126_193448_traj.json"), key=os.path.getmtime, reverse=True)
+# 
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_26/Setup_H_NO_20251126_201109_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_26/Setup_H_NO_20251126_201940_traj.json"), key=os.path.getmtime, reverse=True)
+
+# test without haptic
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251126_214518_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251126_224338_traj.json"), key=os.path.getmtime, reverse=True)
+
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251126_223243_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251126_223755_traj.json"), key=os.path.getmtime, reverse=True)
+
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251126_232153_traj.json"), key=os.path.getmtime, reverse=True)
+
+# new location
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_020502_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_021109_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_023808_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_024255_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_104912_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_115358_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_125553_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_125900_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_130936_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_131339_traj.json"), key=os.path.getmtime, reverse=True)
+
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_140022_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_140340_traj.json"), key=os.path.getmtime, reverse=True)
+
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_142649_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251127_144134_traj.json"), key=os.path.getmtime, reverse=True)
+
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251129_214458_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251129_214959_traj.json"), key=os.path.getmtime, reverse=True)
+
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251129_215356_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251129_215621_traj.json"), key=os.path.getmtime, reverse=True)
+
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251129_222126_traj.json"), key=os.path.getmtime, reverse=True)
+
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251129_223626_traj.json"), key=os.path.getmtime, reverse=True)
+
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251130_005711_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251130_010006_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251130_130008_traj.json"), key=os.path.getmtime, reverse=True)
+
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251130_131057_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251130_131736_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251130_171652_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251130_171808_traj.json"), key=os.path.getmtime, reverse=True)
+
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251130_174320_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/Shuhang11_29/Setup_H_NO_20251130_174439_traj.json"), key=os.path.getmtime, reverse=True)
+
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251130_181531_traj.json"), key=os.path.getmtime, reverse=True)
+
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251130_182238_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251130_182418_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251130_205232_traj.json"), key=os.path.getmtime, reverse=True)
+# candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251130_222757_traj.json"), key=os.path.getmtime, reverse=True)
+
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251130_224058_traj.json"), key=os.path.getmtime, reverse=True)
+candidates = sorted(glob.glob("/Users/chenyang/ToGoogleDrive/Gitchen/UnityMIT/SoundMapping/SoundMappingUnity/Assets/Data/default/test/Setup_H_NO_20251130_224159_traj.json"), key=os.path.getmtime, reverse=True)
+
 # candidates = sorted(glob.glob("..."), key=os.path.getmtime, reverse=True)
 
 if not candidates:
@@ -235,6 +308,10 @@ if "trajectories" in data:
         z_arr = [fr.get("z", 0.0) for fr in frames]
         g_arr = [fr.get("g", None) for fr in frames]
         e_arr = [fr.get("e", None) for fr in frames]
+        qx_arr = [fr.get("qx", None) for fr in frames]
+        qy_arr = [fr.get("qy", None) for fr in frames]
+        qz_arr = [fr.get("qz", None) for fr in frames]
+        qw_arr = [fr.get("qw", None) for fr in frames]
         drone_tracks[name] = {
             "id": traj.get("id", None),
             "embodied": bool(traj.get("embodied", False)),
@@ -243,6 +320,7 @@ if "trajectories" in data:
             "z": np.array(z_arr, dtype=float),
             "g": np.array(g_arr, dtype=float) if any(v is not None for v in g_arr) else None,
             "e": np.array(e_arr, dtype=float) if any(v is not None for v in e_arr) else None,
+            "q": np.column_stack([qx_arr, qy_arr, qz_arr, qw_arr]).astype(float) if any(v is not None for v in qx_arr) else None,
         }
 elif "swarmState" in data:
     top_time = data.get("time", None)
@@ -256,6 +334,10 @@ elif "swarmState" in data:
         z_arr = [p.get("z", 0.0) for p in pos]
         g_arr = [p.get("g", None) for p in pos]
         e_arr = [p.get("e", None) for p in pos]
+        qx_arr = [p.get("qx", None) for p in pos]
+        qy_arr = [p.get("qy", None) for p in pos]
+        qz_arr = [p.get("qz", None) for p in pos]
+        qw_arr = [p.get("qw", None) for p in pos]
         t_here = top_time if (top_time is not None and len(top_time) == len(x_arr)) else None
         drone_tracks[name] = {
             "id": entry.get("droneId", None),
@@ -265,6 +347,7 @@ elif "swarmState" in data:
             "z": np.array(z_arr, dtype=float),
             "g": np.array(g_arr, dtype=float) if any(v is not None for v in g_arr) else None,
             "e": np.array(e_arr, dtype=float) if any(v is not None for v in e_arr) else None,
+            "q": np.column_stack([qx_arr, qy_arr, qz_arr, qw_arr]).astype(float) if any(v is not None for v in qx_arr) else None,
         }
 else:
     raise ValueError("Unrecognized JSON layout (expected 'trajectories' or 'swarmState').")
@@ -617,6 +700,41 @@ def _normalize_exclude(exclude_cfg):
         return {int(exclude_cfg)}
     return {int(x) for x in exclude_cfg}
 
+def _quat_forward_right(q):
+    """Return forward (x,z) and right (x,z) unit vectors from quaternion [x,y,z,w]."""
+    if q is None or len(q) != 4:
+        return None, None
+    qx, qy, qz, qw = [float(v) for v in q]
+    # Forward = rotation of (0,0,1)
+    fx = 2.0 * (qx*qz + qw*qy)
+    fz = 1.0 - 2.0 * (qx*qx + qy*qy)
+    norm = math.hypot(fx, fz)
+    if norm <= 1e-6:
+        return None, None
+    fx /= norm; fz /= norm
+    rx, rz = fz, -fx  # right perpendicular in XZ plane
+    return (fx, fz), (rx, rz)
+
+def _build_embodied_pose_lookup(tracks, use_time, sample_hz):
+    """
+    Build lookup: rounded time -> (pos(x,z), quat(x,y,z,w))
+    using frames where e==1.
+    """
+    lookup = {}
+    for name, tr in tracks.items():
+        e = tr.get("e")
+        q = tr.get("q")
+        if e is None or q is None or len(e) == 0 or q.shape[0] == 0:
+            continue
+        ts = tr.get("t")
+        if ts is None:
+            n = len(e)
+            ts = np.arange(n, dtype=float) / float(sample_hz) if sample_hz else np.arange(n, dtype=float)
+        for xi, zi, ei, qi, ti in zip(tr["x"], tr["z"], e, q, ts):
+            if ei >= 0.5:
+                lookup[round(float(ti), 3)] = ((float(xi), float(zi)), qi)
+    return lookup
+
 if np.any(mask_cte):
     exclude_set = _normalize_exclude(EXCLUDE_SEG_INDICES)
     mask_exclude = _exclude_mask(centroid_segidx, exclude_set)
@@ -629,6 +747,94 @@ else:
     avg_err_m = float("nan")
     excluded = 0
     total_in_run = 0
+
+# -------- Swarm width (main group, relative to embodied orientation) --------
+emb_pose_lookup = _build_embodied_pose_lookup(drone_tracks, use_time, sample_hz)
+
+def _swarm_width_embodied(time_key, pts):
+    """Compute lateral width of pts wrt embodied look direction at time_key (XZ plane)."""
+    pose = emb_pose_lookup.get(round(float(time_key), 3))
+    if pose is None:
+        return float("nan")
+    (ex, ez), q = pose
+    fwd, right = _quat_forward_right(q)
+    if right is None or not pts:
+        return float("nan")
+    projections = []
+    for (x, z) in pts:
+        dx, dz = x - ex, z - ez
+        proj = dx * right[0] + dz * right[1]
+        projections.append(proj)
+    return float(max(projections) - min(projections)) if projections else float("nan")
+
+def _swarm_width_perp_segment(idx, pts):
+    """
+    Width of main group at sample idx, measured perpendicular to the nearest
+    reference segment's direction.
+    """
+    if idx < 0 or idx >= len(centroid):
+        return float("nan")
+    seg_idx = int(centroid_segidx[idx])
+    if seg_idx < 0 or seg_idx >= (len(ref_poly) - 1) or not pts:
+        return float("nan")
+    a = np.asarray(ref_poly[seg_idx], dtype=float)
+    b = np.asarray(ref_poly[seg_idx + 1], dtype=float)
+    ab = b - a
+    seg_len = float(np.hypot(ab[0], ab[1]))
+    if seg_len <= 0.0:
+        return float("nan")
+    t_hat = ab / seg_len
+    n_hat = np.array([-t_hat[1], t_hat[0]])
+    c = np.asarray(centroid[idx], dtype=float)
+    w_coords = []
+    for (x, z) in pts:
+        d = np.array([x, z]) - c
+        w_coords.append(float(d[0] * n_hat[0] + d[1] * n_hat[1]))
+    if not w_coords:
+        return float("nan")
+    return float(max(w_coords) - min(w_coords))
+
+# Width vs time (embodied frame)
+swarm_width_times_emb = []
+swarm_width_vals_emb = []
+
+# Width vs time (perpendicular to nearest segment)
+swarm_width_times_seg = []
+swarm_width_vals_seg = []
+
+if use_time:
+    for idx, t_key in enumerate(times):
+        pts_here = bins_all.get(round(float(t_key), 3), [])
+        # Embodied-based width
+        w_emb = _swarm_width_embodied(t_key, pts_here) if pts_here else float("nan")
+        swarm_width_times_emb.append(float(t_key))
+        swarm_width_vals_emb.append(w_emb)
+        # Segment-perpendicular width
+        w_seg = _swarm_width_perp_segment(idx, pts_here) if pts_here else float("nan")
+        swarm_width_times_seg.append(float(t_key))
+        swarm_width_vals_seg.append(w_seg)
+else:
+    min_len = min(len(d["x"]) for d in drone_tracks.values())
+    ts = np.arange(min_len, dtype=float)
+    for idx in range(min_len):
+        pts_here = []
+        for d in drone_tracks.values():
+            g = d.get("g", None)
+            if g is not None and not (g[idx] == 1):
+                continue
+            pts_here.append((float(d["x"][idx]), float(d["z"][idx])))
+        if not pts_here:
+            pts_here = [(float(d["x"][idx]), float(d["z"][idx])) for d in drone_tracks.values()]
+        t_here = ts[idx] / float(sample_hz) if sample_hz else ts[idx]
+        w_emb = _swarm_width_embodied(t_here, pts_here)
+        w_seg = _swarm_width_perp_segment(idx, pts_here)
+        swarm_width_times_emb.append(ts[idx])
+        swarm_width_vals_emb.append(w_emb)
+        swarm_width_times_seg.append(ts[idx])
+        swarm_width_vals_seg.append(w_seg)
+
+# Lookup for sweep calculations (use segment-perpendicular width over time)
+width_lookup = {round(float(t), 3): float(w) for t, w in zip(swarm_width_times_seg, swarm_width_vals_seg)}
 
 # Run total spent time
 run_total_spent_time_s = float(t1 - t0) if (t0 is not None and t1 is not None) else float(total_time_s)
@@ -887,6 +1093,167 @@ def compute_segment_coverage_if_needed(seg_index, workspace_poly, workspace_area
     cov = compute_segment_coverage(seg_index, workspace_poly, workspace_area)
     return (*cov, False)
 
+def compute_sweep_coverage(seg_index, workspace_poly, workspace_area):
+    """
+    Coverage of the swarm treated as a whole: when the centroid is within the
+    trimmed along-segment span. Swarm footprint per sample is modeled as a
+    ribbon following the centroid along the reference segment, with width
+    given by the main-group spread perpendicular to that segment.
+    """
+    if Polygon is None or Point is None or unary_union is None or workspace_poly is None:
+        return None, 0.0, float("nan"), None
+
+    # Segment geometry
+    a = np.asarray(ref_poly[seg_index], dtype=float)
+    b = np.asarray(ref_poly[seg_index + 1], dtype=float)
+    ab = b - a
+    seg_len = float(np.hypot(ab[0], ab[1]))
+    if seg_len <= 0:
+        return None, 0.0, float("nan"), None
+    t_hat = ab / seg_len
+    n_hat = np.array([-t_hat[1], t_hat[0]])
+    trim_cfg = SEG_TRIMS.get(seg_index, dict(trim_start=0.0, trim_end=0.0))
+    trim_start = float(trim_cfg.get("trim_start", 0.0))
+    trim_end   = float(trim_cfg.get("trim_end", 0.0))
+    eff_len = max(seg_len - trim_start - trim_end, 0.0)
+
+    # Segment strip (for limiting perpendicular spread and per-segment isolation)
+    half_w_strip = SEG_WIDTHS[seg_index] / 2.0
+    seg_start_trim = a + t_hat * trim_start
+    seg_end_trim   = b - t_hat * trim_end
+    strip_len = eff_len + 2.0 * SENSING_RADIUS
+    p_mid_strip = 0.5 * (seg_start_trim + seg_end_trim)
+    p0_strip = p_mid_strip - t_hat * (strip_len / 2.0)
+    p1_strip = p_mid_strip + t_hat * (strip_len / 2.0)
+    strip_poly = Polygon([
+        p0_strip + n_hat * half_w_strip,
+        p0_strip - n_hat * half_w_strip,
+        p1_strip - n_hat * half_w_strip,
+        p1_strip + n_hat * half_w_strip,
+    ])
+
+    # Collect time indices where centroid is (a) in the Run window, (b) closest to this segment,
+    # and (c) projected along this segment within the trimmed span.
+    # For each such sample we store (centroid_center, half_width_perp_segment).
+    sample_data = []
+    if use_time:
+        for i, c in enumerate(centroid):
+            if not mask_cte[i]:
+                continue
+            if centroid_segidx[i] != seg_index:
+                continue
+            vec = c - a
+            s_along = float(vec @ t_hat)
+            if (s_along < trim_start) or (s_along > (seg_len - trim_end)):
+                continue
+
+            t_key = round(float(times[i]), 3)
+            pts_here = bins_all.get(t_key, [])
+            if not pts_here:
+                continue
+
+            # Use真实质心作为带的中心，但宽度方向仍然用段法向 n_hat。
+            c_center = np.asarray(centroid[i], dtype=float)
+            # Width = spread of main-group points along the segment normal around centroid
+            w_coords = []
+            for (x_p, z_p) in pts_here:
+                d = np.array([x_p, z_p]) - c_center
+                w_coords.append(float(d[0] * n_hat[0] + d[1] * n_hat[1]))
+            if not w_coords:
+                continue
+            # Base positional spread along segment normal
+            width_here = max(w_coords) - min(w_coords)
+            # Inflate by sensing radius on both sides to match coverage footprint
+            width_here = max(width_here + 2.0 * SENSING_RADIUS, 2.0 * SENSING_RADIUS)
+            sample_data.append((c_center, width_here * 0.5))
+    else:
+        min_len = min(len(d["x"]) for d in drone_tracks.values())
+        for i, c in enumerate(centroid[:min_len]):
+            if not mask_cte[i]:
+                continue
+            if centroid_segidx[i] != seg_index:
+                continue
+            vec = c - a
+            s_along = float(vec @ t_hat)
+            if (s_along < trim_start) or (s_along > (seg_len - trim_end)):
+                continue
+
+            pts_here = []
+            for d in drone_tracks.values():
+                g = d.get("g", None)
+                if g is not None and not (g[i] == 1):
+                    continue
+                pts_here.append((float(d["x"][i]), float(d["z"][i])))
+            if not pts_here:
+                pts_here = [(float(d["x"][i]), float(d["z"][i])) for d in drone_tracks.values()]
+
+            c_center = np.asarray(centroid[i], dtype=float)
+            w_coords = []
+            for (x_p, z_p) in pts_here:
+                d = np.array([x_p, z_p]) - c_center
+                w_coords.append(float(d[0] * n_hat[0] + d[1] * n_hat[1]))
+            if not w_coords:
+                continue
+            width_here = max(w_coords) - min(w_coords)
+            width_here = max(width_here + 2.0 * SENSING_RADIUS, 2.0 * SENSING_RADIUS)
+            sample_data.append((c_center, width_here * 0.5))
+
+    if not sample_data:
+        return None, 0.0, 0.0, None
+
+    # Build a ribbon from consecutive centroid samples along the segment.
+    # Rectangles are centered at the (真实)质心位置，方向用该段的切向/法向。
+    rects = []
+    # Sort by along-segment coordinate so the ribbon follows the walkway
+    def _s_along(c_center):
+        return float((np.asarray(c_center, dtype=float) - a) @ t_hat)
+    sample_data.sort(key=lambda item: _s_along(item[0]))
+
+    for idx in range(len(sample_data) - 1):
+        c0, hw0 = sample_data[idx]
+        c1, hw1 = sample_data[idx + 1]
+        # 用两帧的平均半宽，避免过度“取最大”导致宽度看起来不变
+        hw = max(0.5 * (hw0 + hw1), SENSING_RADIUS)
+        c0 = np.asarray(c0, dtype=float)
+        c1 = np.asarray(c1, dtype=float)
+        p0 = c0 + n_hat * hw
+        p1 = c0 - n_hat * hw
+        p2 = c1 - n_hat * hw
+        p3 = c1 + n_hat * hw
+        rects.append(Polygon([p0, p1, p2, p3]))
+
+    # Optional small caps at endpoints so the ribbon isn't hollow at start/end
+    if sample_data:
+        for c_mid, hw in (sample_data[0:1] + sample_data[-1:]):
+            hw = max(hw, SENSING_RADIUS)
+            c_mid = np.asarray(c_mid, dtype=float)
+            cap_len = SENSING_RADIUS
+            q0 = c_mid - t_hat * (cap_len * 0.5)
+            q1 = c_mid + t_hat * (cap_len * 0.5)
+            p0 = q0 + n_hat * hw
+            p1 = q0 - n_hat * hw
+            p2 = q1 - n_hat * hw
+            p3 = q1 + n_hat * hw
+            rects.append(Polygon([p0, p1, p2, p3]))
+
+    if not rects:
+        return None, 0.0, 0.0, None
+
+    # Full sweep ribbon: 只限制在这条线段的长度范围（通过 sample 选择和矩形构造实现），
+    # 不再用 strip_poly 在宽度方向上裁剪，这样宽度上超出 workspace 的部分也会保留。
+    ribbon = unary_union(rects)
+
+    # Inside = ribbon within workspace; outside = ribbon in strip but outside workspace
+    inside_poly = ribbon.intersection(workspace_poly)
+    outside_poly = ribbon.difference(workspace_poly) if SUBTRACT_OUTSIDE_COVERAGE else None
+
+    area_inside = float(inside_poly.area) if inside_poly is not None and not inside_poly.is_empty else 0.0
+    area_outside = float(outside_poly.area) if outside_poly is not None and not outside_poly.is_empty else 0.0
+    effective = max(area_inside - area_outside, 0.0) if SUBTRACT_OUTSIDE_COVERAGE else area_inside
+    coverage_pct = 100.0 * effective / float(workspace_area) if workspace_area > 0 else float("nan")
+    # Return inside, outside, and the full ribbon (for visualization of total sweep).
+    return inside_poly, area_inside, area_outside, effective, coverage_pct, outside_poly, ribbon
+
 # Compute coverage for three segments: 1, 2, and 4
 coverage_poly_seg1, covered_area_seg1, coverage_pct_seg1, coverage_out_seg1, covered_out_area_seg1, seg1_excluded = compute_segment_coverage_if_needed(
     SEG_IDX_1, workspace_polys[SEG_IDX_1], workspace_areas[SEG_IDX_1]
@@ -897,6 +1264,21 @@ coverage_poly_seg2, covered_area_seg2, coverage_pct_seg2, coverage_out_seg2, cov
 coverage_poly_seg4, covered_area_seg4, coverage_pct_seg4, coverage_out_seg4, covered_out_area_seg4, seg4_excluded = compute_segment_coverage_if_needed(
     SEG_IDX_4, workspace_polys[SEG_IDX_4], workspace_areas[SEG_IDX_4]
 )
+
+# Sweep coverage (swarm as a whole, centroid along segment span)
+sweep_seg1 = compute_sweep_coverage(SEG_IDX_1, workspace_polys[SEG_IDX_1], workspace_areas[SEG_IDX_1]) if not seg1_excluded else (None,0,0,0,float("nan"), None, None)
+sweep_seg2 = compute_sweep_coverage(SEG_IDX_2, workspace_polys[SEG_IDX_2], workspace_areas[SEG_IDX_2]) if not seg2_excluded else (None,0,0,0,float("nan"), None, None)
+sweep_seg4 = compute_sweep_coverage(SEG_IDX_4, workspace_polys[SEG_IDX_4], workspace_areas[SEG_IDX_4]) if not seg4_excluded else (None,0,0,0,float("nan"), None, None)
+
+def _full_sweep_poly(sweep_tuple):
+    """Full sweep = ribbon ∩ strip, already returned as last element."""
+    if not sweep_tuple or len(sweep_tuple) < 7:
+        return None
+    return sweep_tuple[6]
+
+sweep_full_seg1 = _full_sweep_poly(sweep_seg1)
+sweep_full_seg2 = _full_sweep_poly(sweep_seg2)
+sweep_full_seg4 = _full_sweep_poly(sweep_seg4)
 
 # Overall coverage across the three segments combined (union of coverage + union of workspaces)
 def _union_polys(polys):
@@ -935,15 +1317,42 @@ else:
     )
 
 if coverage_poly_overall is not None and workspace_area_overall > 0:
-    covered_area_overall = float(coverage_poly_overall.area)
-    covered_out_area_overall = float(coverage_out_overall.area) if (coverage_out_overall is not None and SUBTRACT_OUTSIDE_COVERAGE) else 0.0
-    effective_overall = max(covered_area_overall - covered_out_area_overall, 0.0) if SUBTRACT_OUTSIDE_COVERAGE else covered_area_overall
-    coverage_pct_overall = 100.0 * effective_overall / workspace_area_overall
+    # Inside overall = 按段分别计算的 inside 面积求和（而不是 union）
+    covered_area_overall = float(
+        (coverage_poly_seg1.area if (coverage_poly_seg1 is not None and not seg1_excluded) else 0.0) +
+        (coverage_poly_seg2.area if (coverage_poly_seg2 is not None and not seg2_excluded) else 0.0) +
+        (coverage_poly_seg4.area if (coverage_poly_seg4 is not None and not seg4_excluded) else 0.0)
+    )
+    # Outside 总计不参与 overall inside 计算；仅保留 0 以防后续使用
+    covered_out_area_overall = 0.0
+    effective_overall = covered_area_overall
+    coverage_pct_overall = 100.0 * covered_area_overall / workspace_area_overall
 else:
     covered_area_overall = 0.0 if not math.isnan(workspace_area_overall) else float("nan")
     covered_out_area_overall = 0.0
     effective_overall = covered_area_overall
     coverage_pct_overall = float("nan")
+
+# Overall sweep coverage (swarm as a whole) across included segments
+sweep_inside_polys = []
+sweep_out_polys = []
+if not seg1_excluded and sweep_seg1[0] is not None:
+    sweep_inside_polys.append(sweep_seg1[0])
+    sweep_out_polys.append(sweep_seg1[5])
+if not seg2_excluded and sweep_seg2[0] is not None:
+    sweep_inside_polys.append(sweep_seg2[0])
+    sweep_out_polys.append(sweep_seg2[5])
+if not seg4_excluded and sweep_seg4[0] is not None:
+    sweep_inside_polys.append(sweep_seg4[0])
+    sweep_out_polys.append(sweep_seg4[5])
+
+sweep_inside_union = _union_polys(sweep_inside_polys)
+sweep_out_union = _union_polys(sweep_out_polys)
+sweep_area_inside_overall = float(sweep_inside_union.area) if sweep_inside_union is not None else (sweep_seg1[3] + sweep_seg2[3] + sweep_seg4[3])
+sweep_area_outside_overall = float(sweep_out_union.area) if (sweep_out_union is not None and SUBTRACT_OUTSIDE_COVERAGE) else (sweep_seg1[2] + sweep_seg2[2] + sweep_seg4[2])
+
+sweep_effective_overall = max(sweep_area_inside_overall - sweep_area_outside_overall, 0.0) if SUBTRACT_OUTSIDE_COVERAGE else sweep_area_inside_overall
+sweep_pct_overall = 100.0 * sweep_effective_overall / workspace_area_overall if workspace_area_overall > 0 else float("nan")
 
 if exclude_set:
     exclude_label = ", ".join(f"#{idx+1}" for idx in sorted(exclude_set))
@@ -973,6 +1382,9 @@ if seg1_excluded:
 else:
     print(f"    coverage: {coverage_pct_seg1:.2f}% (inside {covered_area_seg1:.3f} m²"
           f"{' minus outside ' + format(covered_out_area_seg1, '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''})")
+    print(f"    sweep (centroid-in-workspace): eff {sweep_seg1[3]:.3f} m² inside {sweep_seg1[1]:.3f} m² "
+          f"{'minus outside ' + format(sweep_seg1[2], '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''} "
+          f"({sweep_seg1[4]:.2f}%)")
 
 print(f"  Segment 2 (idx {SEG_IDX_2}), length={workspace_lengths[SEG_IDX_2]:.3f} m, "
       f"width={SEG_WIDTHS[SEG_IDX_2]:.3f} m, area={workspace_areas[SEG_IDX_2]:.3f} m²")
@@ -981,6 +1393,9 @@ if seg2_excluded:
 else:
     print(f"    coverage: {coverage_pct_seg2:.2f}% (inside {covered_area_seg2:.3f} m²"
           f"{' minus outside ' + format(covered_out_area_seg2, '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''})")
+    print(f"    sweep (centroid-in-workspace): eff {sweep_seg2[3]:.3f} m² inside {sweep_seg2[1]:.3f} m² "
+          f"{'minus outside ' + format(sweep_seg2[2], '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''} "
+          f"({sweep_seg2[4]:.2f}%)")
 
 print(f"  Segment 4 (idx {SEG_IDX_4}), length={workspace_lengths[SEG_IDX_4]:.3f} m, "
       f"width={SEG_WIDTHS[SEG_IDX_4]:.3f} m, area={workspace_areas[SEG_IDX_4]:.3f} m²")
@@ -989,11 +1404,16 @@ if seg4_excluded:
 else:
     print(f"    coverage: {coverage_pct_seg4:.2f}% (inside {covered_area_seg4:.3f} m²"
           f"{' minus outside ' + format(covered_out_area_seg4, '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''})")
+    print(f"    sweep (centroid-in-workspace): eff {sweep_seg4[3]:.3f} m² inside {sweep_seg4[1]:.3f} m² "
+          f"{'minus outside ' + format(sweep_seg4[2], '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''} "
+          f"({sweep_seg4[4]:.2f}%)")
 
 print("\n  Overall (segments 1+2+4 union)")
 print(f"    workspace area={workspace_area_overall:.3f} m²")
-print(f"    coverage: {coverage_pct_overall:.2f}% (inside {covered_area_overall:.3f} m²"
-      f"{' minus outside ' + format(covered_out_area_overall, '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''})")
+print(f"    coverage: {coverage_pct_overall:.2f}% (inside-sum {covered_area_overall:.3f} m²)")
+print(f"    sweep: {sweep_pct_overall:.2f}% (inside {sweep_area_inside_overall:.3f} m²"
+      f"{' minus outside ' + format(sweep_area_outside_overall, '.3f') + ' m²' if SUBTRACT_OUTSIDE_COVERAGE else ''}, "
+      f"effective {sweep_effective_overall:.3f} m²)")
 
 # Debug: print each drone’s last time and status
 print("\n--- Drone end-state summary ---")
@@ -1029,22 +1449,38 @@ metrics_txt.write_text(
     f"seg1_covered_area_m2: {covered_area_seg1:.6f}\n"
     f"seg1_outside_area_m2: {covered_out_area_seg1:.6f}\n"
     f"seg1_coverage_pct: {coverage_pct_seg1:.6f}\n"
+    f"seg1_sweep_inside_m2: {sweep_seg1[1]:.6f}\n"
+    f"seg1_sweep_outside_m2: {sweep_seg1[2]:.6f}\n"
+    f"seg1_sweep_effective_m2: {sweep_seg1[3]:.6f}\n"
+    f"seg1_sweep_pct: {sweep_seg1[4]:.6f}\n"
     f"seg2_length_m: {workspace_lengths[SEG_IDX_2]:.6f}\n"
     f"seg2_workspace_width_m: {SEG_WIDTHS[SEG_IDX_2]:.6f}\n"
     f"seg2_workspace_area_m2: {workspace_areas[SEG_IDX_2]:.6f}\n"
     f"seg2_covered_area_m2: {covered_area_seg2:.6f}\n"
     f"seg2_outside_area_m2: {covered_out_area_seg2:.6f}\n"
     f"seg2_coverage_pct: {coverage_pct_seg2:.6f}\n"
+    f"seg2_sweep_inside_m2: {sweep_seg2[1]:.6f}\n"
+    f"seg2_sweep_outside_m2: {sweep_seg2[2]:.6f}\n"
+    f"seg2_sweep_effective_m2: {sweep_seg2[3]:.6f}\n"
+    f"seg2_sweep_pct: {sweep_seg2[4]:.6f}\n"
     f"seg4_length_m: {workspace_lengths[SEG_IDX_4]:.6f}\n"
     f"seg4_workspace_width_m: {SEG_WIDTHS[SEG_IDX_4]:.6f}\n"
     f"seg4_workspace_area_m2: {workspace_areas[SEG_IDX_4]:.6f}\n"
     f"seg4_covered_area_m2: {covered_area_seg4:.6f}\n"
     f"seg4_outside_area_m2: {covered_out_area_seg4:.6f}\n"
     f"seg4_coverage_pct: {coverage_pct_seg4:.6f}\n"
+    f"seg4_sweep_inside_m2: {sweep_seg4[1]:.6f}\n"
+    f"seg4_sweep_outside_m2: {sweep_seg4[2]:.6f}\n"
+    f"seg4_sweep_effective_m2: {sweep_seg4[3]:.6f}\n"
+    f"seg4_sweep_pct: {sweep_seg4[4]:.6f}\n"
     f"overall_workspace_area_m2: {workspace_area_overall:.6f}\n"
-    f"overall_covered_area_m2: {effective_overall:.6f}\n"
+    f"overall_covered_area_m2: {covered_area_overall:.6f}\n"
     f"overall_outside_area_m2: {covered_out_area_overall:.6f}\n"
     f"overall_coverage_pct: {coverage_pct_overall:.6f}\n"
+    f"overall_sweep_inside_m2: {sweep_area_inside_overall:.6f}\n"
+    f"overall_sweep_outside_m2: {sweep_area_outside_overall:.6f}\n"
+    f"overall_sweep_effective_m2: {sweep_effective_overall:.6f}\n"
+    f"overall_sweep_pct: {sweep_pct_overall:.6f}\n"
 )
 
 # -------- Plot helpers --------
@@ -1219,9 +1655,31 @@ plt.ylabel("Average inter-agent distance (m)")
 plt.title("Average inter-agent distance vs time")
 plt.grid(True, alpha=0.3); plt.legend(loc="best")
 plt.tight_layout(); plt.savefig(OUT_INTERDIST_BOTH_PNG, dpi=150)
-plt.show()
 
-print("Saved:", OUT_TRAJ_PNG, OUT_ERR_PNG, OUT_INTERDIST_BOTH_PNG)
+# 4) Swarm width (main group) relative to embodied orientation
+plt.figure(figsize=(9, 5))
+plt.plot(swarm_width_times_emb, swarm_width_vals_emb, label="Swarm width (perpendicular span)", linewidth=2.2)
+if x0_line is not None and x1_line is not None and x1_line >= x0_line:
+    plt.axvspan(x0_line, x1_line, alpha=0.15, label=f"Run window ({run_total_spent_time_s:.2f}s)")
+    plt.axvline(x0_line, linestyle="--"); plt.axvline(x1_line, linestyle="--")
+plt.xlabel("Time (s)" if use_time else f"Frame index (~{sample_hz:.1f} Hz)")
+plt.ylabel("Width (m)")
+plt.title("Swarm width vs time (main group, perpendicular to embodied forward)")
+plt.grid(True, alpha=0.3); plt.legend(loc="best")
+plt.tight_layout(); plt.savefig(OUT_WIDTH_EMB_PNG, dpi=150)
+
+# 5) Swarm width (main group) perpendicular to nearest reference segment
+plt.figure(figsize=(9, 5))
+plt.plot(swarm_width_times_seg, swarm_width_vals_seg, label="Swarm width ⟂ nearest segment", linewidth=2.2)
+if x0_line is not None and x1_line is not None and x1_line >= x0_line:
+    plt.axvspan(x0_line, x1_line, alpha=0.15, label=f"Run window ({run_total_spent_time_s:.2f}s)")
+    plt.axvline(x0_line, linestyle="--"); plt.axvline(x1_line, linestyle="--")
+plt.xlabel("Time (s)" if use_time else f"Frame index (~{sample_hz:.1f} Hz)")
+plt.ylabel("Width (m)")
+plt.title("Swarm width vs time (main group, ⟂ nearest segment)")
+plt.grid(True, alpha=0.3); plt.legend(loc="best")
+plt.tight_layout(); plt.savefig(OUT_WIDTH_SEG_PNG, dpi=150)
+print("Saved:", OUT_TRAJ_PNG, OUT_ERR_PNG, OUT_INTERDIST_BOTH_PNG, OUT_WIDTH_EMB_PNG, OUT_WIDTH_SEG_PNG)
 
 # =========================
 # Interactive time slider: reveal trajectories up to time T
@@ -1313,6 +1771,19 @@ coverage_polys_for_plot = [
     (coverage_out_seg4, dict(facecolor='#ff6666', edgecolor='none', alpha=0.35, zorder=0, label='Outside coverage')),
     (coverage_poly_overall, dict(facecolor='C2', edgecolor='none', alpha=0.20, zorder=1)),
 ]
+coverage_sweep_patches = []
+# Visualize sweep inside / outside separately per segment
+coverage_sweep_polys_for_plot = [
+    # Segment 1
+    (sweep_seg1[0], dict(facecolor='#7fc97f', edgecolor='none', alpha=0.35, zorder=0, label='Sweep inside seg1')),
+    (sweep_seg1[5] if len(sweep_seg1) > 5 else None, dict(facecolor='#ff9999', edgecolor='none', alpha=0.35, zorder=0, label='Sweep outside seg1')),
+    # Segment 2
+    (sweep_seg2[0], dict(facecolor='#7fc97f', edgecolor='none', alpha=0.35, zorder=0, label='Sweep inside seg2')),
+    (sweep_seg2[5] if len(sweep_seg2) > 5 else None, dict(facecolor='#ff9999', edgecolor='none', alpha=0.35, zorder=0, label='Sweep outside seg2')),
+    # Segment 4
+    (sweep_seg4[0], dict(facecolor='#7fc97f', edgecolor='none', alpha=0.35, zorder=0, label='Sweep inside seg4')),
+    (sweep_seg4[5] if len(sweep_seg4) > 5 else None, dict(facecolor='#ff9999', edgecolor='none', alpha=0.35, zorder=0, label='Sweep outside seg4')),
+]
 for poly, opts in coverage_polys_for_plot:
     if poly is None or Point is None:
         continue
@@ -1323,6 +1794,15 @@ for poly, opts in coverage_polys_for_plot:
         p.set_visible(False)
         ax.add_patch(p)
         coverage_patches.append(p)
+
+for poly, opts in coverage_sweep_polys_for_plot:
+    if poly is None or Point is None:
+        continue
+    patches_here = shapely_to_patches(poly, **opts)
+    for p in patches_here:
+        p.set_visible(False)
+        ax.add_patch(p)
+        coverage_sweep_patches.append(p)
 
 # Prepare a colored line for each drone and a per-drone endpoint marker
 drone_lines = {}
@@ -1426,14 +1906,31 @@ ax_btn = plt.axes([0.80, 0.08, 0.12, 0.05])  # [left, bottom, width, height]
 btn = Button(ax_btn, 'Toggle coverage')
 
 coverage_visible = [False]
+coverage_sweep_visible = [False]
 
 def on_btn_clicked(event):
     coverage_visible[0] = not coverage_visible[0]
     for p in coverage_patches:
         p.set_visible(coverage_visible[0])
+    for p in coverage_sweep_patches:
+        p.set_visible(False)  # hide sweep when coverage toggled on
     fig.canvas.draw_idle()
 
 btn.on_clicked(on_btn_clicked)
+
+# ----- Button to toggle sweep coverage area -----
+ax_btn_sweep = plt.axes([0.80, 0.02, 0.12, 0.05])
+btn_sweep = Button(ax_btn_sweep, 'Toggle sweep')
+
+def on_btn_sweep(event):
+    coverage_sweep_visible[0] = not coverage_sweep_visible[0]
+    for p in coverage_sweep_patches:
+        p.set_visible(coverage_sweep_visible[0])
+    for p in coverage_patches:
+        p.set_visible(False)  # hide standard coverage when sweep shown
+    fig.canvas.draw_idle()
+
+btn_sweep.on_clicked(on_btn_sweep)
 
 # Legend (comment out if too many drones)
 ax.legend(loc="best", fontsize=8, ncol=1)

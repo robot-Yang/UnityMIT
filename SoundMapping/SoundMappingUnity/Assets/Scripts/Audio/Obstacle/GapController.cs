@@ -19,7 +19,7 @@ public class GapsController : MonoBehaviour
     public float gapWidth = 5f;
 
     [Range(5, 50)]
-    public float gapSize = 20f;
+    public float gapSize = 25f;
 
     [Range(10, 100)]
     public float gapSpacing = 50f;
@@ -110,7 +110,7 @@ public class GapsController : MonoBehaviour
             return;
 
         Vector3 s = tc.groundTile.localScale;
-        s.x = corridorWidth;   // width of the ground = corridor width
+        s.x = corridorWidth + gapWidth;   // width of the ground = corridor width
         s.z = totalLength + 200;     // length matches course length
         tc.groundTile.localScale = s;
 
@@ -121,10 +121,43 @@ public class GapsController : MonoBehaviour
     }
 
 
+    // GapsController.cs (Nouveau)
+
+    #if UNITY_EDITOR
+    private bool isApplying = false;
+
+    void OnValidate()
+    {
+        // Décaler l'exécution pour éviter l'erreur SendMessage en OnValidate/Awake
+        if (!isApplying)
+        {
+            isApplying = true;
+            UnityEditor.EditorApplication.delayCall += DelayedApply;
+        }
+    }
+
+    private void DelayedApply()
+    {
+        // Important : retirer la fonction de la file d'attente
+        UnityEditor.EditorApplication.delayCall -= DelayedApply;
+        
+        // Assurez-vous que l'objet existe toujours avant d'appliquer
+        if (this == null) 
+        {
+            isApplying = false;
+            return;
+        }
+
+        Apply();
+        isApplying = false;
+    }
+    #else
+    // Comportement normal si nous ne sommes pas dans l'éditeur
     void OnValidate()
     {
         Apply();
     }
+    #endif
 
     public void Apply()
     {

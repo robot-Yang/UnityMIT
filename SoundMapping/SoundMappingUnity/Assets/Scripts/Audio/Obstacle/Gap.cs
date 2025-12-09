@@ -20,12 +20,20 @@ public class Gap : MonoBehaviour
     // -------------------------------
     // Collectible settings (internal)
     // -------------------------------
-    private Transform leftCollectible;
-    private Transform rightCollectible;
+    [System.Serializable]
+    public struct StarConfig
+    {
+        public float offsetX;
+        public float offsetY;
+        public string starName;
+        [HideInInspector] public Transform instance;
+    }
+
+    [Header("Stars")]
+    public List<StarConfig> stars = new List<StarConfig>(); 
+    public float gapCenterY = 18.3f;
     private const string collectiblePrefabName = "Star";
     private const string collectibleFolder     = "Assets/Prefab/";
-    private float collectibleOffsetX = 5f;      // horizontal offset from gap center
-    private float collectibleY = 25f;            // height at which stars appear
 
 
     // -------------------------------
@@ -35,38 +43,64 @@ public class Gap : MonoBehaviour
     {
     #if UNITY_EDITOR
         GameObject prefab = LoadPrefab(collectiblePrefabName, collectibleFolder);
-        if (prefab == null)
-            return;
+        if (prefab == null) return;
 
-        // Spawn left star
-        GameObject left = PrefabUtility.InstantiatePrefab(prefab, this.transform) as GameObject;
-        leftCollectible = left.transform;
+        char gapName = this.gameObject.name[5];
 
-        // Spawn right star
-        GameObject right = PrefabUtility.InstantiatePrefab(prefab, this.transform) as GameObject;
-        rightCollectible = right.transform;
+        // Instantiate all stars
+        for (int i = 0; i < stars.Count; i++)
+        {
+            GameObject obj = PrefabUtility.InstantiatePrefab(prefab, this.transform) as GameObject;
+            var sc = stars[i];
+            string finalName = "Star_" + gapName + "_" + sc.starName; 
+            obj.name = finalName;
+            sc.instance = obj.transform;
+            stars[i] = sc;
+        }
 
-        UpdateStars();  // Position initial stars
+        UpdateStars();
     #endif
     }
 
+    private void ResetStarsIfEmpty()
+    {
+        if (stars == null || stars.Count == 0)
+        {
+            float size = 10f;
+            float corner = 8.5f;
+            stars = new List<StarConfig>
+            {
+                // Center
+                new StarConfig { offsetX = 0f, offsetY = 0f, starName = "Center" },
+                // X
+                new StarConfig { offsetX =  size, offsetY = 0f, starName = "Right" },
+                new StarConfig { offsetX =  -size, offsetY = 0f, starName = "Left" },
+                // Y
+                new StarConfig { offsetX =  0f, offsetY = size+2, starName = "Up" },
+                new StarConfig { offsetX =  0f, offsetY = -size-2, starName = "Down"},
+                // Corners
+                new StarConfig { offsetX =  corner, offsetY = corner, starName = "UpRight"},
+                new StarConfig { offsetX =  corner, offsetY = -corner, starName = "DownRight"},
+                new StarConfig { offsetX =  -corner, offsetY = corner, starName = "UpLeft"},
+                new StarConfig { offsetX =  -corner, offsetY = -corner, starName = "DownLeft"},
+            };
+        }
+    }
+    
     private void UpdateStars()
     {
-        if (leftCollectible == null || rightCollectible == null)
-            return;
-
-        leftCollectible.localPosition = new Vector3(
-            gapCenterX - collectibleOffsetX,
-            collectibleY,
-            0f
-        );
-
-        rightCollectible.localPosition = new Vector3(
-            gapCenterX + collectibleOffsetX,
-            collectibleY,
-            0f
-        );
+        for (int i = 0; i < stars.Count; i++)
+        {
+            var sc = stars[i];
+            if (sc.instance == null) continue;
+            sc.instance.localPosition = new Vector3(
+                gapCenterX + sc.offsetX,
+                gapCenterY + sc.offsetY,
+                0f
+            );
+        }
     }
+
 
 #if UNITY_EDITOR
     // Loads prefab by name in a folder
@@ -145,6 +179,8 @@ public class Gap : MonoBehaviour
 
     private void OnValidate()
     {
+        ResetStarsIfEmpty();
         Apply();
     }
+
 }

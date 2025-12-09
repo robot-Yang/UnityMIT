@@ -9,12 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7042b685cc32d4b5695a860033b8b191, type: 3}
+  m_Script: {fileID: 11500000, guid: 54641d8a3fd2641c6b41f26772a4b94c, type: 3}
   m_Name: ContinuousAudioProfile
   m_EditorClassIdentifier: 
-  maxAudibleDistance: 6
+  maxAudibleDistance: 15
   baseVolume: 0.8
-  basePitch: 0.7
+  basePitch: 0.755
   volumeByDistance:
     serializedVersion: 2
     m_Curve:
@@ -23,7 +23,7 @@ MonoBehaviour:
       value: 1
       inSlope: 0
       outSlope: 0
-      tangentMode: 34
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -32,7 +32,7 @@ MonoBehaviour:
       value: 1
       inSlope: 0
       outSlope: 0
-      tangentMode: 34
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -87,4 +87,4 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  loopClip: {fileID: 8300000, guid: 8171b8716c1a3441cafc15d3d2f5b2df, type: 3}
+  loopClip: {fileID: 8300000, guid: ce0c8764a73474844893644b8bd7c42c, type: 3}

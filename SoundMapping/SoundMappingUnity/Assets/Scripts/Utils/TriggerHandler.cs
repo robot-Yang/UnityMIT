@@ -53,7 +53,7 @@ public class TriggerHandlerWithCallback : MonoBehaviour
     {
         gm = gameManager;
     }
-
+    // SimpleCollectibleScript.cs : Code à insérer dans OnTriggerEnter(Collider other)
 
     private void OnTriggerEnter(Collider other)
     {
@@ -67,6 +67,7 @@ public class TriggerHandlerWithCallback : MonoBehaviour
                     TutorialPlayer.stopVideo();
                     //         print(gm.name);
                     SwarmTrajectoryRecorder.MarkTrialStart("Run");
+                    StarLogger.ClearLog();
                     gm.GetComponent<Timer>().StartTimer();
                 }
                 else
@@ -76,7 +77,8 @@ public class TriggerHandlerWithCallback : MonoBehaviour
                     //     textInfo.setTextErrorStatic("No drones must be left behind", 2);
                     //     return;
                     // }
-                    if (allCollectiblesCollected)
+                    // if (allCollectiblesCollected)
+                    if (true)
                     {
                         if(Timer.isValidTime())
                         {
@@ -84,9 +86,8 @@ public class TriggerHandlerWithCallback : MonoBehaviour
                             print("Level Finished from trigger");
                             SwarmTrajectoryRecorder.MarkTrialStop("Run");
                             // saveInfoToJSON.exportData(false);
+                            StarLogger.SaveLog();
                             gm.GetComponent<Timer>().StopTimer();
-                        }else{
-                            swarmModel.restart();
                         }
 
                     }else{

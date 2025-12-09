@@ -44,14 +44,29 @@ public class SimpleCollectibleScript : MonoBehaviour {
 
 	}
 
-	void OnTriggerEnter(Collider other)
-	{
-		if (other.tag == "Drone") {
-			//string starName, float timeCollected, int droneId, Vector3 position
-			// saveInfoToJSON.addStarData(this.name, Timer.elapsedTime, other.gameObject.GetComponent<DroneController>().droneFake.id, transform.position);
-			Collect ();
-		}
-	}
+	// SimpleCollectibleScript.cs : Code à insérer dans OnTriggerEnter(Collider other)
+
+void OnTriggerEnter(Collider other)
+{
+    if (other.tag == "Drone") {
+        DroneController droneController = other.gameObject.GetComponent<DroneController>();
+        
+        if (droneController != null && droneController.droneFake != null)
+        {
+            int droneId = droneController.droneFake.id;
+            
+            // 💡 NOUVEL APPEL AU LOG DEDICACE (StarLogger)
+            StarLogger.RecordStar(
+                starName: this.name, 
+                timeCollected: Timer.elapsedTime, // Assurez-vous que Timer est accessible
+                droneId: droneId, 
+                position: transform.position
+            );
+            
+            Collect ();
+        }
+    }
+}
 
 	public void Collect()
 	{
@@ -76,9 +91,6 @@ public class SimpleCollectibleScript : MonoBehaviour {
 			audioSource.Play();
 			sound.GetComponent<AudioSource>().Play();
 			Destroy(sound, collectSound.length);
-
-
-
 		}
 
 		//Below is space to add in your code for what happens based on the collectible type
@@ -87,37 +99,34 @@ public class SimpleCollectibleScript : MonoBehaviour {
 
 			//Add in code here;
 
+			Debug.Log ("Do NoType Command");
+
 //			Debug.Log ("Do NoType Command");
 		}
 		if (CollectibleType == CollectibleTypes.Type1) {
 
 			//Add in code here;
 
-			Debug.Log ("Do NoType Command");
 		}
 		if (CollectibleType == CollectibleTypes.Type2) {
 
 			//Add in code here;
 
-			Debug.Log ("Do NoType Command");
 		}
 		if (CollectibleType == CollectibleTypes.Type3) {
 
 			//Add in code here;
 
-			Debug.Log ("Do NoType Command");
 		}
 		if (CollectibleType == CollectibleTypes.Type4) {
 
 			//Add in code here;
 
-			Debug.Log ("Do NoType Command");
 		}
 		if (CollectibleType == CollectibleTypes.Type5) {
 
 			//Add in code here;
 
-			Debug.Log ("Do NoType Command");
 		}
 
 		Destroy (gameObject);
