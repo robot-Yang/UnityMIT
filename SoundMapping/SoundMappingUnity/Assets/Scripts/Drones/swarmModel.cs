@@ -1058,4 +1058,36 @@ public class swarmModel : MonoBehaviour
     }
 
     #endregion
+
+    public (float width, float height) GetEllipsoidSize()
+    {
+        List<Vector3> pts = null;
+
+        if (Application.isPlaying && network != null && network.largestComponent != null && network.largestComponent.Count > 0)
+        {
+            // Largest connected component (main group)
+            pts = network.largestComponent.Select(df => df.position).ToList();
+        }
+        else
+        {
+            // Editor / fallback: use all DroneController transforms
+            var allDrones = FindObjectsOfType<DroneController>();
+            if (allDrones != null && allDrones.Length > 0)
+                pts = allDrones.Select(d => d.transform.position).ToList();
+        }
+
+        // MUST return a tuple
+        if (pts == null || pts.Count == 0)
+            return (0f, 0f);
+
+        // Compute ellipsoid axes
+        var (_, axes) = ComputeSwarmEllipsoidAxes(pts, axisFloor, axisScale);
+
+        float width  = axes.x; // full width
+        float height = axes.y; // full height
+
+        return (width, height);
+    }
+
+
 }

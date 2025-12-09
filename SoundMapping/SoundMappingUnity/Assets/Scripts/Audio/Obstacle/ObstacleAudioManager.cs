@@ -341,6 +341,10 @@ public class ObstacleAudioManager : MonoBehaviour
         }
         _envelopeRadius = (Mathf.Max(0.1f, maxSide - minSide)) * 0.5f + envelopeWidthSafety;
 
+        var s = FindObjectOfType<swarmModel>();
+
+        _envelopeRadius = s.GetEllipsoidSize().width;
+
         // Length: baseLength scaled by speed, with minimal length so it never collapses
         float rawLength = baseEnvelopeLength * speed;
         _envelopeLength = Mathf.Max(minEnvelopeLength, rawLength);
@@ -750,7 +754,7 @@ private void OnDrawGizmos()
         float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;
         center.y = y;
 
-        float fullL = lookEnvelopeLength;   // full forward length
+        float fullL = lookEnvelopeLength;
         float halfW = _envelopeRadius;
 
         Vector3 f = _lookForwardXZ.normalized * fullL;

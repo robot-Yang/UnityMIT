@@ -57,7 +57,7 @@ public class Gap : MonoBehaviour
             sc.instance = obj.transform;
             stars[i] = sc;
         }
-
+        
         UpdateStars();
     #endif
     }
