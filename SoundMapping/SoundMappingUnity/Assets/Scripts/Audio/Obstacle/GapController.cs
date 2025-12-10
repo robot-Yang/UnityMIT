@@ -14,12 +14,21 @@ public class GapsController : MonoBehaviour
     [Range(100, 300)]
     public float corridorWidth = 200f;
 
+    [Tooltip("Minimum gap size in world units before quantization.")]
+    [Range(1f, 150f)]
+    public float minGapSize = 5f;
+
+    [Tooltip("Maximum gap size in world units before corridor cap and quantization.")]
+    [Range(1f, 150f)]
+    public float maxGapSize = 60f;
+
     [Tooltip("Width of the walls in world units.")]
     [Range(1, 10)]
     public float gapWidth = 5f;
 
-    [Range(5, 50)]
-    public float gapSize = 25f;
+    [Tooltip("Size step (units) used to quantize gaps and star grid.")]
+    [Range(1, 25)]
+    public float gapResolution = 5f;
 
     [Range(10, 100)]
     public float gapSpacing = 50f;
@@ -56,6 +65,12 @@ public class GapsController : MonoBehaviour
         if (prefab == null)
             return;
 
+        // Reuse already-instantiated boundary walls if they exist in the hierarchy
+        if (leftBoundaryWall == null)
+            leftBoundaryWall = transform.Find("BoundaryLeft");
+        if (rightBoundaryWall == null)
+            rightBoundaryWall = transform.Find("BoundaryRight");
+
         // Read wall geometry from the first gap's left wall
         float wallHeight    = gaps[0].leftWall.localScale.y;
         float wallThickness = gaps[0].leftWall.localScale.z;
@@ -70,6 +85,7 @@ public class GapsController : MonoBehaviour
         // ---------- LEFT WALL ----------
         if (leftBoundaryWall == null)
         {
+            Debug.Log("creating left wall");
             GameObject go = PrefabUtility.InstantiatePrefab(prefab, transform) as GameObject;
             go.name = "BoundaryLeft";
             leftBoundaryWall = go.transform;
@@ -85,6 +101,7 @@ public class GapsController : MonoBehaviour
         // ---------- RIGHT WALL ----------
         if (rightBoundaryWall == null)
         {
+            Debug.Log("creating right wall");
             GameObject go = PrefabUtility.InstantiatePrefab(prefab, transform) as GameObject;
             go.name = "BoundaryRight";
             rightBoundaryWall = go.transform;
@@ -195,7 +212,27 @@ public class GapsController : MonoBehaviour
             p.z = startZ + i * gapSpacing;
             g.transform.localPosition = p;
 
-            g.gapWidth = gapSize;
+            float maxAllowedSize = Mathf.Min(maxGapSize, corridorWidth);
+            float minAllowedSize = Mathf.Min(Mathf.Max(minGapSize, gapResolution), maxAllowedSize);
+
+            int minSteps = Mathf.CeilToInt(minAllowedSize / gapResolution);
+            int maxSteps = Mathf.Max(minSteps, Mathf.FloorToInt(maxAllowedSize / gapResolution));
+            float minSizeAligned = minSteps * gapResolution;
+            float maxSizeAligned = maxSteps * gapResolution;
+
+            if (g.gapSize <= 0f)
+            {
+                int randomStep = Random.Range(minSteps, maxSteps + 1);
+                g.gapSize = randomStep * gapResolution;
+            }
+            else if (g.gapSize < minSizeAligned)
+            {
+                g.gapSize = minSizeAligned;
+            }
+            else if (g.gapSize > maxSizeAligned)
+            {
+                g.gapSize = maxSizeAligned;
+            }
 
             // Apply layout (this clamps gapCenterX too)
             g.Apply();

@@ -11,7 +11,7 @@ public class Gap : MonoBehaviour
     public float gapCenterX;
     
     [HideInInspector] 
-    public float gapWidth;
+    public float gapSize;
 
     [Header("Walls (children of this object)")]
     public Transform leftWall;
@@ -33,22 +33,50 @@ public class Gap : MonoBehaviour
     private const string collectiblePrefabName = "Star";
     private const string collectibleFolder     = "Assets/Prefab/";
 
+    private float GetGapResolution()
+    {
+        GapsController controller = GetComponentInParent<GapsController>();
+        if (controller == null || controller.gapResolution <= 0f)
+            return 0f;
+        return controller.gapResolution;
+    }
+
+    private int GetColumnCount(float resolution)
+    {
+        float effectiveGapSize = Mathf.Max(resolution, gapSize);
+        return Mathf.Max(1, Mathf.RoundToInt(effectiveGapSize / resolution));
+    }
+
+    private int GetRowCount(float resolution)
+    {
+        float wallHeight = (leftWall != null ? leftWall.localScale.y : 0f);
+        return Mathf.Max(1, Mathf.RoundToInt(wallHeight / resolution));
+    }
+
     public void Initialize()
     {
     #if UNITY_EDITOR
         GameObject prefab = LoadPrefab(collectiblePrefabName, collectibleFolder);
         if (prefab == null) return;
 
-        char gapName = this.gameObject.name[5];
+        ResetStarsIfEmpty();
+
+        string gapName = this.gameObject.name;
 
         // Instantiate all stars
         for (int i = 0; i < stars.Count; i++)
         {
-            GameObject obj = PrefabUtility.InstantiatePrefab(prefab, this.transform) as GameObject;
             var sc = stars[i];
-            string finalName = "Star_" + gapName + "_" + sc.starName; 
-            obj.name = finalName;
-            sc.instance = obj.transform;
+            if (sc.instance == null)
+            {
+                GameObject obj = PrefabUtility.InstantiatePrefab(prefab, this.transform) as GameObject;
+                if (obj != null)
+                {
+                    string finalName = "Star_" + gapName + "_" + i; 
+                    obj.name = finalName;
+                    sc.instance = obj.transform;
+                }
+            }
             stars[i] = sc;
         }
         
@@ -58,40 +86,106 @@ public class Gap : MonoBehaviour
 
     private void ResetStarsIfEmpty()
     {
-        if (stars == null || stars.Count == 0)
+        float resolution = GetGapResolution();
+        if (resolution <= 0f)
+            return;
+
+        if (leftWall == null || rightWall == null)
+            return;
+
+        int columns = GetColumnCount(resolution);
+        int rows = GetRowCount(resolution);
+        int expected = rows * columns;
+
+        if (stars == null)
+            stars = new List<StarConfig>();
+
+        if (stars.Count > expected)
         {
-            float size = 10f;
-            float corner = 8.5f;
-            stars = new List<StarConfig>
-            {
-                // Center
-                new StarConfig { offsetX = 0f, offsetY = 0f, starName = "Center" },
-                // X
-                new StarConfig { offsetX =  size, offsetY = 0f, starName = "Right" },
-                new StarConfig { offsetX =  -size, offsetY = 0f, starName = "Left" },
-                // Y
-                new StarConfig { offsetX =  0f, offsetY = size+2, starName = "Up" },
-                new StarConfig { offsetX =  0f, offsetY = -size-2, starName = "Down"},
-                // Corners
-                new StarConfig { offsetX =  corner, offsetY = corner, starName = "UpRight"},
-                new StarConfig { offsetX =  corner, offsetY = -corner, starName = "DownRight"},
-                new StarConfig { offsetX =  -corner, offsetY = corner, starName = "UpLeft"},
-                new StarConfig { offsetX =  -corner, offsetY = -corner, starName = "DownLeft"},
-            };
+        #if UNITY_EDITOR
+            for (int i = expected; i < stars.Count; i++)
+                if (stars[i].instance != null)
+                    DestroyImmediate(stars[i].instance.gameObject);
+        #else
+            for (int i = expected; i < stars.Count; i++)
+                if (stars[i].instance != null)
+                    Destroy(stars[i].instance.gameObject);
+        #endif
+
+            stars.RemoveRange(expected, stars.Count - expected);
         }
+
+        while (stars.Count < expected)
+            stars.Add(new StarConfig());
     }
     
     private void UpdateStars()
     {
-        for (int i = 0; i < stars.Count; i++)
+        float resolution = GetGapResolution();
+        if (resolution <= 0f)
+            return;
+
+        if (leftWall == null || rightWall == null)
+            return;
+
+        ResetStarsIfEmpty();
+
+        int columns = GetColumnCount(resolution);
+        int rows = GetRowCount(resolution);
+        if (rows * columns == 0)
+            return;
+
+        float effectiveGapSize = Mathf.Max(resolution, gapSize);
+        float halfGap = effectiveGapSize * 0.5f;
+        float baseY = leftWall.localPosition.y - (leftWall.localScale.y * 0.5f);
+
+        float startX = -halfGap + (resolution * 0.5f);
+        float startY = baseY + (resolution * 0.5f);
+
+    #if UNITY_EDITOR
+        GameObject prefab = LoadPrefab(collectiblePrefabName, collectibleFolder);
+    #endif
+
+        for (int row = 0; row < rows; row++)
         {
-            var sc = stars[i];
-            if (sc.instance == null) continue;
-            sc.instance.localPosition = new Vector3(
-                gapCenterX + sc.offsetX,
-                gapCenterY + sc.offsetY,
-                0f
-            );
+            for (int col = 0; col < columns; col++)
+            {
+                int idx = row * columns + col;
+                if (idx >= stars.Count)
+                    continue;
+
+                var sc = stars[idx];
+
+                sc.offsetX = startX + col * resolution;
+                sc.offsetY = startY + row * resolution;
+                sc.starName = "Star_" + this.gameObject.name + "_" + row + "_" + col;
+
+            #if UNITY_EDITOR
+                if (sc.instance == null && prefab != null)
+                {
+                    GameObject obj = PrefabUtility.InstantiatePrefab(prefab, this.transform) as GameObject;
+                    if (obj != null)
+                        sc.instance = obj.transform;
+                }
+            #endif
+
+                if (sc.instance == null)
+                {
+                    stars[idx] = sc;
+                    continue;
+                }
+
+            #if UNITY_EDITOR
+                sc.instance.name = sc.starName;
+            #endif
+                sc.instance.localPosition = new Vector3(
+                    gapCenterX + sc.offsetX,
+                    sc.offsetY,
+                    0f
+                );
+
+                stars[idx] = sc;
+            }
         }
     }
 
@@ -130,13 +224,13 @@ public class Gap : MonoBehaviour
         float halfCorridor = corridorWidth * 0.5f;
 
         // Clamp gap size to corridor
-        gapWidth = Mathf.Clamp(gapWidth, 0f, corridorWidth);
+        gapSize = Mathf.Clamp(gapSize, 0f, corridorWidth);
 
         // Clamp center so gap always stays inside corridor
-        float maxCenter = halfCorridor - gapWidth * 0.5f;
+        float maxCenter = halfCorridor - gapSize * 0.5f;
         gapCenterX = Mathf.Clamp(gapCenterX, -maxCenter, maxCenter);
 
-        float halfGap = gapWidth * 0.5f;
+        float halfGap = gapSize * 0.5f;
 
         float leftEdge  = -halfCorridor;   
         float rightEdge =  halfCorridor;   
