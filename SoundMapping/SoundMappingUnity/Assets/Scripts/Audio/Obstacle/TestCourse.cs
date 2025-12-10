@@ -6,7 +6,7 @@ using UnityEditor;
 // ============================================================================
 public class TestCourse : MonoBehaviour
 {
-    [Header("Auto-lookup names")]
+    [Header("Lookup names")]
     public string pathHolderName = "Path Holder";
     public string floorName = "floor";
     public string startName = "Path (4)";
@@ -14,7 +14,7 @@ public class TestCourse : MonoBehaviour
     public string groundName = "Path";
 
 
-    [Header("Start Transform")]
+    [Header("Ground Scale")]
     public Vector3 groundScale = new Vector3(100f, 1f, 500f);
 
     [Header("Start Transform")]
@@ -129,12 +129,12 @@ public class TestCourse : MonoBehaviour
         #endif
 
         // 2. Delete all FLOOR children except start, end, ground
-        AutoFindReferences();   // ensures startLine, endLine, groundTile, floor ref valid
+        AutoFindReferences();
 
         if (startLine == null || endLine == null || groundTile == null)
             return;
 
-        Transform floor = startLine.parent;   // floor component
+        Transform floor = startLine.parent;
 
         #if UNITY_EDITOR
         for (int i = floor.childCount - 1; i >= 0; i--)
@@ -181,24 +181,6 @@ public class TestCourse : MonoBehaviour
         Debug.Log("[TestCourse] Start & End fully positioned (pos+rot+scale).");
     }
 
-    public void UpdateGroundTile(float corridorWidth, float totalLength, float gcPosX, float gcPosZ, float safetyOffset)
-    {
-        if (groundTile == null)
-            return;
-
-        // SCALE
-        Vector3 s = groundTile.localScale;
-        s.x = corridorWidth;   // width matches corridor
-        s.z = totalLength;     // length matches full obstacle course
-        groundTile.localScale = s;
-
-        // POSITION (centered on gap corridor)
-        Vector3 p = groundTile.position;
-        p.x = gcPosX;
-        p.z = gcPosZ + (totalLength * 0.5f) + safetyOffset;
-        groundTile.position = p;
-    }
-
     public void GenerateGaps()
     {
         AutoFindReferences();
@@ -243,24 +225,18 @@ public class TestCourse : MonoBehaviour
             gap.gapCenterX = initialGapCenters[index];
         }
 
-
-        // -------------------------------
-        // BASIC GAP POSITIONING (simple, stable)
-        // -------------------------------
-
+        // Pre controller gap positioning
         float localZ = firstGapZOffset + index * 0.1f;
 
         // Place gap relative to the controller
         gapGO.transform.localPosition = new Vector3(
-            0f,     // centered
-            0f,     // same height as controller
-            localZ  // offset and sorting key
+            0f,
+            0f,
+            localZ
         );
         gapGO.transform.localScale = Vector3.one;
 
-        // -------------------------------
-        // INSTANTIATE WALL PREFABS
-        // -------------------------------
+        // Create side walls
         Transform L = Instantiate(wallPrefab, gapGO.transform).transform;
         L.name = "LeftWall";
         gap.leftWall = L;
@@ -269,9 +245,7 @@ public class TestCourse : MonoBehaviour
         R.name = "RightWall";
         gap.rightWall = R;
 
-        // -------------------------------
-        // BASIC WALL OVERRIDES
-        // -------------------------------
+        // Side walls positioning
         Vector3 ls = L.localScale;
         ls.y = wallHeight;
         ls.x = wallThickness;
@@ -296,7 +270,7 @@ public class TestCourse : MonoBehaviour
 }
 
 // ============================================================================
-// CUSTOM EDITOR (EMBEDDED) — Inspector Buttons
+// Inspector Buttons
 // ============================================================================
 #if UNITY_EDITOR
 

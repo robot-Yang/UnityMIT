@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 # ------------------------------
 # Load JSON files
 # ------------------------------
-with open("Assets/Data/default/Trajectories/Setup_H_NO_20251209_195104_traj.json") as f:
+with open("Assets/Data/default/Trajectories/Me_with_sound/Setup_H_NO_20251210_012610_traj.json") as f:
     traj = json.load(f)
 
-with open("Assets/Data/default/Trajectories/stars.json") as f:
+with open("Assets/Data/default/Trajectories/Me_with_sound/stars.json") as f:
     stars = json.load(f)
 
 # ------------------------------
@@ -85,22 +85,23 @@ mean_inter = np.mean(mean_dists)
 print(f"Distance Inter-agent (Swarm Complet): {mean_inter:.3f} m")
 
 # ------------------------------
-# Stars collected (from stars.json)
+# Stars collected
 # ------------------------------
-# Expected format:
-# [
-#   {"gap": 0, "time": 4.21, "drone": "Drone3"},
-#   ...
-# ]
+events = stars["records"]  # list of dicts
 
 gap_counts = {}
-for ev in stars:
-    g = ev["gap"]
-    gap_counts[g] = gap_counts.get(g, 0) + 1
+
+for ev in events:
+    name = ev["name"]              # e.g. "Star_0_Center"
+    gap_str = name.split("_")[1]   # "0"
+    gap = int(gap_str)
+
+    gap_counts[gap] = gap_counts.get(gap, 0) + 1
 
 print("\nEtoiles collectées:")
 for g in sorted(gap_counts):
     print(f"Gap {g}: {gap_counts[g]}")
+
 
 # ------------------------------
 # Simple plot of trajectories

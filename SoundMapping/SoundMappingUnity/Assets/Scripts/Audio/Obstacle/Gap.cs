@@ -17,9 +17,7 @@ public class Gap : MonoBehaviour
     public Transform leftWall;
     public Transform rightWall;
 
-    // -------------------------------
-    // Collectible settings (internal)
-    // -------------------------------
+    // Star collectible config structure
     [System.Serializable]
     public struct StarConfig
     {
@@ -35,10 +33,6 @@ public class Gap : MonoBehaviour
     private const string collectiblePrefabName = "Star";
     private const string collectibleFolder     = "Assets/Prefab/";
 
-
-    // -------------------------------
-    // Called manually from TestCourse
-    // -------------------------------
     public void Initialize()
     {
     #if UNITY_EDITOR
@@ -118,10 +112,6 @@ public class Gap : MonoBehaviour
     }
 #endif
 
-
-    // -------------------------------
-    // EXISTING APPLY (unchanged)
-    // -------------------------------
     public void Apply()
     {
         if (leftWall == null || rightWall == null)

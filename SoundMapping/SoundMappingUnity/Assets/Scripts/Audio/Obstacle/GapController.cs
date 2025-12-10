@@ -110,25 +110,32 @@ public class GapsController : MonoBehaviour
             return;
 
         Vector3 s = tc.groundTile.localScale;
-        s.x = corridorWidth + gapWidth;   // width of the ground = corridor width
-        s.z = totalLength + 200;     // length matches course length
+        s.x = corridorWidth + gapWidth;
+        s.z = totalLength + 200;
         tc.groundTile.localScale = s;
 
         s = tc.startLine.localScale;
-        s.x = corridorWidth;
+        s.x = corridorWidth + gapWidth;
         tc.startLine.localScale = s;
         tc.endLine.localScale = s;
+
+        // Move endline
+        Vector3 ep = tc.endLine.localPosition;
+        ep.z = tc.gc_position.z + (tc.NB_GAPS-1)*gapSpacing + 50f;
+        tc.endLine.localPosition = ep;
+
+        // Move ground tile
+        Vector3 gp = tc.groundTile.localPosition;
+        gp.z = tc.gc_position.z + (tc.NB_GAPS-1)*gapSpacing/2;
+        tc.groundTile.localPosition = gp;
     }
-
-
-    // GapsController.cs (Nouveau)
 
     #if UNITY_EDITOR
     private bool isApplying = false;
 
     void OnValidate()
     {
-        // Décaler l'exécution pour éviter l'erreur SendMessage en OnValidate/Awake
+        // Delay execution to avoid SendMessage error in OnValidate/Awake
         if (!isApplying)
         {
             isApplying = true;
@@ -141,7 +148,6 @@ public class GapsController : MonoBehaviour
         // Important : retirer la fonction de la file d'attente
         UnityEditor.EditorApplication.delayCall -= DelayedApply;
         
-        // Assurez-vous que l'objet existe toujours avant d'appliquer
         if (this == null) 
         {
             isApplying = false;
@@ -152,7 +158,7 @@ public class GapsController : MonoBehaviour
         isApplying = false;
     }
     #else
-    // Comportement normal si nous ne sommes pas dans l'éditeur
+
     void OnValidate()
     {
         Apply();
