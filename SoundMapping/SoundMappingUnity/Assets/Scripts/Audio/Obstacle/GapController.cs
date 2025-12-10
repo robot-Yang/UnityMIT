@@ -16,11 +16,11 @@ public class GapsController : MonoBehaviour
 
     [Tooltip("Minimum gap size in world units before quantization.")]
     [Range(1f, 150f)]
-    public float minGapSize = 5f;
+    public float minGapSize = 7f;
 
     [Tooltip("Maximum gap size in world units before corridor cap and quantization.")]
     [Range(1f, 150f)]
-    public float maxGapSize = 60f;
+    public float maxGapSize = 50f;
 
     [Tooltip("Width of the walls in world units.")]
     [Range(1, 10)]

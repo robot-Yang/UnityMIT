@@ -23,15 +23,37 @@ import numpy as np
 BASE_DIR = Path("Assets/Data/default/Trajectories")
 OUT_DIR = Path("outputs")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-OUT_PNG = OUT_DIR / "audio_vs_no_audio_metrics.png"
 
 # Batch filtering: set INCLUDE_ALL_BATCH = False and BATCH_ID = "B3" (example)
 # to only include folders starting with that batch prefix (before the first underscore).
-INCLUDE_ALL_BATCH = True
-BATCH_ID = "B1"
+INCLUDE_ALL_BATCH = False
+BATCH_ID = "1"
 
 SCENE_SWITCH_GRACE_S = 1.0
 DEFAULT_SAMPLE_HZ = 5.0
+
+
+def _target_batch_prefix():
+    if INCLUDE_ALL_BATCH:
+        return None
+    batch = BATCH_ID.strip()
+    if not batch:
+        return None
+    if batch and not batch.startswith("B"):
+        batch = f"B{batch}"
+    return batch
+
+
+def _output_png_path():
+    batch = _target_batch_prefix()
+    if batch is None:
+        name = "metrics_comparison"
+    else:
+        name = f"metrics_comparison_{batch}"
+    return OUT_DIR / f"{name}.png"
+
+
+OUT_PNG = _output_png_path()
 
 
 def _load_json(path: Path):
@@ -210,6 +232,7 @@ def _line_dot_metric(ax, runs, key, ylabel, title, colors):
 
 
 def _collect_runs():
+    target_batch = _target_batch_prefix()
     runs = []
     for folder in sorted(BASE_DIR.iterdir()):
         if not folder.is_dir():
@@ -229,7 +252,7 @@ def _collect_runs():
         batch_prefix = parts[0] if parts else ""
         subj_id = parts[1] if len(parts) > 1 else parts[0]
 
-        if (not INCLUDE_ALL_BATCH) and batch_prefix != BATCH_ID:
+        if (not INCLUDE_ALL_BATCH) and target_batch is not None and batch_prefix != target_batch:
             continue
 
         stars_path = folder / "stars.json"

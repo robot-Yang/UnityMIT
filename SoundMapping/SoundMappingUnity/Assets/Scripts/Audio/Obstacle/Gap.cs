@@ -10,7 +10,6 @@ public class Gap : MonoBehaviour
     [Range(-30, 30)]
     public float gapCenterX;
     
-    [HideInInspector] 
     public float gapSize;
 
     [Header("Walls (children of this object)")]
@@ -183,6 +182,15 @@ public class Gap : MonoBehaviour
                     sc.offsetY,
                     0f
                 );
+
+                BoxCollider boxCollider = sc.instance.GetComponent<BoxCollider>();
+                if (boxCollider != null)
+                {
+                    Vector3 size = boxCollider.size;
+                    size.x = resolution/2;
+                    size.y = resolution/2;
+                    boxCollider.size = size;
+                }
 
                 stars[idx] = sc;
             }
