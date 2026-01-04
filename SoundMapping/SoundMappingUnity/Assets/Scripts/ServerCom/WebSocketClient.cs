@@ -17,7 +17,7 @@ public class WebSocketClient : MonoBehaviour
 
         ws.OnMessage += (sender, e) =>
         {
-            Debug.Log("Message received: " + e.Data);
+            // Debug.Log("Message received: " + e.Data);
         };
 
         ws.OnError += (sender, e) =>
@@ -37,7 +37,7 @@ public class WebSocketClient : MonoBehaviour
     void UpdateStatus(string message)
     {
 
-        Debug.Log(message);
+        // Debug.Log(message);
     }
 
     public void SendMessageToServer(string message)
@@ -45,7 +45,7 @@ public class WebSocketClient : MonoBehaviour
         if (ws != null && ws.IsAlive)
         {
             ws.Send(message);
-            Debug.Log("Sent: " + message);
+            // Debug.Log("Sent: " + message);
         }
         else
         {

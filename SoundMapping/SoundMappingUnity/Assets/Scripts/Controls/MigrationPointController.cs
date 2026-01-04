@@ -363,8 +363,8 @@ public class MigrationPointController : MonoBehaviour
             {
                 CameraMovement.nextEmbodiedDrone = _candidateFrontmost;
                 _lastSwitchTime = Time.time;
-                Debug.Log($"[AutoSwitch] Next embodied (frontmost/main-group): " +
-                        _candidateFrontmost.GetComponent<DroneController>().droneFake.id);
+                // Debug.Log($"[AutoSwitch] Next embodied (frontmost/main-group): " +
+                        // _candidateFrontmost.GetComponent<DroneController>().droneFake.id);
             }
             _candidateSinceTime = Time.time;
         }

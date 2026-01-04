@@ -40,7 +40,7 @@ public class ObstacleGeneration : MonoBehaviour
 
             if (floorWidth <= 0f)
             {
-                Debug.LogWarning($"Cannot determine width of floor {floor.name}");
+                // Debug.LogWarning($"Cannot determine width of floor {floor.name}");
                 continue;
             }
 
@@ -57,7 +57,7 @@ public class ObstacleGeneration : MonoBehaviour
                 Mesh mesh = floor.GetComponent<MeshFilter>().sharedMesh;
                 if (mesh == null)
                 {
-                    Debug.LogWarning($"No mesh found on {floor.name}");
+                    // Debug.LogWarning($"No mesh found on {floor.name}");
                     continue;
                 }
                 Vector3 position = GetRandomPointOnMesh(mesh, floor.transform);
@@ -83,7 +83,7 @@ public class ObstacleGeneration : MonoBehaviour
         Mesh mesh = floor.GetComponent<MeshFilter>().sharedMesh;
         if (mesh == null)
         {
-            Debug.LogWarning($"No mesh found on {floor.name}");
+            // Debug.LogWarning($"No mesh found on {floor.name}");
             return 0;
         }
         float area = CalculateMeshArea(mesh, floor.transform);
@@ -234,7 +234,7 @@ public class ObstacleGeneration : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning(obstacleObject.name + " has no supported collider type.");
+                // Debug.LogWarning(obstacleObject.name + " has no supported collider type.");
                 continue;
             }
 

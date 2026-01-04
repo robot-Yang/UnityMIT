@@ -30,7 +30,7 @@ public class MultiWaveSoundGenerator : MonoBehaviour
     {
         if (frequencies.Length != waveTypes.Length)
         {
-            Debug.LogError("Frequencies and waveTypes arrays must have the same length.");
+            // Debug.LogError("Frequencies and waveTypes arrays must have the same length.");
             return null;
         }
 

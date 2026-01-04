@@ -16,11 +16,11 @@ public class TcpSender : MonoBehaviour
 
         // Enable detailed logging
         ws.Log.Level = LogLevel.Trace;
-        ws.Log.Output = (logData, s) => Debug.Log($"{logData.Level}: {logData.Message}");
+        ws.Log.Output = (logData, s) => // Debug.Log($"{logData.Level}: {logData.Message}");
 
         ws.OnOpen += (sender, e) =>
         {
-            Debug.Log("WebSocket connected.");
+            // Debug.Log("WebSocket connected.");
             isConnected = true;
             tcpserveron = true;
         };
@@ -39,16 +39,16 @@ public class TcpSender : MonoBehaviour
 
         ws.OnError += (sender, e) =>
         {
-            Debug.LogError("WebSocket error: " + e.Message);
+            // Debug.LogError("WebSocket error: " + e.Message);
             if (e.Exception != null)
             {
-                Debug.LogError("Exception: " + e.Exception);
+                // Debug.LogError("Exception: " + e.Exception);
             }
         };
 
         ws.OnClose += (sender, e) =>
         {
-            Debug.Log("WebSocket closed.");
+            // Debug.Log("WebSocket closed.");
             isConnected = false;
             tcpserveron = false;
         };
@@ -59,7 +59,7 @@ public class TcpSender : MonoBehaviour
         }
         catch (System.Exception ex)
         {
-            Debug.LogError("Exception during WebSocket connection: " + ex.Message);
+            // Debug.LogError("Exception during WebSocket connection: " + ex.Message);
         }
     }
 
@@ -85,7 +85,7 @@ public class TcpSender : MonoBehaviour
         if (ws != null)
         {
             ws.Close();
-            Debug.Log("WebSocket closed.");
+            // Debug.Log("WebSocket closed.");
         }
     }
 }

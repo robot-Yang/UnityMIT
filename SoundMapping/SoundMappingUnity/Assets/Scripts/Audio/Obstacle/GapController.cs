@@ -45,7 +45,7 @@ public class GapsController : MonoBehaviour
         string[] guids = AssetDatabase.FindAssets(name + " t:Prefab", new[] { folder });
         if (guids.Length == 0)
         {
-            Debug.LogError("[GapsController] Boundary wall prefab not found: " + name);
+            // Debug.LogError("[GapsController] Boundary wall prefab not found: " + name);
             return null;
         }
 
@@ -85,7 +85,7 @@ public class GapsController : MonoBehaviour
         // ---------- LEFT WALL ----------
         if (leftBoundaryWall == null)
         {
-            Debug.Log("creating left wall");
+            // Debug.Log("creating left wall");
             GameObject go = PrefabUtility.InstantiatePrefab(prefab, transform) as GameObject;
             go.name = "BoundaryLeft";
             leftBoundaryWall = go.transform;
@@ -101,7 +101,7 @@ public class GapsController : MonoBehaviour
         // ---------- RIGHT WALL ----------
         if (rightBoundaryWall == null)
         {
-            Debug.Log("creating right wall");
+            // Debug.Log("creating right wall");
             GameObject go = PrefabUtility.InstantiatePrefab(prefab, transform) as GameObject;
             go.name = "BoundaryRight";
             rightBoundaryWall = go.transform;

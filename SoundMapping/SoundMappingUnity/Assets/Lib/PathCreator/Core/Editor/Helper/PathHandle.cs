@@ -214,7 +214,7 @@ namespace PathCreationEditor
                     numIts ++;
                     id += numIts * numIts;
                     if (numIts > 100) {
-                        Debug.LogError("Failed to generate unique handle id.");
+                        // Debug.LogError("Failed to generate unique handle id.");
                         break;
                     }
                 }

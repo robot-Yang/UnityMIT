@@ -375,7 +375,7 @@ public static class ClosestPointCalculator
             }
         }
 
-        Debug.Log($"Closest point to {point} is {closestPoint} on {name}");
+        // Debug.Log($"Closest point to {point} is {closestPoint} on {name}");
         return closestPoint;
     }
 

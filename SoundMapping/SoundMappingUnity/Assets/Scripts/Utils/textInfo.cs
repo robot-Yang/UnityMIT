@@ -41,7 +41,7 @@ public class textInfo : MonoBehaviour
         LevelConfiguration config = GameObject.FindGameObjectWithTag("Config").GetComponent<LevelConfiguration>();
         if (config == null)
         {
-            Debug.LogError("No config found");
+            // Debug.LogError("No config found");
             return;
         }
 
@@ -53,32 +53,32 @@ public class textInfo : MonoBehaviour
     }
     void Update()
     {
-        // if(LevelConfiguration._ShowText)
-        // {
-        //     connexionText.text = showConnexion ? "Connection: " + getOneDecimal(swarmModel.swarmConnectionScore) : "";
-        //     SpreadnessText.text = showSpreadness ? "Spreadness: " + getOneDecimal(swarmModel.desiredSeparation) : "";
-        //     IsolationText.text = showIsolation ? "Isolation : " + swarmModel.numberOfDroneDiscionnected.ToString() : "";
-        //     DroneCrashText.text = showDroneCrash ? "Drone Crash : " + swarmModel.numberOfDroneCrashed.ToString() : "";
-        //     //SpreadnessSwarmScore.text = showSpreadness ? "Swarm spreadness : " + getOneDecimal(swarmModel.swarmAskingSpreadness) : "";
-        //     SpreadnessSwarmScore.text = "";
-        // }else
-        // {
-        //     connexionText.text = "";
-        //     SpreadnessText.text = "";
-        //     IsolationText.text = "";
-        //     DroneCrashText.text = "";
-        //     SpreadnessSwarmScore.text = "";
-        // }
+        if(LevelConfiguration._ShowText)
+        {
+            connexionText.text = showConnexion ? "Connection: " + getOneDecimal(swarmModel.swarmConnectionScore) : "";
+            SpreadnessText.text = showSpreadness ? "Spreadness: " + getOneDecimal(swarmModel.desiredSeparation) : "";
+            IsolationText.text = showIsolation ? "Isolation : " + swarmModel.numberOfDroneDiscionnected.ToString() : "";
+            DroneCrashText.text = showDroneCrash ? "Drone Crash : " + swarmModel.numberOfDroneCrashed.ToString() : "";
+            //SpreadnessSwarmScore.text = showSpreadness ? "Swarm spreadness : " + getOneDecimal(swarmModel.swarmAskingSpreadness) : "";
+            SpreadnessSwarmScore.text = "";
+        }else
+        {
+            connexionText.text = "";
+            SpreadnessText.text = "";
+            IsolationText.text = "";
+            DroneCrashText.text = "";
+            SpreadnessSwarmScore.text = "";
+        }
         
-        // if(LevelConfiguration._CollectibleNumber > 0)
-        // {
-        //     CollectibleText.text = "Collectible: " + (LevelConfiguration._CollectibleNumber - GameObject.FindGameObjectsWithTag("Collectibles").Length).ToString() + 
-        //                                             "/" + LevelConfiguration._CollectibleNumber.ToString();
-        // }
-        // else
-        // {
-        //     CollectibleText.text = "";
-        // }
+        if(LevelConfiguration._CollectibleNumber > 0)
+        {
+            CollectibleText.text = "Collectible: " + (LevelConfiguration._CollectibleNumber - GameObject.FindGameObjectsWithTag("Collectibles").Length).ToString() + 
+                                                    "/" + LevelConfiguration._CollectibleNumber.ToString();
+        }
+        else
+        {
+            CollectibleText.text = "";
+        }
     }
 
 

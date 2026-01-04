@@ -18,13 +18,13 @@ public class TactorVisualizer : MonoBehaviour
         panel.transform.localRotation = Quaternion.identity;
 
         _cells = panel.GetComponentsInChildren<Image>();
-        if (_cells.Length != 20)
-            Debug.LogWarning("Need exactly 20 Image children for 5×4 matrix.");
+        // if (_cells.Length != 20)
+        //     Debug.LogWarning("Need exactly 20 Image children for 5×4 matrix.");
     }
 
     void Update()
     {
-        if (haptics == null) { Debug.LogError("Visualizer: Haptics reference missing"); return; }
+        // if (haptics == null) { Debug.LogError("Visualizer: Haptics reference missing"); return; }
 
         // Read the latest duty table from HapticsTest
         int[] dutyByTile = haptics.GetDutySnapshot();  // ← add this accessor below

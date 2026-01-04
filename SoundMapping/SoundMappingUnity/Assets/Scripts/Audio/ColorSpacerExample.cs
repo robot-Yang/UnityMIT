@@ -166,8 +166,8 @@ public class swarmDisconnectionInspector : Editor
             //call callback only if mouse is pressed
             if (Event.current.type == EventType.Used)
             {
-                Debug.Log(Event.GetEventCount());
-                Debug.Log("Selected option changed to: " + selected);
+                // Debug.Log(Event.GetEventCount());
+                // Debug.Log("Selected option changed to: " + selected);
                 OnSelectionChanged(selected);
             }
         }
@@ -183,7 +183,7 @@ public class swarmDisconnectionInspector : Editor
     private void OnSelectionChanged(int selected)
     {
         // Handle the selection change
-        Debug.Log("Selected option changed to: " + selected);
+        // Debug.Log("Selected option changed to: " + selected);
         // Add any additional logic you need here
         SwarmDisconnection myScript = (SwarmDisconnection)target;
         myScript.StopAndPlaySound(selected);

@@ -20,7 +20,7 @@ public class DroneFake
     public static float maxForce;
     public static float desiredSeparation = 3f;
     public static float desiredSeparationObs = 3f;
-    public static float neighborRadius = 5f;
+    public static float neighborRadius = 10f;
     public static float alpha = 1.5f; // c
     public static float beta = 1.0f;  // c
     public static float delta = 1.0f; // c
@@ -309,7 +309,7 @@ public class DroneFake
 
 //         if (layer == 1 && embodied)
 //         {
-// //            Debug.Log(id);
+// //            // Debug.Log(id);
 //             accVel = cVm * (vRef - velocity);
 //             lastAllignement = accVel;
 

@@ -135,14 +135,14 @@ public class TutorialPlayer : MonoBehaviour
         string[] mp4Files = Directory.GetFiles(folderPath, "*.mp4", SearchOption.TopDirectoryOnly);
         if (mp4Files.Length == 0)
         {
-            Debug.LogError("No .mp4 file found in folder: " + folderPath);
+            // Debug.LogError("No .mp4 file found in folder: " + folderPath);
             return;
         }
 
         string[] mp3Files = Directory.GetFiles(folderPath, "*.mp3", SearchOption.TopDirectoryOnly);
         if (mp3Files.Length == 0)
         {
-            Debug.LogError("No .mp3 file found in folder: " + folderPath);
+            // Debug.LogError("No .mp3 file found in folder: " + folderPath);
             return;
         }
 
@@ -163,7 +163,7 @@ public class TutorialPlayer : MonoBehaviour
 
             if (www.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError("Error loading audio: " + www.error);
+                // Debug.LogError("Error loading audio: " + www.error);
             }
             else
             {

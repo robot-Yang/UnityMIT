@@ -78,7 +78,7 @@ namespace PathCreation {
             Vector3[] pointsArray = points.ToArray ();
 
             if (pointsArray.Length < 2) {
-                Debug.LogError ("Path requires at least 2 anchor points.");
+                // Debug.LogError ("Path requires at least 2 anchor points.");
             } else {
                 controlMode = ControlMode.Automatic;
                 this.points = new List<Vector3> { pointsArray[0], Vector3.zero, Vector3.zero, pointsArray[1] };

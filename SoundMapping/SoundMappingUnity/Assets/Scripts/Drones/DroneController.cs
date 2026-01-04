@@ -101,7 +101,7 @@ public class DroneController : MonoBehaviour
             // if (printTimer >= 0.5f)        // 每 0.5 s 打一次
             // {
             //     printTimer = 0f;
-            //     Debug.Log(
+            //     // Debug.Log(
             //         $"[t={Time.time:F1}s]  Drone {droneFake.id}  obsForce = {obstacleAvoidanceForce:F2}");
             // }
         }

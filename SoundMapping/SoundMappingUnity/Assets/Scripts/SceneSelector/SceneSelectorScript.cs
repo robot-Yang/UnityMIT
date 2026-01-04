@@ -82,7 +82,7 @@ public class SceneSelectorScript : MonoBehaviour
 
         if (experimentNumber < -1)
         {
-            Debug.LogWarning($"[SceneSelector] '{sceneName}' not found in scenesPlayed; falling back to direct load.");
+            // Debug.LogWarning($"[SceneSelector] '{sceneName}' not found in scenesPlayed; falling back to direct load.");
             StartCoroutine(LoadTrainingScene(sceneName)); // last-resort fallback
             return;
         }
@@ -112,11 +112,11 @@ public class SceneSelectorScript : MonoBehaviour
                 if (op != null)
                 {
                     yield return new WaitUntil(() => op.isDone);
-                    Debug.Log($"Unloaded scene: {scene.name}");
+                    // Debug.Log($"Unloaded scene: {scene.name}");
                 }
                 else
                 {
-                    Debug.LogWarning($"UnloadSceneAsync returned null for scene {scene.name}");
+                    // Debug.LogWarning($"UnloadSceneAsync returned null for scene {scene.name}");
                 }
             }
         }
@@ -128,7 +128,7 @@ public class SceneSelectorScript : MonoBehaviour
         print("Loading Scene: " + sceneName);
         if (isLoading)
         {
-            Debug.LogWarning("Scene loading already in progress.");
+            // Debug.LogWarning("Scene loading already in progress.");
             yield break;
         }
         // Unload all scenes except the persistent one.
@@ -138,13 +138,13 @@ public class SceneSelectorScript : MonoBehaviour
         AsyncOperation loadOp = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
         yield return new WaitUntil(() => loadOp.isDone);
         lastLoadedScene = sceneName;
-        Debug.Log($"Loaded training scene: {sceneName}");
+        // Debug.Log($"Loaded training scene: {sceneName}");
 
         
         // Load the setup scene additively.
         AsyncOperation setupLoadOp = SceneManager.LoadSceneAsync(setupScene, LoadSceneMode.Additive);
         yield return new WaitUntil(() => setupLoadOp.isDone);
-        Debug.Log($"Loaded setup scene: {setupScene}");
+        // Debug.Log($"Loaded setup scene: {setupScene}");
     }
 
     public void SelectTraining(string sceneName)
@@ -162,7 +162,7 @@ public class SceneSelectorScript : MonoBehaviour
 
         experimentNumber = scenesPlayed.IndexOf(sceneName) - 1;
         
-        print("Experiment Number fron training button: " + experimentNumber);
+        // print("Experiment Number fron training button: " + experimentNumber);
         NextScene();
     }
 
@@ -259,7 +259,7 @@ public class SceneSelectorScript : MonoBehaviour
         //     StartCoroutine(UnloadAllScenesExcept("Scene Selector"));
         //     return;
         // }
-        print("Experiment Number: " + experimentNumber);
+        // print("Experiment Number: " + experimentNumber);
         SelectTraining(scenesPlayed[experimentNumber]);
     }
 

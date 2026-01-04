@@ -64,7 +64,7 @@ public class NetworkCreator
         }
         catch (System.Exception e)
         {
-            Debug.LogError("Error in BuildNetwork: " + e.Message);
+            // Debug.LogError("Error in BuildNetwork: " + e.Message);
             return;
         }
     }
@@ -131,7 +131,7 @@ public class NetworkCreator
             }
         }
 
-      //  Debug.Log("Largest component: " + largestComponent.Count);
+      //  // Debug.Log("Largest component: " + largestComponent.Count);
     }
 
     void FindLargestComponent(List<DroneFake> drones, int idLeader)
@@ -187,7 +187,7 @@ public class NetworkCreator
             }
         }
 
-      //  Debug.Log("Largest component: " + largestComponent.Count);
+      //  // Debug.Log("Largest component: " + largestComponent.Count);
     }
 
     public bool IsInMainNetwork(DroneFake drone)
@@ -198,10 +198,7 @@ public class NetworkCreator
     bool IsDistanceNeighbor(DroneFake a, DroneFake b)
     {
         float distance = Vector3.Distance(a.position, b.position);
-        if (distance > DroneFake.neighborRadius)
-        {
-            return false;
-        }
+        if (distance > DroneFake.neighborRadius) return false;
         // bool visible = ClosestPointCalculator.IsLineIntersecting(a.position, b.position);
         // return !visible;
         return true; // ← add this line so the function always returns
@@ -580,7 +577,7 @@ public class NetworkCreator
 
     public bool IsFullyConnected()
     {
-        Debug.Log("Subnetworks: " + GetSubnetworks().Count);
+        // Debug.Log("Subnetworks: " + GetSubnetworks().Count);
         return GetSubnetworks().Count == 1;
     }
 }

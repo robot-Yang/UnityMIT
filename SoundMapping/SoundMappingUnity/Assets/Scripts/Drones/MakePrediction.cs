@@ -313,12 +313,12 @@ public class Prediction
         idLeader = -1;
         if(CameraMovement.embodiedDrone != null)
         {
-//            Debug.Log("Embodied drone prediction" + idLeader);
+//            // Debug.Log("Embodied drone prediction" + idLeader);
             idLeader = CameraMovement.idLeader;
         }else if(MigrationPointController.selectedDrone != null)
         {
             idLeader = MigrationPointController.idLeader;
- //           Debug.Log("Selected drone prediction" + idLeader);
+ //           // Debug.Log("Selected drone prediction" + idLeader);
         }
     }
 

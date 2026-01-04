@@ -61,7 +61,7 @@ public class ExperimentSetupS : MonoBehaviour
         PID = PIDInput.text;
         if (PID.Length < 3)
         {
-            Debug.LogError("PID must be at least 3 characters long.");
+            // Debug.LogError("PID must be at least 3 characters long.");
             return;
         }
 

@@ -3732,6 +3732,7 @@ MonoBehaviour:
   rotationSpeed: 80
   lastEmbodiedDrone: {fileID: 0}
   initialCamRotation: {x: 0, y: 0, z: 0, w: 0}
+  listener: {fileID: 0}
 --- !u!114 &1573697196
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4062,8 +4063,8 @@ MonoBehaviour:
   perFrameBudget: 0
   largeSizeThreshold: 2
   profiles:
-  - {fileID: 11400000, guid: 30c4afbbde4884682960011119f8eed7, type: 2}
-  - {fileID: 11400000, guid: 443079fb5934843579d58c8c0bf5e71a, type: 2}
+  - {fileID: 11400000, guid: 02016996af58845d8b9ff34226908f1b, type: 2}
+  - {fileID: 11400000, guid: 58a90f1e76646413c9de37e6bfbfc972, type: 2}
   continuousSwitchDistance: 2.3
   switchThreshold: 0.2
   listenerFollowSpeed: 20
@@ -4077,7 +4078,7 @@ MonoBehaviour:
   lookEnvelopeLength: 30
   velocityDirectionThreshold: 1
   safety_radius_scale: 1
-  safety_radius_offset: 0.5
+  safety_radius_offset: 1.3
   envelopeWidthSafety: 0.5
 --- !u!114 &1573697213
 MonoBehaviour:

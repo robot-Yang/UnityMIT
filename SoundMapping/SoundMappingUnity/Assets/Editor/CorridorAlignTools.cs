@@ -25,7 +25,7 @@ namespace Haptics.Editor
             var selection = Selection.transforms;
             if (selection == null || selection.Length == 0)
             {
-                Debug.LogWarning("[CorridorAlign] Select some corridor root objects first.");
+                // Debug.LogWarning("[CorridorAlign] Select some corridor root objects first.");
                 return;
             }
 
@@ -52,7 +52,7 @@ namespace Haptics.Editor
             var selection = Selection.transforms;
             if (selection == null || selection.Length == 0)
             {
-                Debug.LogWarning("[CorridorAlign] Select some corridor root objects first.");
+                // Debug.LogWarning("[CorridorAlign] Select some corridor root objects first.");
                 return;
             }
 
@@ -62,7 +62,7 @@ namespace Haptics.Editor
             {
                 if (!TryGetWorldBounds(t, out var b))
                 {
-                    Debug.LogWarning($"[CorridorAlign] No renderers under '{t.name}'. Skipped.");
+                    // Debug.LogWarning($"[CorridorAlign] No renderers under '{t.name}'. Skipped.");
                     continue;
                 }
 
@@ -81,7 +81,7 @@ namespace Haptics.Editor
             var selection = Selection.transforms;
             if (selection == null || selection.Length == 0)
             {
-                Debug.LogWarning("[CorridorAlign] Select some corridor root objects first.");
+                // Debug.LogWarning("[CorridorAlign] Select some corridor root objects first.");
                 return;
             }
 
@@ -91,7 +91,7 @@ namespace Haptics.Editor
             {
                 if (!TryGetWorldBounds(t, out var b))
                 {
-                    Debug.LogWarning($"[CorridorAlign] No renderers under '{t.name}'. Skipped.");
+                    // Debug.LogWarning($"[CorridorAlign] No renderers under '{t.name}'. Skipped.");
                     continue;
                 }
 
@@ -110,7 +110,7 @@ namespace Haptics.Editor
             var selection = Selection.transforms;
             if (selection == null || selection.Length == 0)
             {
-                Debug.LogWarning("[CorridorAlign] Select some corridor root objects first.");
+                // Debug.LogWarning("[CorridorAlign] Select some corridor root objects first.");
                 return;
             }
 
@@ -158,7 +158,7 @@ namespace Haptics.Editor
                 }
             }
 
-            Debug.Log($"[CorridorAlign] Chained {ordered.Length} piece(s) along +X.");
+            // Debug.Log($"[CorridorAlign] Chained {ordered.Length} piece(s) along +X.");
         }
 
         // ----------------------------------------------

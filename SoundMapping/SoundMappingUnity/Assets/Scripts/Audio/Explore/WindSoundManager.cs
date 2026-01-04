@@ -30,7 +30,7 @@ public class WindSoundManager : MonoBehaviour
 
         if (windSoundPrefab == null)
         {
-            Debug.LogError("WindSoundPrefab is not assigned.");
+            // Debug.LogError("WindSoundPrefab is not assigned.");
         }
     }
 

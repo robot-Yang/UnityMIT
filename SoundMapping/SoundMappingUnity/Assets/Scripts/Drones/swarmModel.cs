@@ -239,7 +239,7 @@ public class swarmModel : MonoBehaviour
         swarmHolder = needToSpawn ? GameObject.FindGameObjectWithTag("Swarm") : LevelConfiguration.swarmHolder;
         if (swarmHolder == null)
         {
-            Debug.LogWarning("No swarm holder found, creating one.");
+            // Debug.LogWarning("No swarm holder found, creating one.");
             swarmHolder = new GameObject("Swarm");
         }
 
@@ -298,17 +298,17 @@ public class swarmModel : MonoBehaviour
         //     {
         //         if (d == null) continue;
         //         string s = string.IsNullOrEmpty(d.idS) ? "(null/empty)" : d.idS;
-        //         // Debug.Log($"[ID CHECK] name:{d.gameObject?.name}  id:{d.id}  idS:{s}");
-        //         Debug.Log($"[ID CHECK] id:{d.id}  idS:{s}");
+        //         // // Debug.Log($"[ID CHECK] name:{d.gameObject?.name}  id:{d.id}  idS:{s}");
+        //         // Debug.Log($"[ID CHECK] id:{d.id}  idS:{s}");
 
 
         //         if (!seenId.Add(d.id))
-        //             Debug.LogWarning($"[ID COLLISION] duplicate id: {d.id}");
+        //             // Debug.LogWarning($"[ID COLLISION] duplicate id: {d.id}");
         //         if (!seenIdS.Add(s))
-        //             Debug.LogWarning($"[ID COLLISION] duplicate idS: {s}");
+        //             // Debug.LogWarning($"[ID COLLISION] duplicate idS: {s}");
         //     }
 
-        //     Debug.Log($"[ID SUMMARY] N={drones.Count}  unique id:{seenId.Count}  unique idS:{seenIdS.Count}");
+        //     // Debug.Log($"[ID SUMMARY] N={drones.Count}  unique id:{seenId.Count}  unique idS:{seenIdS.Count}");
         // }
 
         
@@ -316,7 +316,7 @@ public class swarmModel : MonoBehaviour
 
     void OnApplicationQuit()
     {
-        Debug.Log($"Application ending after {Time.time:F1} seconds");
+        // Debug.Log($"Application ending after {Time.time:F1} seconds");
         isThreadRunning = false;
         if (scorePlottingThread != null && scorePlottingThread.IsAlive)
             scorePlottingThread.Join(100);
@@ -336,7 +336,7 @@ public class swarmModel : MonoBehaviour
 
     void restartFunction()
     {
-        Debug.Log("----------------------------- Restarting -----------------------------");
+        // Debug.Log("----------------------------- Restarting -----------------------------");
         SceneSelectorScript.reset();
     }
 
@@ -480,7 +480,7 @@ public class swarmModel : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Drone ID not found");
+            // Debug.LogWarning("Drone ID not found");
         }
 
         getDummies();
@@ -920,7 +920,7 @@ public class swarmModel : MonoBehaviour
             float relativeConnectivity = networkToCompute.ComputeRelativeConnectivity();
             float cohesionRadius = networkToCompute.ComputeCohesionRadius();
 
-            Debug.Log($"[Scores] VelMismatch:{velMissmatch:F3}  EnergyDev:{energyDev:F3}  RelConn:{relativeConnectivity:F3}  CohesionR:{cohesionRadius:F3}  N={networkToCompute.drones.Count}");
+            // Debug.Log($"[Scores] VelMismatch:{velMissmatch:F3}  EnergyDev:{energyDev:F3}  RelConn:{relativeConnectivity:F3}  CohesionR:{cohesionRadius:F3}  N={networkToCompute.drones.Count}");
 
             Thread.Sleep((int)(printInterval * 1000));
         }
@@ -1088,6 +1088,4 @@ public class swarmModel : MonoBehaviour
 
         return (width, height);
     }
-
-
 }

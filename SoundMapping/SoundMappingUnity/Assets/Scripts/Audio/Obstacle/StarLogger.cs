@@ -63,7 +63,7 @@ public static class StarLogger
         File.WriteAllText(fullPath, json);
         
         #if UNITY_EDITOR
-        Debug.Log($"[StarLogger] Saved star log to: {fullPath}");
+        // Debug.Log($"[StarLogger] Saved star log to: {fullPath}");
         AssetDatabase.Refresh();
         #endif
     }

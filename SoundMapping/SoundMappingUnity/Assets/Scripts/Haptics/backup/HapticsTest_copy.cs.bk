@@ -273,7 +273,7 @@ public class HapticsTest : MonoBehaviour
 
         if (current == null)
         {
-            Debug.LogWarning("No embodied drone in scene – skipping swarm-frame update.");
+            // Debug.LogWarning("No embodied drone in scene – skipping swarm-frame update.");
             return;
         }
 
@@ -293,7 +293,7 @@ public class HapticsTest : MonoBehaviour
         _swarmFrame.rotation = Quaternion.LookRotation(
                                     embodiedDrone.forward,
                                     embodiedDrone.up);
-        // Debug.Log($"swarmFrame.rotation = {_swarmFrame.rotation.eulerAngles:F2} " +
+        // // Debug.Log($"swarmFrame.rotation = {_swarmFrame.rotation.eulerAngles:F2} " +
         //           $"(centroid at {centroid:F2})");
 
         // ② measure current half-sizes
@@ -332,13 +332,13 @@ public class HapticsTest : MonoBehaviour
             Vector3 localE = _swarmFrame.InverseTransformPoint(embodiedDrone.position);
             int colE = ColFromX(localE.x, halfW);
             int rowE = RowFromY(localE.z, halfH);
-            Debug.Log($"embodiedDrone at {localE:F2} " +
+            // Debug.Log($"embodiedDrone at {localE:F2} " +
                       $"(col {colE}, row {rowE})");
             int addrE = matrix[rowE, colE];
 
             duty[addrE] = 14;                       // full-strength buzz
 
-            Debug.Log($"embodiedDrone addr {addrE} " +
+            // Debug.Log($"embodiedDrone addr {addrE} " +
             $"(duty {duty[addrE]})");
         }
 
@@ -365,7 +365,7 @@ public class HapticsTest : MonoBehaviour
         // int rowE = RowFromY(localE.z, halfH);
 
         // int addrE = matrix[rowE, colE];         // 4 × 5 → hardware addr
-        // Debug.Log($"embodiedDrone addr {addrE} " +
+        // // Debug.Log($"embodiedDrone addr {addrE} " +
         //             $"(duty {duty[addrE]})");
         // /*-------------------------------------------------------------*
         // * ⑤ send: 1) silence the old tactor (if any)
@@ -555,7 +555,7 @@ public class HapticsTest : MonoBehaviour
         currentGamepad = Gamepad.current;
         if (currentGamepad == null)
         {
-            Debug.LogWarning("No gamepad connected.");
+            // Debug.LogWarning("No gamepad connected.");
         }else {
             currentGamepad.SetMotorSpeeds(0.0f, 0.0f);
         }
@@ -588,12 +588,12 @@ public class HapticsTest : MonoBehaviour
             switch (change)
             {
                 case InputDeviceChange.Added:
-                    Debug.Log("Controller Connected: " + gamepad.name);
+                    // Debug.Log("Controller Connected: " + gamepad.name);
                     currentGamepad = gamepad;
                     break;
 
                 case InputDeviceChange.Removed:
-                    Debug.Log("Controller Disconnected!");
+                    // Debug.Log("Controller Disconnected!");
                     
                     // Check if the removed device was the active gamepad
                     if (currentGamepad == gamepad)
@@ -1182,7 +1182,7 @@ public class Actuators
             VibraForge.SendCommand(Adresse, (int)duty == 0 ? 0:1, (int)duty, (int)frequency);
             lastSendDuty = duty;
             lastSendFrequency = frequency;
-      //      Debug.Log("Send Command: " + Adresse + " Duty: " + duty + " Frequency: " + frequency);
+      //      // Debug.Log("Send Command: " + Adresse + " Duty: " + duty + " Frequency: " + frequency);
         }
     }
 
@@ -1219,10 +1219,10 @@ public class GamepadMonitor : MonoBehaviour
             switch (change)
             {
                 case InputDeviceChange.Added:
-                    Debug.Log("Gamepad Connected: " + device.name);
+                    // Debug.Log("Gamepad Connected: " + device.name);
                     break;
                 case InputDeviceChange.Removed:
-                    Debug.Log("Gamepad Disconnected!");
+                    // Debug.Log("Gamepad Disconnected!");
                     break;
             }
         }

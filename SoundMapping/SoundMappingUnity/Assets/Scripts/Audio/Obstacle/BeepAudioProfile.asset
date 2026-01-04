@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0bd70207a56c4a45ad75495bc96956b, type: 3}
   m_Name: BeepAudioProfile
   m_EditorClassIdentifier: 
-  maxAudibleDistance: 15
+  maxAudibleDistance: 7
   baseVolume: 0.8
   basePitch: 0.755
   volumeByDistance:
@@ -47,7 +47,7 @@ MonoBehaviour:
       value: 1
       inSlope: 0
       outSlope: 0
-      tangentMode: 34
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -56,7 +56,7 @@ MonoBehaviour:
       value: 1
       inSlope: 0
       outSlope: 0
-      tangentMode: 34
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -71,7 +71,7 @@ MonoBehaviour:
       value: 1
       inSlope: 0
       outSlope: 0
-      tangentMode: 34
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -80,15 +80,15 @@ MonoBehaviour:
       value: 1
       inSlope: 0
       outSlope: 0
-      tangentMode: 34
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  pulseRateClamp: {x: 1, y: 6}
-  beepClip: {fileID: 8300000, guid: 6b6ead017fb2c4e62afbfd96caf040a8, type: 3}
-  k: 120
+  pulseRateClamp: {x: 1, y: 4}
+  beepClip: {fileID: 8300000, guid: 6f8dcfa2a8e634129b213e555de82840, type: 3}
+  k: 40
   eps: 2
   offset: 1

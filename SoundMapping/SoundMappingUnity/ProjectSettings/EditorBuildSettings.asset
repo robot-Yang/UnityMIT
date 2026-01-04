@@ -74,4 +74,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SceneStudy/FPVCollectibles_1.unity
     guid: 66120afd4c0ad6c498427499b1b16fcd
+  - enabled: 1
+    path: Assets/Scenes/SceneStudy/FPVObs_3.unity
+    guid: 8020eaeaff46d4a2da28b2bda78dca95
   m_configObjects: {}

@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEditor;
+using System.IO;
+using System.Collections.Generic;
 
 // ============================================================================
 // MAIN RUNTIME SCRIPT
@@ -59,6 +61,33 @@ public class TestCourse : MonoBehaviour
     [HideInInspector]
     public Transform groundTile;
 
+    [System.Serializable]
+    public class ObstacleWall
+    {
+        public string name;
+        public float x;
+        public float z;
+        public float width;
+        public float length;
+    }
+
+    [System.Serializable]
+    public class GapExport
+    {
+        public int index;
+        public ObstacleWall left;
+        public ObstacleWall right;
+    }
+
+    [System.Serializable]
+    public class ObstacleCourseExport
+    {
+        public float courseWidth;
+        public float courseLength;
+        public ObstacleWall[] boundaryWalls;
+        public GapExport[] gaps;
+    }
+
     // -------------------------------
     // AUTO-FIND
     // -------------------------------
@@ -115,6 +144,87 @@ public class TestCourse : MonoBehaviour
         Clean();
         PlaceStartEnd();
         GenerateGaps();
+    }
+
+    public void Save()
+    {
+        Transform gcRoot = transform.Find("GapController");
+        if (gcRoot == null)
+        {
+            Debug.LogWarning("[TestCourse] Cannot save: generate the obstacle course first.");
+            return;
+        }
+
+        var controller = gcRoot.GetComponent<GapsController>();
+        if (controller == null)
+        {
+            Debug.LogWarning("[TestCourse] Cannot save: GapsController component missing on GapController.");
+            return;
+        }
+
+        AutoFindReferences();
+        controller.Apply();
+
+        var gaps = new List<Gap>(gcRoot.GetComponentsInChildren<Gap>(includeInactive: true));
+        if (gaps.Count == 0)
+        {
+            Debug.LogWarning("[TestCourse] Cannot save: no gaps found.");
+            return;
+        }
+
+        float courseWidth = controller.corridorWidth;
+        float courseLength = Mathf.Max(0f, (gaps.Count - 1) * controller.gapSpacing + controller.gapWidth);
+
+        var boundaryWalls = new List<ObstacleWall>();
+        var leftBoundary = gcRoot.Find("BoundaryLeft");
+        var rightBoundary = gcRoot.Find("BoundaryRight");
+        if (leftBoundary != null) boundaryWalls.Add(ToWall(leftBoundary, "BoundaryLeft"));
+        if (rightBoundary != null) boundaryWalls.Add(ToWall(rightBoundary, "BoundaryRight"));
+
+        gaps.Sort((a, b) => a.transform.localPosition.z.CompareTo(b.transform.localPosition.z));
+        var gapExports = new List<GapExport>();
+        for (int i = 0; i < gaps.Count; i++)
+        {
+            Gap g = gaps[i];
+            var left = g.leftWall != null ? ToWall(g.leftWall, "LeftWall") : null;
+            var right = g.rightWall != null ? ToWall(g.rightWall, "RightWall") : null;
+            gapExports.Add(new GapExport
+            {
+                index = i,
+                left = left,
+                right = right
+            });
+        }
+
+        var export = new ObstacleCourseExport
+        {
+            courseWidth = courseWidth,
+            courseLength = courseLength,
+            boundaryWalls = boundaryWalls.ToArray(),
+            gaps = gapExports.ToArray()
+        };
+
+        string json = JsonUtility.ToJson(export, true);
+        string dir = Path.Combine(Application.dataPath, "Data/default/ObstacleCourse");
+        if (!Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+        string path = Path.Combine(dir, "TestCourse.json");
+        File.WriteAllText(path, json);
+        Debug.Log("[TestCourse] Saved obstacle course to " + path);
+    }
+
+    private ObstacleWall ToWall(Transform t, string defaultName)
+    {
+        Vector3 p = t.position;
+        Vector3 s = t.lossyScale;
+        return new ObstacleWall
+        {
+            name = string.IsNullOrEmpty(t.name) ? defaultName : t.name,
+            x = p.x,
+            z = p.z,
+            width = s.x,
+            length = s.z
+        };
     }
 
     public void Clean()
@@ -288,6 +398,9 @@ public class TestCourseEditor : Editor
 
         if (GUILayout.Button("Generate"))
             script.Generate();
+
+        if (GUILayout.Button("Save Course"))
+            script.Save();
     }
 }
 #endif

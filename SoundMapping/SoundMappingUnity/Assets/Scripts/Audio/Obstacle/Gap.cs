@@ -205,7 +205,7 @@ public class Gap : MonoBehaviour
         string[] guids = AssetDatabase.FindAssets(name + " t:Prefab", new[] { folder });
         if (guids.Length == 0)
         {
-            Debug.LogError("[Gap] Collectible prefab not found: " + name);
+            // Debug.LogError("[Gap] Collectible prefab not found: " + name);
             return null;
         }
 

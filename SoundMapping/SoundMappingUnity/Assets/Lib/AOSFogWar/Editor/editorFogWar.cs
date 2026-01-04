@@ -37,7 +37,7 @@ namespace FischlWorks_FogWar
             }
             else
             {
-                Debug.LogError("Designated property was not found : " + attributeHandle._BaseCondition);
+                // Debug.LogError("Designated property was not found : " + attributeHandle._BaseCondition);
             }
         }
     }

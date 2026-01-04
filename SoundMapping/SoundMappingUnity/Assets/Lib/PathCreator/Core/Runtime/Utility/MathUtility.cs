@@ -81,7 +81,7 @@ namespace PathCreation.Utility {
         public static Vector2 PointOfLineLineIntersection (Vector2 a1, Vector2 a2, Vector2 a3, Vector2 a4) {
             float d = (a1.x - a2.x) * (a3.y - a4.y) - (a1.y - a2.y) * (a3.x - a4.x);
             if (d == 0) {
-                Debug.LogError ("Lines are parallel, please check that this is not the case before calling line intersection method");
+                // Debug.LogError ("Lines are parallel, please check that this is not the case before calling line intersection method");
                 return Vector2.zero;
             } else {
                 float n = (a1.x - a3.x) * (a3.y - a4.y) - (a1.y - a3.y) * (a3.x - a4.x);

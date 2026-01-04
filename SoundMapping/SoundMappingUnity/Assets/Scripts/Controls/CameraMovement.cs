@@ -36,6 +36,15 @@ public class CameraMovement : MonoBehaviour
     [SerializeField] private AudioListener listener;   // assign in Inspector
     private Transform listenerTransform;
 
+    void Awake()
+    {
+        if (listener == null)
+            Debug.LogError("[CameraMovement] Listener reference not defined.");
+            listener = GetComponentInChildren<AudioListener>();
+
+        listenerTransform = listener.transform;
+    }
+
     void Start()
     {
         _this = gameObject;
@@ -46,17 +55,12 @@ public class CameraMovement : MonoBehaviour
         heightCamera = DEFAULT_HEIGHT_CAMERA;
         initialCamRotation = cam.transform.rotation;
 
+        var listener = FindObjectOfType<AudioListener>();
+        if (listener != null)
+            listenerTransform = listener.transform;
+
         // Begin in top-down view mode
         currentState = CameraState.TDView;
-    }
-
-    void Awake()
-    {
-        if (listener == null)
-            Debug.LogError("[CameraMovement] Listener reference not defined.");
-            listener = GetComponentInChildren<AudioListener>();
-
-        listenerTransform = listener.transform;
     }
 
     void Update()
@@ -264,7 +268,7 @@ public class CameraMovement : MonoBehaviour
         float t = Mathf.Clamp01(animTimer / 2f);
         textInfo.setDeathImageStatic(t);
 
-        Debug.Log(t);
+        // Debug.Log(t);
 
         
         if (t >= 1f)

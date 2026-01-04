@@ -19,7 +19,7 @@ public class BeepAudioProfile : ObstacleAudioProfileBase
     public override float GetPulseRate(float distance)
     {
         float pulse = (k / ((distance + eps) * (distance + eps))) + offset;
-        Debug.Log("Distance: "+distance+"  pulse: "+pulse);
+        // Debug.Log("Distance: "+distance+"  pulse: "+pulse);
         return pulse;
     }
 

@@ -26,7 +26,7 @@ public abstract class ObstacleAudioProfileBase : ScriptableObject
     public virtual float GetPulseRate(float distance)
     {
         // Default: profiles that do not override use a simple curve
-        Debug.Log("default pulse no override");
+        // Debug.Log("default pulse no override");
         return 1f;
     }
 

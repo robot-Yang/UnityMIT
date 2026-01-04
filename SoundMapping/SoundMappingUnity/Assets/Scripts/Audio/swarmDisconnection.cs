@@ -176,23 +176,23 @@ public class SwarmDisconnection : MonoBehaviour
     {
         if(selectedOption == 0)
         {
-            Debug.Log("Playing Bip sound");
+            // Debug.Log("Playing Bip sound");
         }
         else if(selectedOption == 1)
         {
-            Debug.Log("Playing White Noise sound");
+            // Debug.Log("Playing White Noise sound");
         }
         else if(selectedOption == 2)
         {
-            Debug.Log("Playing Bap sound");
+            // Debug.Log("Playing Bap sound");
         }
         else if(selectedOption == 3)
         {
-            Debug.Log("Playing Bop sound");
+            // Debug.Log("Playing Bop sound");
         }
         else if(selectedOption == 4)
         {
-            Debug.Log("Playing Beep sound");
+            // Debug.Log("Playing Beep sound");
         }
     }
 
@@ -225,6 +225,6 @@ public class SwarmDisconnection : MonoBehaviour
 
     public void RandomizeSwarm()
     {
-        Debug.Log("Randomizing swarm");
+        // Debug.Log("Randomizing swarm");
     }
 }

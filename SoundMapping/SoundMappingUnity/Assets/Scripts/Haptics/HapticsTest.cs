@@ -1234,7 +1234,7 @@ public class HapticsTest : MonoBehaviour
         const int OBSTACLE_SLAVE_ID = 1; // Haptics for obstacles
 
         VibraForge.Reset();
-        print("HapticsTest Start");
+        // print("HapticsTest Start");
         finalList = new List<Actuators>();
         actuatorsRange = new List<Actuators>();
         actuatorsVariables = new List<Actuators>();

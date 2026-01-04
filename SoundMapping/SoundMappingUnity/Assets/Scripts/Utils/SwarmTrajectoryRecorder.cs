@@ -228,7 +228,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         foreach (var kv in _trajById) { if (kv.Value.frames.Count > 0) { any = true; break; } }
         if (any)
         {
-            Debug.Log($"[SwarmTrajectoryRecorder] Scene unloaded -> saving previous scene '{s.name}'");
+            // Debug.Log($"[SwarmTrajectoryRecorder] Scene unloaded -> saving previous scene '{s.name}'");
             TrySave(SaveReason.Final);
         }
 
@@ -340,14 +340,14 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         if (singleRunMode && _runFinalized)
         {
 #if UNITY_EDITOR
-            Debug.Log($"[SwarmTrajectoryRecorder] Ignoring Start('{label}') because a run was already finalized.");
+            // Debug.Log($"[SwarmTrajectoryRecorder] Ignoring Start('{label}') because a run was already finalized.");
 #endif
             return;
         }
         if (_openTrial != null)
         {
 #if UNITY_EDITOR
-            Debug.Log($"[SwarmTrajectoryRecorder] Ignoring Start('{label}') because a run is already open.");
+            // Debug.Log($"[SwarmTrajectoryRecorder] Ignoring Start('{label}') because a run is already open.");
 #endif
             return;
         }
@@ -361,7 +361,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
             endRealtime = 0f
         };
 #if UNITY_EDITOR
-        Debug.Log($"[SwarmTrajectoryRecorder] Trial START '{_openTrial.label}' at t={_openTrial.startGameTime:F2}s");
+        // Debug.Log($"[SwarmTrajectoryRecorder] Trial START '{_openTrial.label}' at t={_openTrial.startGameTime:F2}s");
 #endif
     }
 
@@ -372,7 +372,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         if (_openTrial == null)
         {
 #if UNITY_EDITOR
-            Debug.Log($"[SwarmTrajectoryRecorder] Ignoring Stop('{label}') because no run is open.");
+            // Debug.Log($"[SwarmTrajectoryRecorder] Ignoring Stop('{label}') because no run is open.");
 #endif
             return;
         }
@@ -381,7 +381,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         _openTrial.endRealtime = Time.realtimeSinceStartup;
         _trialsBuffer.Add(_openTrial);
 #if UNITY_EDITOR
-        Debug.Log($"[SwarmTrajectoryRecorder] Trial STOP '{_openTrial.label}' at t={_openTrial.endGameTime:F2}s (dur {( _openTrial.endGameTime - _openTrial.startGameTime):F2}s)");
+        // Debug.Log($"[SwarmTrajectoryRecorder] Trial STOP '{_openTrial.label}' at t={_openTrial.endGameTime:F2}s (dur {( _openTrial.endGameTime - _openTrial.startGameTime):F2}s)");
 #endif
         if (singleRunMode && _openTrial.label == runLabelName) _runFinalized = true;
         _openTrial = null;
@@ -468,14 +468,14 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
                 if (_droneTransforms.Count > 0)
                 {
                     _samplingEnabled = true;
-                    Debug.Log($"[SwarmTrajectoryRecorder] Found Swarm with {_droneTransforms.Count} drones; recording enabled.");
+                    // Debug.Log($"[SwarmTrajectoryRecorder] Found Swarm with {_droneTransforms.Count} drones; recording enabled.");
                     yield break;
                 }
             }
 
             if (timeout > 0f && (Time.unscaledTime - t0) > timeout)
             {
-                Debug.LogWarning("[SwarmTrajectoryRecorder] Swarm not found within timeout; will keep idle and retry.");
+                // Debug.LogWarning("[SwarmTrajectoryRecorder] Swarm not found within timeout; will keep idle and retry.");
                 // light retry while idle
                 while (!_samplingEnabled)
                 {
@@ -487,7 +487,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
                         if (_droneTransforms.Count > 0)
                         {
                             _samplingEnabled = true;
-                            Debug.Log($"[SwarmTrajectoryRecorder] Late-found Swarm with {_droneTransforms.Count} drones; recording enabled.");
+                            // Debug.Log($"[SwarmTrajectoryRecorder] Late-found Swarm with {_droneTransforms.Count} drones; recording enabled.");
                             yield break;
                         }
                     }
@@ -861,7 +861,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
 
         if (reason == SaveReason.Final) _finalized = true;
 #if UNITY_EDITOR
-        Debug.Log($"[SwarmTrajectoryRecorder] Save() wrote file. finalized={_finalized} time={Time.time:F2}");
+        // Debug.Log($"[SwarmTrajectoryRecorder] Save() wrote file. finalized={_finalized} time={Time.time:F2}");
 #endif
     }
 
@@ -917,7 +917,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         string full = Path.Combine(root, fileName);
 
         File.WriteAllText(full, JsonUtility.ToJson(log, true));
-        Debug.Log($"[SwarmTrajectoryRecorder] Saved {log.trajectories.Count} drones to:\n{full}");
+        // Debug.Log($"[SwarmTrajectoryRecorder] Saved {log.trajectories.Count} drones to:\n{full}");
 
 #if UNITY_EDITOR
         if (full.StartsWith(Application.dataPath)) AssetDatabase.Refresh();
