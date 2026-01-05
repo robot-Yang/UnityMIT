@@ -23,16 +23,17 @@ from matplotlib import transforms
 import numpy as np
 
 BASE_DIR = Path("Assets/Data/default/Trajectories")
-OUT_DIR = Path("outputs")
+OUT_DIR = Path("../../../../Results/plots")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+JSON_OUTPUT_PATH = Path("../../../../Results/run_metrics.json")
 
 # Batch filtering: set INCLUDE_ALL_BATCH = False and BATCH_ID = "B3" (example)
 # to only include folders starting with that batch prefix (before the first underscore).
-INCLUDE_ALL_BATCH = False
-BATCH_ID = "3"
+INCLUDE_ALL_BATCH = True
+BATCH_ID = "0"
 
 # Interactive trajectory preview (set batch/uid/condition to pick a run)
-TRAJ_BATCH = "B3"
+TRAJ_BATCH = "B1"
 TRAJ_UID = "0"
 TRAJ_CONDITION = "no_sound"  # "sound" or "no_sound"
 ENABLE_TRAJECTORY_SLIDER = True
@@ -431,6 +432,7 @@ def _collect_runs():
                 subject=subject_label,
                 batch=batch_prefix,
                 condition=condition,
+                folder_name=folder.name,
                 stars=star_count,
                 traj_file=str(traj_path),
                 stars_file=str(stars_path) if stars_path.exists() else "missing",
@@ -439,6 +441,66 @@ def _collect_runs():
             )
         )
     return runs
+
+
+def _subject_key_from_folder(folder_name: str):
+    base = folder_name
+    # Match the longer suffix first to avoid partial stripping (e.g., "_no_sound" before "_sound")
+    for suffix in ("_no_sound", "_sound"):
+        if base.endswith(suffix):
+            base = base[: -len(suffix)]
+            break
+    parts = base.split("_", 1)
+    if len(parts) == 2:
+        batch_part, user_part = parts
+        batch_id = batch_part[1:] if batch_part.startswith("B") else batch_part
+        if batch_id:
+            return f"{batch_id}_{user_part}"
+    return base
+
+
+def _load_saved_metrics():
+    if not JSON_OUTPUT_PATH.exists():
+        return {}
+    try:
+        with JSON_OUTPUT_PATH.open("r") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return data
+        print(f"[WARN] Metrics file at {JSON_OUTPUT_PATH} is not a dict; starting fresh.")
+    except Exception as exc:
+        print(f"[WARN] Could not read existing metrics at {JSON_OUTPUT_PATH}: {exc}")
+    return {}
+
+
+def _persist_new_metrics(runs):
+    saved = _load_saved_metrics()
+    added = 0
+
+    for r in runs:
+        folder_name = r.get("folder_name") or Path(r.get("traj_file", "")).parent.name
+        subject_key = _subject_key_from_folder(folder_name)
+        cond_key = "S" if r.get("condition") == "sound" else "NS" if r.get("condition") == "no_sound" else None
+        if cond_key is None:
+            continue
+        subj_block = saved.setdefault(subject_key, {})
+        if cond_key in subj_block:
+            continue
+        lost = r.get("lost_drones", max(0, r["total_drones"] - r["survivors"]))
+        subj_block[cond_key] = {
+            "time": float(r["run_time_s"]),
+            "nb_stars": int(r["stars"]),
+            "lost_drones": int(lost),
+        }
+        added += 1
+
+    if added:
+        JSON_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with JSON_OUTPUT_PATH.open("w") as f:
+            json.dump(saved, f, indent=2, sort_keys=True)
+        print(f"[INFO] Saved {added} new metric entries to {JSON_OUTPUT_PATH}")
+    else:
+        print(f"[INFO] No new metrics to save; existing file is up to date at {JSON_OUTPUT_PATH}")
 
 
 def _print_summary(runs):
@@ -762,6 +824,7 @@ def main():
 
     if not runs:
         raise SystemExit("No runs found under Assets/Data/default/Trajectories/")
+    _persist_new_metrics(runs)
     _print_summary(runs)
 
     colors = plt.get_cmap("tab10").colors

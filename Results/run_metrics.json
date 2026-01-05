@@ -1,0 +1,146 @@
+{
+  "2_0": {
+    "NS": {
+      "lost_drones": 1,
+      "nb_stars": 84,
+      "time": 127.3599967956543
+    },
+    "S": {
+      "lost_drones": 0,
+      "nb_stars": 137,
+      "time": 150.31999492645264
+    }
+  },
+  "2_1": {
+    "NS": {
+      "lost_drones": 3,
+      "nb_stars": 122,
+      "time": 52.260000228881836
+    },
+    "S": {
+      "lost_drones": 0,
+      "nb_stars": 98,
+      "time": 49.760000228881836
+    }
+  },
+  "2_2": {
+    "NS": {
+      "lost_drones": 7,
+      "nb_stars": 92,
+      "time": 47.33999824523926
+    },
+    "S": {
+      "lost_drones": 7,
+      "nb_stars": 99,
+      "time": 50.77999687194824
+    }
+  },
+  "2_3": {
+    "NS": {
+      "lost_drones": 2,
+      "nb_stars": 97,
+      "time": 47.279998779296875
+    },
+    "S": {
+      "lost_drones": 0,
+      "nb_stars": 67,
+      "time": 47.09999752044678
+    }
+  },
+  "2_4": {
+    "NS": {
+      "lost_drones": 0,
+      "nb_stars": 118,
+      "time": 73.45999908447266
+    },
+    "S": {
+      "lost_drones": 3,
+      "nb_stars": 185,
+      "time": 173.73999118804932
+    }
+  },
+  "2_5": {
+    "NS": {
+      "lost_drones": 0,
+      "nb_stars": 79,
+      "time": 50.71999931335449
+    },
+    "S": {
+      "lost_drones": 0,
+      "nb_stars": 79,
+      "time": 46.760000228881836
+    }
+  },
+  "3_0": {
+    "NS": {
+      "lost_drones": 2,
+      "nb_stars": 18,
+      "time": 33.57999801635742
+    },
+    "S": {
+      "lost_drones": 0,
+      "nb_stars": 23,
+      "time": 53.079997062683105
+    }
+  },
+  "3_1": {
+    "NS": {
+      "lost_drones": 0,
+      "nb_stars": 12,
+      "time": 27.459999084472656
+    },
+    "S": {
+      "lost_drones": 0,
+      "nb_stars": 20,
+      "time": 61.739996910095215
+    }
+  },
+  "3_2": {
+    "NS": {
+      "lost_drones": 0,
+      "nb_stars": 13,
+      "time": 25.31999897956848
+    },
+    "S": {
+      "lost_drones": 0,
+      "nb_stars": 16,
+      "time": 42.839996337890625
+    }
+  },
+  "3_3": {
+    "NS": {
+      "lost_drones": 4,
+      "nb_stars": 18,
+      "time": 34.399999141693115
+    },
+    "S": {
+      "lost_drones": 0,
+      "nb_stars": 19,
+      "time": 49.319997787475586
+    }
+  },
+  "3_4": {
+    "NS": {
+      "lost_drones": 5,
+      "nb_stars": 13,
+      "time": 60.06000232696533
+    },
+    "S": {
+      "lost_drones": 1,
+      "nb_stars": 18,
+      "time": 53.81999969482422
+    }
+  },
+  "3_5": {
+    "NS": {
+      "lost_drones": 1,
+      "nb_stars": 14,
+      "time": 39.39999961853027
+    },
+    "S": {
+      "lost_drones": 0,
+      "nb_stars": 14,
+      "time": 30.699997901916504
+    }
+  }
+}
