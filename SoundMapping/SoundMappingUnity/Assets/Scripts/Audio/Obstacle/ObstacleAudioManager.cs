@@ -27,12 +27,12 @@ public class ObstacleAudioManager : MonoBehaviour
 
     [Header("Mode Switching")]
     [Tooltip("Below this distance, switch from Beep to Continuous (car-like solid tone).")]
-    [Min(0f)] public float continuousSwitchDistance = 2.3f;
+    [Min(0f)] public float continuousSwitchDistance = 2f;
 
     [Tooltip("Hysteresis band to avoid rapid toggling (meters). " +
              "Profile switches to Continuous at (threshold - hysteresis), " +
              "and back to Beep at (threshold + hysteresis).")]
-    [Min(0f)] public float switchThreshold = 0.2f;
+    [Min(0f)] public float switchThreshold = 0.1f;
 
     [Tooltip("Smooth follow speed of the listener toward the swarm center.")]
     public float listenerFollowSpeed = 20f;
@@ -73,14 +73,8 @@ public class ObstacleAudioManager : MonoBehaviour
     [Tooltip("Offset")]
     public float safety_radius_offset = 1.5f;
 
-    [Header("Width Safety")]
+    [Tooltip("Width Safety")]
     public float envelopeWidthSafety = 0.5f;
-    [Tooltip("Update cadence (in UpdateSwarmEnvelope calls) for recomputing safety offset from velocity.")]
-    [Min(1)] public int safetyOffsetUpdateFrames = 5;
-    [Tooltip("Lerp speed toward the latest sampled safety offset.")]
-    public float safetyOffsetLerpSpeed = 5f;
-    [Tooltip("Safety offset scale")]
-    public float safety_offset_scale = 5f;
 
     // ===== Runtime containers =====
     private Transform listenerTransform;
@@ -134,10 +128,6 @@ public class ObstacleAudioManager : MonoBehaviour
     private float _envelopeRadius = 0f;
     private float _envelopeLength = 0f;
     private bool _hasEnvelope = false;
-    private float _swarmSpeed = 0f;
-    private float _dynamicSafetyOffset = 0f;
-    private float _targetSafetyOffset = 0f;
-    private int _safetyOffsetFrameCounter = 0;
 
     private Vector3 _lastCentroidXZ;
     private bool _hasLastCentroid = false;
@@ -316,28 +306,6 @@ public class ObstacleAudioManager : MonoBehaviour
 
         vel.y = 0f;
         float speed = vel.magnitude;
-        Debug.Log($"Speed: {speed}");
-        _swarmSpeed = speed;
-
-        if (!_hasEnvelope)
-        {
-            _targetSafetyOffset = ComputeSafetyOffset(speed);
-            _dynamicSafetyOffset = _targetSafetyOffset;
-            _safetyOffsetFrameCounter = 0;
-        }
-        else
-        {
-            _safetyOffsetFrameCounter++;
-            if (_safetyOffsetFrameCounter >= Mathf.Max(1, safetyOffsetUpdateFrames))
-            {
-                _targetSafetyOffset = ComputeSafetyOffset(speed);
-                _safetyOffsetFrameCounter = 0;
-            }
-
-            float lerpSpeed = Mathf.Max(0f, safetyOffsetLerpSpeed);
-            float alpha = 1f - Mathf.Exp(-lerpSpeed * dt);
-            _dynamicSafetyOffset = Mathf.Lerp(_dynamicSafetyOffset, _targetSafetyOffset, alpha);
-        }
 
         // Direction: keep last direction when speed is near zero
         // --- Velocity-direction freeze threshold ---
@@ -466,7 +434,7 @@ public class ObstacleAudioManager : MonoBehaviour
             return false;
 
         // radius = a*w + b
-        float radius = safety_radius_scale * _envelopeRadius + _dynamicSafetyOffset;
+        float radius = safety_radius_scale * _envelopeRadius + safety_radius_offset;
 
         Vector3 C = _envelopeCenterXZ;
         C.y = 0f;
@@ -642,15 +610,6 @@ public class ObstacleAudioManager : MonoBehaviour
         _rt[obstacle] = r;
     }
 
-    private float ComputeSafetyOffset(float speed)
-    {
-        // Non-linear transition: r(x) = (1/x) + 1.3 clamped between moving offset and max 7.
-        float safeSpeed = Mathf.Max(speed, 0.001f); // avoid division by zero
-        float raw = (safety_offset_scale / safeSpeed) + 1.3f;
-        float minOffset = Mathf.Max(0f, safety_radius_offset);
-        return Mathf.Clamp(raw, minOffset, 7f);
-    }
-
 #if UNITY_EDITOR
     public ObstacleAudioProfileBase GetAssignedProfileFor(ObstacleAudio obstacle)
     {
@@ -706,7 +665,7 @@ public class ObstacleAudioManager : MonoBehaviour
         Vector3 projectionPoint = r.closestPoint;
         projectionPoint.y = 0f;
 
-        Vector3 toCentroid = _envelopeCenterXZ - projectionPoint;
+        Vector3 toCentroid = projectionPoint - _envelopeCenterXZ;
         toCentroid.y = 0f;
 
         if (heading.sqrMagnitude < 1e-6f || toCentroid.sqrMagnitude < 1e-6f)
@@ -716,8 +675,7 @@ public class ObstacleAudioManager : MonoBehaviour
         toCentroid.Normalize();
 
         float dot = Vector3.Dot(heading, toCentroid);
-        float mul01 = 1f - Mathf.Abs(dot);
-        mul01 = (-10*Mathf.Pow(dot,3) + 1) / 2;
+        float mul01 = (1f - dot)/2;
 
         if (facingExponent != 1f) mul01 = Mathf.Pow(mul01, facingExponent);
 
@@ -887,7 +845,7 @@ private void OnDrawGizmos()
     // ===== Safety Envelope (Circle C) =====
     if (_hasEnvelope)
     {
-        float radius = safety_radius_scale * _envelopeRadius + _dynamicSafetyOffset;
+        float radius = safety_radius_scale * _envelopeRadius + safety_radius_offset;
 
         Vector3 center = _envelopeCenterXZ;
         float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;

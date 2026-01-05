@@ -103,7 +103,7 @@ MonoBehaviour:
   rotate: 1
   rotationSpeed: 100
   collectSound: {fileID: 8300000, guid: 1a1923b924dbef741974dd12a4a6b56d, type: 3}
-  collectEffect: {fileID: 1702657300312902, guid: a45c51da10cf1a84abc6a99c06951e3f, type: 3}
+  collectEffect: {fileID: 0}
 --- !u!82 &82494281517017762
 AudioSource:
   m_ObjectHideFlags: 0
