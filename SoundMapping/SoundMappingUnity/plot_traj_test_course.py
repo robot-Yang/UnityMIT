@@ -28,7 +28,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Batch filtering: set INCLUDE_ALL_BATCH = False and BATCH_ID = "B3" (example)
 # to only include folders starting with that batch prefix (before the first underscore).
-INCLUDE_ALL_BATCH = True
+INCLUDE_ALL_BATCH = False
 BATCH_ID = "3"
 
 # Interactive trajectory preview (set batch/uid/condition to pick a run)

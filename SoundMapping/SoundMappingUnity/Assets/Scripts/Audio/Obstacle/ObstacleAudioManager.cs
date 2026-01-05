@@ -71,11 +71,16 @@ public class ObstacleAudioManager : MonoBehaviour
     public float safety_radius_scale = 1.0f;
 
     [Tooltip("Offset")]
-    public float safety_radius_offset = 0.5f;
+    public float safety_radius_offset = 1.5f;
 
     [Header("Width Safety")]
     public float envelopeWidthSafety = 0.5f;
-    
+    [Tooltip("Update cadence (in UpdateSwarmEnvelope calls) for recomputing safety offset from velocity.")]
+    [Min(1)] public int safetyOffsetUpdateFrames = 5;
+    [Tooltip("Lerp speed toward the latest sampled safety offset.")]
+    public float safetyOffsetLerpSpeed = 5f;
+    [Tooltip("Safety offset scale")]
+    public float safety_offset_scale = 5f;
 
     // ===== Runtime containers =====
     private Transform listenerTransform;
@@ -102,12 +107,17 @@ public class ObstacleAudioManager : MonoBehaviour
     private class Runtime
     {
         public ObstacleAudio obstacle;
+        public Transform obstacleRoot;
         public ObstacleAudioProfileBase profile;
         public bool isLoopingStarted;
         public float pulseTimer;
         public Transform closestDrone;
         public float closestDistance = -1;
         public Vector3 dirDroneToP_XZ = Vector3.zero;
+        public Vector3 closestPoint = Vector3.zero;
+        public bool hasClosestPoint = false;
+        public AudioSource audioSource;
+        public Transform audioTransform;
     }
 
     private struct AudioCtx
@@ -124,6 +134,10 @@ public class ObstacleAudioManager : MonoBehaviour
     private float _envelopeRadius = 0f;
     private float _envelopeLength = 0f;
     private bool _hasEnvelope = false;
+    private float _swarmSpeed = 0f;
+    private float _dynamicSafetyOffset = 0f;
+    private float _targetSafetyOffset = 0f;
+    private int _safetyOffsetFrameCounter = 0;
 
     private Vector3 _lastCentroidXZ;
     private bool _hasLastCentroid = false;
@@ -302,6 +316,28 @@ public class ObstacleAudioManager : MonoBehaviour
 
         vel.y = 0f;
         float speed = vel.magnitude;
+        Debug.Log($"Speed: {speed}");
+        _swarmSpeed = speed;
+
+        if (!_hasEnvelope)
+        {
+            _targetSafetyOffset = ComputeSafetyOffset(speed);
+            _dynamicSafetyOffset = _targetSafetyOffset;
+            _safetyOffsetFrameCounter = 0;
+        }
+        else
+        {
+            _safetyOffsetFrameCounter++;
+            if (_safetyOffsetFrameCounter >= Mathf.Max(1, safetyOffsetUpdateFrames))
+            {
+                _targetSafetyOffset = ComputeSafetyOffset(speed);
+                _safetyOffsetFrameCounter = 0;
+            }
+
+            float lerpSpeed = Mathf.Max(0f, safetyOffsetLerpSpeed);
+            float alpha = 1f - Mathf.Exp(-lerpSpeed * dt);
+            _dynamicSafetyOffset = Mathf.Lerp(_dynamicSafetyOffset, _targetSafetyOffset, alpha);
+        }
 
         // Direction: keep last direction when speed is near zero
         // --- Velocity-direction freeze threshold ---
@@ -430,7 +466,7 @@ public class ObstacleAudioManager : MonoBehaviour
             return false;
 
         // radius = a*w + b
-        float radius = safety_radius_scale * _envelopeRadius + safety_radius_offset;
+        float radius = safety_radius_scale * _envelopeRadius + _dynamicSafetyOffset;
 
         Vector3 C = _envelopeCenterXZ;
         C.y = 0f;
@@ -470,7 +506,10 @@ public class ObstacleAudioManager : MonoBehaviour
     // ------------------------------------------------------------
     private float ComputeDistanceToObstacle(ObstacleAudio o)
     {
-        Transform obstacleTf = o.transform;
+        if (!_rt.TryGetValue(o, out var rCache))
+            return Vector3.Distance(listenerTransform.position, o.transform.position);
+
+        Transform obstacleTf = rCache.obstacleRoot != null ? rCache.obstacleRoot : o.transform;
 
         var drones = _cachedDrones;
         if (drones == null || drones.Count == 0)
@@ -503,6 +542,11 @@ public class ObstacleAudioManager : MonoBehaviour
         // Record projection point for gizmos (optional)
         allPointsP.Add(bestPoint);
 
+        // Keep the audio source located at the projection point on the obstacle
+        var audioTransform = rCache.audioTransform ?? rCache.audioSource?.transform ?? o.source?.transform;
+        if (audioTransform != null)
+            audioTransform.position = bestPoint;
+
         // No drone found (should not happen)
         if (bestDrone == null)
             return float.MaxValue;
@@ -518,9 +562,14 @@ public class ObstacleAudioManager : MonoBehaviour
         {
             if (_rt.TryGetValue(o, out var rOutside))
             {
+                rOutside.obstacleRoot = obstacleTf;
+                rOutside.audioSource = rCache.audioSource;
+                rOutside.audioTransform = rCache.audioTransform ?? audioTransform;
                 rOutside.closestDrone = null;
                 rOutside.closestDistance = -1f;
                 rOutside.dirDroneToP_XZ = Vector3.zero;
+                rOutside.closestPoint = Vector3.zero;
+                rOutside.hasClosestPoint = false;
                 _rt[o] = rOutside;
             }
 
@@ -536,11 +585,17 @@ public class ObstacleAudioManager : MonoBehaviour
         {
             rForThis.closestDrone = bestDrone;
             rForThis.closestDistance = bestDistance;
+            rForThis.closestPoint = bestPoint;
+            rForThis.hasClosestPoint = true;
 
             // Direction drone -> obstacle (XZ)
             Vector3 dir = bestPoint - bestDrone.position;
             dir.y = 0f;
             rForThis.dirDroneToP_XZ = (dir.sqrMagnitude > 1e-6f) ? dir.normalized : Vector3.zero;
+
+            rForThis.obstacleRoot = obstacleTf;
+            rForThis.audioSource = rCache.audioSource;
+            rForThis.audioTransform = rCache.audioTransform ?? audioTransform;
 
             _rt[o] = rForThis;
         }
@@ -555,6 +610,7 @@ public class ObstacleAudioManager : MonoBehaviour
         {
             _obstacles.Add(obstacle);
             _rt[obstacle] = new Runtime { obstacle = obstacle, profile = null, isLoopingStarted = false, pulseTimer = 0f };
+            RefreshObstacleBindings(obstacle);
             AssignProfile(obstacle);
         }
     }
@@ -563,6 +619,36 @@ public class ObstacleAudioManager : MonoBehaviour
     {
         _obstacles.Remove(obstacle);
         _rt.Remove(obstacle);
+    }
+
+    private void RefreshObstacleBindings(ObstacleAudio obstacle)
+    {
+        if (obstacle == null || !_rt.TryGetValue(obstacle, out var r)) return;
+
+        Transform root = obstacle.transform.parent != null ? obstacle.transform.parent : obstacle.transform;
+        r.obstacleRoot = root;
+
+        Transform audioNode = root.Find("audio_source");
+        if (audioNode == null)
+            audioNode = obstacle.transform.Find("audio_source");
+
+        AudioSource src = audioNode != null ? audioNode.GetComponent<AudioSource>() : obstacle.source;
+        if (src == null)
+            src = obstacle.GetComponentInChildren<AudioSource>();
+
+        r.audioSource = src;
+        r.audioTransform = (audioNode != null) ? audioNode : (src != null ? src.transform : null);
+
+        _rt[obstacle] = r;
+    }
+
+    private float ComputeSafetyOffset(float speed)
+    {
+        // Non-linear transition: r(x) = (1/x) + 1.3 clamped between moving offset and max 7.
+        float safeSpeed = Mathf.Max(speed, 0.001f); // avoid division by zero
+        float raw = (safety_offset_scale / safeSpeed) + 1.3f;
+        float minOffset = Mathf.Max(0f, safety_radius_offset);
+        return Mathf.Clamp(raw, minOffset, 7f);
     }
 
 #if UNITY_EDITOR
@@ -576,6 +662,7 @@ public class ObstacleAudioManager : MonoBehaviour
     // ===== Internals =====
     private void AssignProfile(ObstacleAudio obstacle)
     {
+        RefreshObstacleBindings(obstacle);
         var chosen = DecideProfileFor(obstacle);
         if (chosen == null)
         {
@@ -610,15 +697,27 @@ public class ObstacleAudioManager : MonoBehaviour
         if (!useDirectionalAttenuation || mpc == null || r == null || r.closestDrone == null)
             return 1f;
 
-        Vector3 heading = mpc.GetSwarmHeading();
-        Vector3 toObs = r.dirDroneToP_XZ;
-
-        if (heading == Vector3.zero || toObs == Vector3.zero)
+        if (!_hasEnvelope)
             return 1f;
 
-        float dot = Vector3.Dot(heading, toObs);
+        Vector3 heading = mpc.GetSwarmHeading();
+        heading.y = 0f;
+
+        Vector3 projectionPoint = r.closestPoint;
+        projectionPoint.y = 0f;
+
+        Vector3 toCentroid = _envelopeCenterXZ - projectionPoint;
+        toCentroid.y = 0f;
+
+        if (heading.sqrMagnitude < 1e-6f || toCentroid.sqrMagnitude < 1e-6f)
+            return 1f;
+
+        heading.Normalize();
+        toCentroid.Normalize();
+
+        float dot = Vector3.Dot(heading, toCentroid);
         float mul01 = 1f - Mathf.Abs(dot);
-        mul01 = (dot + 1) / 2;
+        mul01 = (-10*Mathf.Pow(dot,3) + 1) / 2;
 
         if (facingExponent != 1f) mul01 = Mathf.Pow(mul01, facingExponent);
 
@@ -648,7 +747,16 @@ public class ObstacleAudioManager : MonoBehaviour
     {
         var o = r.obstacle;
         var p = r.profile;
-        if (o == null || p == null || o.source == null) return;
+        var audioSrc = r.audioSource ?? o.source;
+        if (o == null || p == null || audioSrc == null) return;
+
+        // keep runtime audioSource updated if we fell back
+        if (r.audioSource == null && audioSrc != null)
+        {
+            r.audioSource = audioSrc;
+            r.audioTransform = audioSrc.transform;
+            _rt[o] = r;
+        }
 
         // Audible gate (computed once)
         bool audible = ctx.distance <= p.maxAudibleDistance;
@@ -672,33 +780,33 @@ public class ObstacleAudioManager : MonoBehaviour
         if (p is ContinuousAudioProfile cProf)
         {
             // Continuous: simple gate
-            o.source.mute = !audible;
+            audioSrc.mute = !audible;
             if (!audible) return;
 
             if (!r.isLoopingStarted)
             {
-                o.source.loop = true;
-                o.source.clip = cProf.loopClip;
-                if (o.source.clip != null) o.source.Play();
+                audioSrc.loop = true;
+                audioSrc.clip = cProf.loopClip;
+                if (audioSrc.clip != null) audioSrc.Play();
                 r.isLoopingStarted = true;
                 _rt[o] = r;
             }
 
-            o.source.volume = finalVolume;
-            o.source.pitch = finalPitch;
+            audioSrc.volume = finalVolume;
+            audioSrc.pitch = finalPitch;
         }
         else if (p is BeepAudioProfile bProf)
         {
             // One-shot mode for beeps
-            if (o.source.loop) o.source.loop = false;
+            if (audioSrc.loop) audioSrc.loop = false;
 
             // Do not mute while a beep is currently playing; let it finish naturally
-            o.source.mute = !audible && !o.source.isPlaying;
-            if (!audible && !o.source.isPlaying) return;
+            audioSrc.mute = !audible && !audioSrc.isPlaying;
+            if (!audible && !audioSrc.isPlaying) return;
 
             // Apply pitch to the source; pass volume only in PlayOneShot to avoid double attenuation
-            o.source.pitch = finalPitch;
-            o.source.volume = 1f;
+            audioSrc.pitch = finalPitch;
+            audioSrc.volume = 1f;
 
             float rateHz = bProf.GetPulseRate(clampedDist);
             rateHz = Mathf.Clamp(rateHz, bProf.pulseRateClamp.x, bProf.pulseRateClamp.y);
@@ -709,7 +817,7 @@ public class ObstacleAudioManager : MonoBehaviour
             {
                 r.pulseTimer = 0f;
                 if (bProf.beepClip != null)
-                    o.source.PlayOneShot(bProf.beepClip, finalVolume); // single volume application
+                    audioSrc.PlayOneShot(bProf.beepClip, finalVolume); // single volume application
             }
             _rt[o] = r;
         }
@@ -779,7 +887,7 @@ private void OnDrawGizmos()
     // ===== Safety Envelope (Circle C) =====
     if (_hasEnvelope)
     {
-        float radius = safety_radius_scale * _envelopeRadius + safety_radius_offset;
+        float radius = safety_radius_scale * _envelopeRadius + _dynamicSafetyOffset;
 
         Vector3 center = _envelopeCenterXZ;
         float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;
@@ -820,6 +928,27 @@ private void OnDrawGizmos()
         Vector3 pos = p;
         pos.y += 0.2f;
         Gizmos.DrawSphere(pos, 0.2f);
+    }
+
+    // ===== ROI Distance Lines (drone -> obstacle) =====
+    Handles.color = new Color(1f, 0.5f, 0f, 0.9f);
+    foreach (var kvp in _rt)
+    {
+        var r = kvp.Value;
+        if (r == null || r.closestDrone == null) continue;
+
+        Vector3 start = r.closestDrone.position;
+        Vector3 end = start;
+        if (r.hasClosestPoint)
+        {
+            end = r.closestPoint;
+        }
+        else if (r.dirDroneToP_XZ != Vector3.zero && r.closestDistance > 0f)
+        {
+            Vector3 flatDir = r.dirDroneToP_XZ.normalized;
+            end = start + new Vector3(flatDir.x, 0f, flatDir.z) * r.closestDistance;
+        }
+        Handles.DrawAAPolyLine(5f, start, end);
     }
 
 }
