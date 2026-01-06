@@ -1,11 +1,7 @@
 using UnityEngine;
 
 public abstract class ObstacleAudioProfileBase : ScriptableObject
-{
-    [Header("Audibility")]
-    [Tooltip("Max distance at which an obstacle should be audible.")]
-    public float maxAudibleDistance = 15f;
-    
+{   
     [Header("Base")]
     [Tooltip("Base output volume applied before curve evaluation.")]
     [Range(0f, 1f)] public float baseVolume = 0.8f;

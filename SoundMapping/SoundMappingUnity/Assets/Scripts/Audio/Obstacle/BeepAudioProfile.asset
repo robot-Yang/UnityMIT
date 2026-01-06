@@ -11,8 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e0bd70207a56c4a45ad75495bc96956b, type: 3}
   m_Name: BeepAudioProfile
-  m_EditorClassIdentifier: 
-  maxAudibleDistance: 7
+  m_EditorClassIdentifier:
   baseVolume: 0.8
   basePitch: 0.755
   volumeByDistance:

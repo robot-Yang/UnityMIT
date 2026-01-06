@@ -48,7 +48,7 @@ public class ObstacleAudio : MonoBehaviour
 
         if (prof == null) return;
         Gizmos.color = new Color(0.2f, 0.7f, 1f, 0.35f);
-        Gizmos.DrawWireSphere(transform.position, prof.maxAudibleDistance);
+        // Gizmos.DrawWireSphere(transform.position, prof.maxAudibleDistance);
     }
 #endif
 }

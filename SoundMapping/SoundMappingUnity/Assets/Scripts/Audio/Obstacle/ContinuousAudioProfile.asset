@@ -11,8 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 54641d8a3fd2641c6b41f26772a4b94c, type: 3}
   m_Name: ContinuousAudioProfile
-  m_EditorClassIdentifier: 
-  maxAudibleDistance: 15
+  m_EditorClassIdentifier:
   baseVolume: 0.8
   basePitch: 0.755
   volumeByDistance:

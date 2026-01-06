@@ -17,9 +17,8 @@ public class ObstacleAudioManager : MonoBehaviour
     [Tooltip("Max obstacles updated per frame. 0 = unlimited.")]
     public int perFrameBudget = 0;
 
-    [Header("Hard-coded thresholds (edit values in code or here)")]
-    [Tooltip("Obstacles of size >= this are treated as 'large' in the hard-coded logic.")]
-    public float largeSizeThreshold = 2.0f;
+    [Tooltip("Max distance at which an obstacle should be audible.")]
+    public float maxAudibleDistance = 15f;
 
     [Header("Profiles")]
     [Tooltip("Drag in all available profiles manually")]
@@ -349,9 +348,7 @@ public class ObstacleAudioManager : MonoBehaviour
 
         _envelopeRadius = s.GetEllipsoidSize().width;
 
-        // Length: baseLength scaled by speed, with minimal length so it never collapses
-        float rawLength = baseEnvelopeLength * speed;
-        _envelopeLength = Mathf.Max(minEnvelopeLength, rawLength);
+        _envelopeLength = maxAudibleDistance;
 
         _envelopeCenterXZ = centroid;
         _hasEnvelope = true;
@@ -425,7 +422,6 @@ public class ObstacleAudioManager : MonoBehaviour
         bool inFront = forwardCoord >= 0f && forwardCoord <= fullLength;
 
         return inSide && inFront;
-
     }
 
     private bool IsInsideSafetyEnvelope(Vector3 point)
@@ -541,11 +537,7 @@ public class ObstacleAudioManager : MonoBehaviour
                 _rt[o] = rOutside;
             }
 
-            float cap = 10f;
-            if (_rt.TryGetValue(o, out var rProf) && rProf.profile != null)
-                cap = rProf.profile.maxAudibleDistance;
-
-            return cap + 1f;
+            return maxAudibleDistance + 1f;
         }
 
         // === 3. Cache final result for audio ===
@@ -675,7 +667,7 @@ public class ObstacleAudioManager : MonoBehaviour
         toCentroid.Normalize();
 
         float dot = Vector3.Dot(heading, toCentroid);
-        float mul01 = (1f - dot)/2;
+        float mul01 = (1f + dot)/2;
 
         if (facingExponent != 1f) mul01 = Mathf.Pow(mul01, facingExponent);
 
@@ -717,15 +709,13 @@ public class ObstacleAudioManager : MonoBehaviour
         }
 
         // Audible gate (computed once)
-        bool audible = ctx.distance <= p.maxAudibleDistance;
+        bool audible = ctx.distance <= maxAudibleDistance;
 
         // Curves → final params (computed once)
         float volMul = ComputeDirectionalVolumeMultiplier(r);
 
         // Use distance curves again (clamp distance to avoid crazy values)
-        float clampedDist = p.maxAudibleDistance > 0f
-            ? Mathf.Min(ctx.distance, p.maxAudibleDistance)
-            : ctx.distance;
+        float clampedDist = Mathf.Min(ctx.distance, maxAudibleDistance);
 
         float volDistMul = Mathf.Max(0f, p.volumeByDistance.Evaluate(clampedDist));
         float pitchDistMul = Mathf.Max(0.01f, p.pitchByDistance.Evaluate(clampedDist));
