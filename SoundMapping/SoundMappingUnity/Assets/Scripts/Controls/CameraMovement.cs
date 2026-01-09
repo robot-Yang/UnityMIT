@@ -54,6 +54,11 @@ public class CameraMovement : MonoBehaviour
 
       //  print("CameraMovement: " + idLeader + " Selected: " + MigrationPointController.idLeader);
 
+        if (EmbodiedHasCrashed() && currentState != CameraState.Crash)
+        {
+            crashAnimationSetup();
+        }
+
         // Run main loop based on current state.
         switch (currentState)
         {
@@ -130,6 +135,7 @@ public class CameraMovement : MonoBehaviour
             embodiedDrone.transform.Rotate(Vector3.up, rightStickHorizontal * Time.deltaTime * rotationSpeed);
             // The camera follows the drone at the set height.
             cam.transform.position = new Vector3(embodiedDrone.transform.position.x, heightCamera, embodiedDrone.transform.position.z);
+            SyncMainCameraOrientationToEmbodied();
         }
 
         // Update minimap camera if enabled.
@@ -150,7 +156,8 @@ public class CameraMovement : MonoBehaviour
         animTimer += Time.deltaTime;
         float t = Mathf.Clamp01(animTimer / animationTime);
         cam.transform.position = Vector3.Lerp(animStartPos, animTargetPos, t);
-        cam.GetComponent<Camera>().orthographicSize = Mathf.Lerp(cam.GetComponent<Camera>().orthographicSize, 15, t);
+        cam.GetComponent<Camera>().orthographicSize = Mathf.Lerp(cam.GetComponent<Camera>().orthographicSize, 12, t);
+        SyncMainCameraOrientationToEmbodied();
 
         // When the animation completes, update the embodied drone’s forward direction and switch to DroneView.
         if (t >= 1f)
@@ -231,7 +238,15 @@ public class CameraMovement : MonoBehaviour
         }
 
         nextEmbodiedDrone = GetEmbodiedDrone();
-        nextEmbodiedDrone.GetComponent<Camera>().enabled = true;
+        if (nextEmbodiedDrone != null)
+        {
+            nextEmbodiedDrone.GetComponent<Camera>().enabled = true;
+        }
+        else
+        {
+            // No replacement drone available; fall back to main camera.
+            cam.enabled = true;
+        }
 
         startAvoidanceForce = DroneFake.avoidanceForce;
         DroneFake.avoidanceForce = 200f;
@@ -256,15 +271,17 @@ public class CameraMovement : MonoBehaviour
         {
             DroneFake.avoidanceForce = startAvoidanceForce;
             MigrationPointController.InControl = true;
-            if(nextEmbodiedDrone.activeSelf)
+            if(nextEmbodiedDrone != null && nextEmbodiedDrone.activeSelf)
             {
+                cam.enabled = true;
                 nextEmbodiedDrone.GetComponent<Camera>().enabled = true;
                 SetEmbodiedDrone(nextEmbodiedDrone);
                 currentState = CameraState.DroneView;
             }else
             {
-                crashAnimationSetup();
-                currentState = CameraState.DroneView;
+                // No next drone, or it vanished; stay in top-down as a safe fallback.
+                cam.enabled = true;
+                currentState = CameraState.TDView;
             }
         }
     }
@@ -345,6 +362,26 @@ public class CameraMovement : MonoBehaviour
         {
             embodiedDrone = null;
         }
+    }
+
+    // Keep the main camera aligned with the embodied drone’s camera (or its transform as a fallback).
+    void SyncMainCameraOrientationToEmbodied()
+    {
+        if (embodiedDrone == null) return;
+
+        Camera embodiedCam = embodiedDrone.GetComponent<Camera>();
+        Vector3 sourceForward = embodiedCam != null ? embodiedCam.transform.forward : embodiedDrone.transform.forward;
+        Vector3 planarForward = Vector3.ProjectOnPlane(sourceForward, Vector3.up);
+        if (planarForward.sqrMagnitude < 1e-6f) return;
+        float yaw = Quaternion.LookRotation(planarForward.normalized, Vector3.up).eulerAngles.y;
+        cam.transform.rotation = Quaternion.Euler(90f, yaw, 0f); // look straight down, yaw follows embodied
+    }
+
+    bool EmbodiedHasCrashed()
+    {
+        if (embodiedDrone == null) return false;
+        DroneController controller = embodiedDrone.GetComponent<DroneController>();
+        return controller != null && controller.droneFake != null && controller.droneFake.hasCrashed;
     }
 
 
