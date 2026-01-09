@@ -143,6 +143,8 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         public float x, y, z;
         public byte g; // 0 = not in main group; 1 = in main group
         public byte e; // 1 = embodied drone at this frame, 0 = not embodied
+        // Drone orientation (Unity world rotation quaternion)
+        public float qx, qy, qz, qw;
     }
 
     [Serializable]
@@ -715,12 +717,14 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         RefreshEmbodiedLabeling();
 
         var positions = new Vector3[n];
+        var rotations = new Quaternion[n];
         var ids       = new int[n];
         for (int i = 0; i < n; i++)
         {
             var tr = _droneTransforms[i];
             if (!tr) continue;
             positions[i] = tr.position;
+            rotations[i] = tr.rotation;
             ids[i] = GetStableId(tr);
             if (!_trajById.TryGetValue(ids[i], out var _))
                 _trajById[ids[i]] = new DroneTraj { id = ids[i], name = tr.name };
@@ -747,7 +751,8 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
                 t = t,
                 x = p.x, y = p.y, z = p.z,
                 g = (byte)(inMain[i] ? 1 : 0),
-                e = (byte)((ids[i] == _embodiedStableId) ? 1 : 0)
+                e = (byte)((ids[i] == _embodiedStableId) ? 1 : 0),
+                qx = rotations[i].x, qy = rotations[i].y, qz = rotations[i].z, qw = rotations[i].w
             });
         }
     }
