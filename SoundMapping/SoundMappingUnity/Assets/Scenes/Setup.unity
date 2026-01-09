@@ -3787,14 +3787,21 @@ MonoBehaviour:
   frequencyInit: 1
   distanceDetection: 2
   embodiedDrone: {fileID: 0}
+  sideBandGain: 1
+  sizeDutyOffset: 4
+  gainPerDrone: 2
   refWorldHalfW: 4.5
   SIZE_EPS01: 0.0015
-  SIZE_STABLE_FOR: 1
+  SIZE_STABLE_FOR: 0.5
+  embodiedBlinkDuty: 10
+  embodiedHorizontalMaxMeters: 2
   disconnectTau: 0.25
   flowSpeedHz: 3.5
   baseDuty: 0
   peakDuty: 8
   overlayMode: 1
+  disconnectMinDistance: 1
+  disconnectMaxDistance: 12
   DISC_ON: 0.2
   DISC_OFF: 0.15
   drawDisconnectedInSwarmFrame: 1
@@ -4012,7 +4019,7 @@ MonoBehaviour:
   recordEveryNthSample: 1
   dontDestroyOnLoad: 1
   lazyDiscover: 0
-  outSubfolder: test
+  outSubfolder: chris_12_11
   pidOverride: 
   sceneLabelOverride: 
   setupSceneName: Scene_Selector
@@ -4680,7 +4687,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1892515273
 Transform:
   m_ObjectHideFlags: 0

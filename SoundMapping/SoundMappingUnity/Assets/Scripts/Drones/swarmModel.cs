@@ -961,7 +961,7 @@ public class swarmModel : MonoBehaviour
 
         // -------- Draw ellipsoid wireframe --------
         Gizmos.color = new Color(0f, 0.5f, 1f, 0.8f);
-        DrawWireEllipsoid(centroid, axes);
+        // DrawWireEllipsoid(centroid, axes);
 
         // ============================================================================================
         // Runtime force visualization (uses swarmObstacleForces populated by UpdateSwarmForcesEllipsoid)
@@ -978,7 +978,7 @@ public class swarmModel : MonoBehaviour
                 Vector3 dir = (intensity > 1e-6f) ? (f / intensity) : Vector3.forward;
 
                 UnityEditor.Handles.color = Color.red;
-                DrawArrow(centroid, dir, intensity, gizmoArrowScale, gizmoArrowHead);
+                // DrawArrow(centroid, dir, intensity, gizmoArrowScale, gizmoArrowHead);
                 drewAnyRuntimeForces = true;
             }
         }
@@ -1021,7 +1021,7 @@ public class swarmModel : MonoBehaviour
                     if (dir.sqrMagnitude < 1e-6f) continue;
 
                     UnityEditor.Handles.color = Color.red; // preview color
-                    DrawArrow(centroid, dir, intensity, gizmoArrowScale, gizmoArrowHead);
+                    // DrawArrow(centroid, dir, intensity, gizmoArrowScale, gizmoArrowHead);
                 }
             }
         }

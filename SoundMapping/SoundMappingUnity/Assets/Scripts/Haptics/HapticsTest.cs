@@ -22,7 +22,6 @@ public class HapticsTest : MonoBehaviour
     {
         if (Instance == this) Instance = null;
     }
-
     #region ObstalceInRange
     public int dutyIntensity = 4;
     public int frequencyInit = 1;
@@ -319,9 +318,9 @@ public class HapticsTest : MonoBehaviour
 
         /*  rectangle (you had this)  */
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireCube(Vector3.zero,
-                            // new Vector3(halfW * 2f, halfH * 2f, 0.05f));
-                            new Vector3(halfW * 2f, 0.05f, halfH * 2f));
+        // Gizmos.DrawWireCube(Vector3.zero,
+        //                     // new Vector3(halfW * 2f, halfH * 2f, 0.05f));
+        //                     new Vector3(halfW * 2f, 0.05f, halfH * 2f));
 
         /*---------------------------------------------------------*
         * 2) forward arrow (red)
@@ -342,20 +341,27 @@ public class HapticsTest : MonoBehaviour
         Gizmos.DrawLine(tip, headR);
 
         /*---------------------------------------------------------*
-        * 3) horizontal distribution curve (x vs. density)
+        * 3) visualize the 3 horizontal bands used in size mapping
         *---------------------------------------------------------*/
-        if (drawHorizontalDistributionCurve && _distributionCurveLocal.Count > 1)
+        float bandHeight = 0.05f; // thin boxes
+        float leftMin = -max_half_width;
+        float leftMax = -1f * max_half_width / 3f;
+        float midMin = leftMax;
+        float midMax =  1f * max_half_width / 3f;
+        float rightMin = midMax;
+        float rightMax =  max_half_width;
+
+        void DrawBand(float xMin, float xMax, Color c)
         {
-            Gizmos.color = distributionCurveColor;
-            for (int i = 0; i < _distributionCurveLocal.Count - 1; i++)
-            {
-                Gizmos.DrawLine(_distributionCurveLocal[i], _distributionCurveLocal[i + 1]);
-            }
-            // mark mean position
-            Gizmos.DrawLine(
-                new Vector3(_distMeanX, 0f, 0f),
-                new Vector3(_distMeanX, distributionCurveHeight * 1.05f, 0f));
+            Gizmos.color = c;
+            Vector3 center = new Vector3((xMin + xMax) * 0.5f, 0f, 0f);
+            Vector3 size = new Vector3(Mathf.Abs(xMax - xMin), bandHeight, halfH * 2f);
+            Gizmos.DrawWireCube(center, size);
         }
+
+        // DrawBand(leftMin, leftMax, new Color(0.2f, 0.7f, 1f, 0.7f));   // left band
+        // DrawBand(midMin, midMax, new Color(0.2f, 1f, 0.4f, 0.7f));     // middle band
+        // DrawBand(rightMin, rightMax, new Color(1f, 0.6f, 0.2f, 0.7f)); // right band
     }
     
     // ------------------------------------------------------------
@@ -366,13 +372,8 @@ public class HapticsTest : MonoBehaviour
 
     private float halfW = 1f;
     private float halfH = 1f;
-    [SerializeField] bool drawHorizontalDistributionCurve = true;
-    [SerializeField] float distributionCurveHeight = 0.5f;
-    [SerializeField] float distributionFixedHalfRange = 4.3f;
-    [SerializeField] float distributionDensityScale = 1f;   // scales with drone count
-    [SerializeField] float distributionMaxYClamp = 0f;      // 0 = no clamp; set >0 to cap
-    [SerializeField] float distributionViewYRange = 10f;    // fixed plot range; set 0 to auto
-    [SerializeField] float distributionCurveDutyGain = 1f;  // overall gain when mapping curve to actuators
+    [SerializeField] float sideBandGain = 1.2f; // extra weight for outer bands in size mapping
+    [SerializeField] float sizeDutyOffset = 4f; // subtract from size-mode duties (runtime-tunable)
 
     private float actuator_W = 3f; //4f;
     private float actuator_H = 3f; //4f; //2f; // 5f;
@@ -414,6 +415,8 @@ public class HapticsTest : MonoBehaviour
     const float DECAY_PER_S  = 8f;     // 衰减速度（每秒减少的 duty “格数”）
     const int   DUTY_GAIN    = 3;      // 密度→强度, 3 for num=9, 
     const int   DUTY_MAX     = 14;     // 上限
+    const int   DUTY_MIN     = 0;     // 上限
+    const int   MIN_PERCEPTIBLE_DUTY = 3; // human threshold
 
     // —— 状态缓存 —— 按你的地址空间大小分配
     float[] lastRaw      = new float[256]; // 上一帧的密度
@@ -422,7 +425,7 @@ public class HapticsTest : MonoBehaviour
     float[] rawByAddr    = new float[256]; // 本帧密度（临时）
 
     // —— 可调参数 ——
-    const float GAIN_PER_DRONE = 12f / 12 * 9; //6f; //12f;   // 一架无人机贡献的总强度 12f for num=9
+    [SerializeField] float gainPerDrone = 1f / 15f * 9f; // 一架无人机贡献的总强度 12f for num=9
     const float TAU_SMOOTH     = 0.20f;// 时间平滑常数(秒)，越大越稳
 
     // —— 状态缓存 ——
@@ -435,16 +438,17 @@ public class HapticsTest : MonoBehaviour
     private const float ROWS_MINUS1 = ROWS - 1f;  // OK
 
     // --- Size-change gate config ---
-    [SerializeField] float refWorldHalfW = 4.5f;  // reference half-width (meters)
+    [SerializeField] float refWorldHalfW = 4.1f;  // reference half-width (meters)
     [SerializeField] float SIZE_EPS01 = 0.001f;    // “small change” threshold in normalized units
     [SerializeField] float SIZE_STABLE_FOR = 0.50f; // must stay small for this long (s)
+    [SerializeField] int embodiedBlinkDuty = 9; // peak duty for embodied blink mode
 
     // --- Size-change gate state ---
     float _lastHalfW01 = -1f;
     float _sizeStableTimer = 0f;
 
     private const float max_half_width= 4.1f; //4f;
-    [SerializeField] float embodiedHorizontalMaxMeters = 2f; // maps edge actuators
+    [SerializeField] float embodiedHorizontalMaxMeters = 2.2f; // maps edge actuators
 
     // —— 断连提示（中间两列动态条）——
     [SerializeField] float disconnectTau = 0.25f;   // 分数平滑时间常数(s)
@@ -478,22 +482,6 @@ public class HapticsTest : MonoBehaviour
     [Header("Debug / Disconnected")]
     [SerializeField] bool drawDisconnectedInSwarmFrame = true;
     [SerializeField] Color disconnectedColor = Color.red;
-    [SerializeField] bool logSizeRowDuty = true;
-    [SerializeField] Color distributionCurveColor = Color.cyan;
-    private readonly List<float> _lastLocalXs = new();
-    private readonly List<Vector3> _distributionCurveLocal = new();
-    private float _distMeanX = 0f;
-    private float _distStdX = 0f;
-    private float _distMaxY = 0f;
-
-    public IReadOnlyList<float> LastLocalXs => _lastLocalXs;
-    public IReadOnlyList<Vector3> DistributionCurveLocal => _distributionCurveLocal;
-    public float DistMeanX => _distMeanX;
-    public float DistStdX => _distStdX;
-    public float DistributionFixedHalfRange => distributionFixedHalfRange;
-    public float DistMaxY => _distMaxY;
-    public float DistributionMaxYClamp => distributionMaxYClamp;
-    public float DistributionViewYRange => distributionViewYRange;
 
     private static void GetDynamicExtents(IReadOnlyList<Transform> drones,
                                     Transform swarmFrame,
@@ -531,6 +519,14 @@ public class HapticsTest : MonoBehaviour
         return Mathf.Lerp(0f, COLS_MINUS1, t);
     }
 
+    float ColUFromXSize(float xLocal)
+    {
+        // Fixed mapping: ±embodiedHorizontalMaxMeters → side actuators
+        float range = Mathf.Max(3.1f, 0.01f);
+        float t = Mathf.Clamp01((xLocal + range) / (2f * range)); // -range→0, +range→1
+        return Mathf.Lerp(0f, COLS_MINUS1, t);
+    }
+
     int ColFromX(float x, float halfW, float actuator_W)    // halfW ≥ 0.01
     {
         // float t = (x + halfW) / (2f * halfW);      // → [0..1]
@@ -555,6 +551,28 @@ public class HapticsTest : MonoBehaviour
     // put next to your other member fields
     private readonly int[] _prevDuty = new int[30 + matrix.Length];   // 40 tactors, init 0
     private readonly int[] _prevFreq = new int[30 + matrix.Length];   // same size, init 0
+
+    // Map a normalized 0..1 intensity into hardware duty while skipping imperceptible 1-2
+    private static int MapDuty(float norm)
+    {
+        if (norm <= 0f) return 0;
+        int duty = Mathf.RoundToInt(norm * (DUTY_MAX - MIN_PERCEPTIBLE_DUTY)) + MIN_PERCEPTIBLE_DUTY;
+        return Mathf.Clamp(duty, 0, DUTY_MAX);
+    }
+
+    /// <summary>Snapshot of a row's duty values (0..DUTY_MAX). Returns false if row is out of range.</summary>
+    public static bool TryGetRowDuty(int row, out int[] rowDuty)
+    {
+        rowDuty = null;
+        if (row < 0 || row >= ROWS) return false;
+        rowDuty = new int[COLS];
+        for (int col = 0; col < COLS; col++)
+        {
+            int addr = matrix[row, col];
+            rowDuty[col] = Mathf.Clamp(duty[addr], 0, DUTY_MAX);
+        }
+        return true;
+    }
 
     /// <summary>
     /// Re-positions the `_swarmFrame` at the swarm centroid, aligns it with
@@ -686,15 +704,6 @@ public class HapticsTest : MonoBehaviour
         System.Array.Clear(targetDuty, 0, targetDuty.Length);
         System.Array.Clear(dutyByTile, 0, dutyByTile.Length);
 
-        // gather X positions in swarm frame for distribution curve
-        _lastLocalXs.Clear();
-        foreach (Transform d in connectedDrones)
-        {
-            Vector3 local = _swarmFrame.InverseTransformPoint(d.position);
-            _lastLocalXs.Add(local.x);
-        }
-        BuildHorizontalDistributionCurve();
-
         // 2) 每架无人机 -> 对周围4格做双线性分配
         foreach (Transform d in connectedDrones)
         {
@@ -728,8 +737,10 @@ public class HapticsTest : MonoBehaviour
             void Add(int rr, int cc, float w)
             {
                 int addr = matrix[rr, cc];
-                // targetDuty[addr] += GAIN_PER_DRONE * (1 - halfW01) * w;
-                targetDuty[addr] += GAIN_PER_DRONE * Mathf.Clamp(1 - halfW01, 0.35f, 0.75f) * w; 
+                // If swarm is narrower than 0.68, boost contribution (>1); otherwise keep 1
+                // float coeff = (halfW01 <= 0.32f) ? (1f + (0.32f - halfW01)) : 1f;
+                float coeff = Mathf.Clamp(1 - halfW01, 0.35f, 0.78f);
+                targetDuty[addr] += gainPerDrone * coeff * w;
             }
 
             Add(r0, c0, w00);
@@ -784,7 +795,8 @@ public class HapticsTest : MonoBehaviour
         disconnActive = filteredDisconnected.Count > 0;
 
         // 2) if size changed obviously
-        bool sizeActive = !muteTargetRow;
+        // Force size mode active (temporarily) so we always render size instead of location
+        bool sizeActive = !muteTargetRow; //true;
         // 注意：这里不再“静音某行”，而是：只有在 sizeActive==true 时才渲染 size bar
 
         // render according to priority
@@ -800,92 +812,51 @@ public class HapticsTest : MonoBehaviour
         }
         else if (sizeActive)
         {
-            bool rendered = false;
+            // ② Size rendering: energy-based split to the nearest two actuators on TARGET_ROW
+            float[] rowAcc = new float[COLS]; // accumulate per-column contributions
 
-            // ② Curve-based horizontal distribution → 4 actuators
-            if (_distributionCurveLocal.Count >= 2)
+            foreach (Transform d in connectedDrones)
             {
-                float minX = _distributionCurveLocal[0].x;
-                float maxX = _distributionCurveLocal[_distributionCurveLocal.Count - 1].x;
-                float span = Mathf.Max(maxX - minX, 0.001f);
-                float binWidth = span / COLS;
-                float dx = span / (_distributionCurveLocal.Count - 1);
+                Vector3 local = _swarmFrame.InverseTransformPoint(d.position);
 
-                float[] binArea = new float[COLS];
-                for (int i = 0; i < _distributionCurveLocal.Count; i++)
-                {
-                    var p = _distributionCurveLocal[i];
-                    int bin = Mathf.Clamp((int)((p.x - minX) / binWidth), 0, COLS - 1);
-                    binArea[bin] += p.y * dx; // approximate integral over x
-                }
+                // map to continuous column coordinate and pick the two closest actuators
+                // float u = Mathf.Clamp(ColUFromX(local.x), 0.001f, COLS_MINUS1 - 0.001f); // keep slightly inside to avoid hard saturation
+                float u = ColUFromXSize(local.x); // keep slightly inside to avoid hard saturation
+                int c0 = Mathf.FloorToInt(u);
+                int c1 = Mathf.Min(c0 + 1, COLS - 1);
+                float t = u - c0; // 0..1 toward actuator c1
 
-                float totalArea = binArea.Sum();
-                if (totalArea > 1e-6f)
-                {
-                    float invTotal = 1f / totalArea;
-                    for (int col = 0; col < COLS; col++)
-                    {
-                        float norm = Mathf.Clamp01(binArea[col] * invTotal * distributionCurveDutyGain);
-                        int dutyVal = Mathf.Min(DUTY_MAX, Mathf.RoundToInt(norm * DUTY_MAX));
-                        int addr = matrix[TARGET_ROW, col];
-                        duty[addr] = dutyVal;
-                        dutyByTile[TARGET_ROW * COLS + col] = dutyVal;
-                    }
-                    if (logSizeRowDuty)
-                    {
-                        string duties = string.Join(", ",
-                            Enumerable.Range(0, COLS)
-                                .Select(col => duty[matrix[TARGET_ROW, col]]));
-                        Debug.Log($"[CurveSizeDuty] row={TARGET_ROW} duties=[{duties}] totalArea={totalArea:F3}");
-                    }
-                    rendered = true;
-                }
+                // float coeff = (halfW01 <= 0.32f) ? (1f + (0.32f - halfW01)) : 1f;
+                // float coeff = Mathf.Clamp(1 - halfW01, 0.7f, 0.78f);
+                float coeff = Mathf.Clamp(1f + 0.3f - halfW01, 1.0f, 1.08f);
+
+                // float duty0 = Mathf.Sqrt(1f - t) * gainPerDrone * coeff;
+                // float duty1 = Mathf.Sqrt(t) * gainPerDrone * coeff;
+
+                float duty0 = Mathf.Sqrt(1f - t) * gainPerDrone;
+                float duty1 = Mathf.Sqrt(t) * gainPerDrone;
+
+                // float duty0 = (1f - t) * gainPerDrone;
+                // float duty1 = (t) * gainPerDrone;
+
+                rowAcc[c0] += duty0;
+                rowAcc[c1] += duty1;
             }
 
-            // Fallback to previous column-sum if curve not ready
-            if (!rendered)
+            for (int col = 0; col < COLS; col++)
             {
-                for (int col = 0; col < COLS; col++)
-                {
-                    int collapsed = Mathf.Min(DUTY_MAX, Mathf.RoundToInt(colSum[col] * Compress));
-                    Debug.Log($"[SizeBar] col={col} value={colSum[col] * Compress:F3}");
-                    int addr = matrix[TARGET_ROW, col];
-                    duty[addr] = collapsed;
-                    dutyByTile[TARGET_ROW * COLS + col] = collapsed;
-                }
-                if (logSizeRowDuty)
-                {
-                    string duties = string.Join(", ",
-                        Enumerable.Range(0, COLS)
-                            .Select(col => duty[matrix[TARGET_ROW, col]]));
-                    Debug.Log($"[SizeBarDuty] row={TARGET_ROW} duties=[{duties}]");
-                }
+                int dutyVal = Mathf.Clamp(Mathf.RoundToInt(rowAcc[col] - sizeDutyOffset), DUTY_MIN, DUTY_MAX);
+                int addr = matrix[TARGET_ROW, col];
+                duty[addr] = dutyVal;
+                dutyByTile[TARGET_ROW * COLS + col] = dutyVal;
             }
         }
-        // else
-        // {
-        //     // ③ Embodied blink
-        //     const float blinkRate = 3f; // Hz, blink frequency
-        //     bool blinkOn = (Mathf.FloorToInt(Time.time * blinkRate) & 1) == 0;
-        //     int dutyVal = blinkOn ? 7 : 0;
-
-        //     Vector3 localE = _swarmFrame.InverseTransformPoint(embodiedDrone.position);
-        //     int colE = ColFromX(localE.x, halfW, actuator_W);
-        //     int rowE = 1; //RowFromY(localE.z, halfH, actuator_H); // 如果你想固定在哪一行，可直接 rowE = 1;
-
-        //     // 写入（注意 tile 步长 = COLS）
-        //     int addrE = matrix[rowE, colE];
-        //     duty[addrE] = dutyVal;
-        //     dutyByTile[rowE * COLS + colE] = dutyVal;
-
-        //     // Debug.Log("[MODE] Embodied blink");
-        // }
         else
         {
             // ③ Embodied blink (but blended to 2 nearest actuators in row=1)
             const float blinkRate = 3f; // Hz
             bool blinkOn = (Mathf.FloorToInt(Time.time * blinkRate) & 1) == 0;
-            int baseDuty = blinkOn ? 10 : 0;
+            int baseDuty = blinkOn ? embodiedBlinkDuty : 0;
 
             Vector3 localE = _swarmFrame.InverseTransformPoint(embodiedDrone.position);
 
@@ -910,6 +881,9 @@ public class HapticsTest : MonoBehaviour
 
             int duty0 = Mathf.RoundToInt(baseDuty * w0);
             int duty1 = Mathf.RoundToInt(baseDuty * w1);
+
+            duty0 = Mathf.RoundToInt(Mathf.Sqrt(1f - t / 1f) * baseDuty);
+            duty1 = Mathf.RoundToInt(Mathf.Sqrt(t / 1f) * baseDuty);
 
             // since the buffer might already have other modes, take max
             duty[addr0] = Mathf.Max(duty[addr0], duty0);
@@ -1091,48 +1065,6 @@ public class HapticsTest : MonoBehaviour
             }
         }
         return res;
-    }
-
-    void BuildHorizontalDistributionCurve()
-    {
-        _distributionCurveLocal.Clear();
-        _distMeanX = 0f;
-        _distStdX = 0f;
-        _distMaxY = 0f;
-
-        int n = _lastLocalXs.Count;
-        if (n == 0) return;
-
-        // mean
-        for (int i = 0; i < n; i++) _distMeanX += _lastLocalXs[i];
-        _distMeanX /= n;
-
-        // std (population)
-        float var = 0f;
-        for (int i = 0; i < n; i++)
-        {
-            float d = _lastLocalXs[i] - _distMeanX;
-            var += d * d;
-        }
-        _distStdX = Mathf.Sqrt(var / n);
-        if (_distStdX < 0.05f) _distStdX = 0.05f; // avoid degenerate zero
-
-        // sample Gaussian curve in swarm frame
-        float range = Mathf.Max(distributionFixedHalfRange, 0.1f);
-        int samples = 40;
-        const float SQRT_TWO_PI = 2.50662827463f; // sqrt(2*pi)
-        float amplitude = (distributionDensityScale * n) / (Mathf.Max(_distStdX, 0.05f) * SQRT_TWO_PI); // keeps area constant
-        for (int i = 0; i < samples; i++)
-        {
-            float t = i / (samples - 1f);
-            float x = Mathf.Lerp(-range, range, t);
-            float gaussian = Mathf.Exp(-0.5f * Mathf.Pow((x - _distMeanX) / _distStdX, 2f));
-            float y = amplitude * gaussian; // area stays constant: amplitude * std * sqrt(2pi)
-            if (distributionMaxYClamp > 0f) y = Mathf.Min(y, distributionMaxYClamp);
-            float yScaled = y * distributionCurveHeight;
-            _distMaxY = Mathf.Max(_distMaxY, yScaled);
-            _distributionCurveLocal.Add(new Vector3(x, yScaled, 0f));
-        }
     }
 
     // Light one tile in the 4x4 matrix in the direction of each disconnected drone
