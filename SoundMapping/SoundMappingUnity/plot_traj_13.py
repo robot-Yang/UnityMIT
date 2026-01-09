@@ -1824,11 +1824,10 @@ if FIG_FLAGS.get("traj", True):
     plt.plot(ref_poly[:,0], ref_poly[:,1], linewidth=3, linestyle="--", label=f"Reference (×{REF_SCALE})")
     plt.scatter(ref_poly[:,0], ref_poly[:,1], s=20)
 
-    for idx, seg_idx in enumerate([SEG_IDX_1, SEG_IDX_2, SEG_IDX_4]):
+    for seg_idx in [SEG_IDX_2, SEG_IDX_4]:
         coords = rects_coords[seg_idx]
-        lbl = "Workspace segments 1/2/4" if idx == 0 else None
         plt.plot(coords[:,0], coords[:,1],
-                 linewidth=1.5, linestyle="-", color="k", label=lbl)
+                 linewidth=1.5, linestyle="-", color="k")
 
     plt.plot(centroid_x, centroid_z, linewidth=3, label="Swarm centroid (main group)")
     plt.scatter([centroid_x[0]],[centroid_z[0]], s=50, marker="o", label="Centroid start")
@@ -1839,18 +1838,7 @@ if FIG_FLAGS.get("traj", True):
     plt.title(f"Trajectories & Centroid vs Reference — {scene}\nFile: {INPUT_JSON.name}")
     plt.grid(True, alpha=0.3)
 
-    legend_path = [
-        Line2D([0],[0], color='k', lw=1.8, alpha=0.7, label='Other drones (various colors)'),
-        Line2D([0],[0], color='k', lw=3.0, label='Embodied segments (e==1)'),
-    ]
-    legend_endpoints = [
-        Line2D([0],[0], marker='o', linestyle='None', label='Endpoint: survivor'),
-        Line2D([0],[0], marker='^', linestyle='None', label='Endpoint: disconnected@stop'),
-        Line2D([0],[0], marker='X', linestyle='None', label='Endpoint: crashed/vanished early'),
-        Line2D([0],[0], marker='s', linestyle='None', label='Endpoint: vanished while disconnected'),
-    ]
-    h0, l0 = plt.gca().get_legend_handles_labels()
-    plt.legend(handles=legend_path + legend_endpoints + h0, loc="best")
+    # Legend omitted to avoid clutter from per-drone labels
 
     a, b, ab, L, L2, t_hat, n_hat, M = _segment_endpoints(ref_poly, 10)
     xmin, xmax = np.min(ref_poly[:,0]), np.max(ref_poly[:,0])
@@ -2027,12 +2015,11 @@ if FIG_FLAGS.get("interactive", True):
     ax.plot(ref_poly[:,0], ref_poly[:,1], linestyle="--", linewidth=2, label=f"Reference (×{REF_SCALE})")
     ax.scatter(ref_poly[:,0], ref_poly[:,1], s=14, alpha=0.7)
 
-    # workspace rectangles for segments 1, 2, 4 (same marking style as static plot)
-    for idx, seg_idx in enumerate([SEG_IDX_1, SEG_IDX_2, SEG_IDX_4]):
+    # workspace rectangles (hide segment 1)
+    for seg_idx in [SEG_IDX_2, SEG_IDX_4]:
         coords = rects_coords[seg_idx]
-        lbl = "Workspace segments 1/2/4" if idx == 0 else None
         ax.plot(coords[:,0], coords[:,1],
-                linewidth=1.5, linestyle="-", color="k", label=lbl)
+                linewidth=1.5, linestyle="-", color="k")
 
     # Coverage patches (initially hidden)
     coverage_patches = []
@@ -2041,23 +2028,20 @@ if FIG_FLAGS.get("interactive", True):
         (coverage_poly_seg1, dict(facecolor='C1', edgecolor='none', alpha=0.25, zorder=1)),
         (coverage_poly_seg2, dict(facecolor='C1', edgecolor='none', alpha=0.25, zorder=1)),
         (coverage_poly_seg4, dict(facecolor='C1', edgecolor='none', alpha=0.25, zorder=1)),
-        (coverage_out_seg1, dict(facecolor='#ff6666', edgecolor='none', alpha=0.35, zorder=0, label='Outside coverage')),
-        (coverage_out_seg2, dict(facecolor='#ff6666', edgecolor='none', alpha=0.35, zorder=0, label='Outside coverage')),
-        (coverage_out_seg4, dict(facecolor='#ff6666', edgecolor='none', alpha=0.35, zorder=0, label='Outside coverage')),
         (coverage_poly_overall, dict(facecolor='C2', edgecolor='none', alpha=0.20, zorder=1)),
     ]
     coverage_sweep_patches = []
     # Visualize sweep inside / outside separately per segment
     coverage_sweep_polys_for_plot = [
         # Segment 1
-        (_sweep_poly(sweep_seg1, 0), dict(facecolor='#7fc97f', edgecolor='none', alpha=0.35, zorder=0, label='Sweep inside seg1')),
-        (_sweep_poly(sweep_seg1, 5), dict(facecolor='#ff9999', edgecolor='none', alpha=0.35, zorder=0, label='Sweep outside seg1')),
+        (_sweep_poly(sweep_seg1, 0), dict(facecolor='#7fc97f', edgecolor='none', alpha=0.35, zorder=0)),
+        (_sweep_poly(sweep_seg1, 5), dict(facecolor='#ff9999', edgecolor='none', alpha=0.35, zorder=0)),
         # Segment 2
-        (_sweep_poly(sweep_seg2, 0), dict(facecolor='#7fc97f', edgecolor='none', alpha=0.35, zorder=0, label='Sweep inside seg2')),
-        (_sweep_poly(sweep_seg2, 5), dict(facecolor='#ff9999', edgecolor='none', alpha=0.35, zorder=0, label='Sweep outside seg2')),
+        (_sweep_poly(sweep_seg2, 0), dict(facecolor='#7fc97f', edgecolor='none', alpha=0.35, zorder=0)),
+        (_sweep_poly(sweep_seg2, 5), dict(facecolor='#ff9999', edgecolor='none', alpha=0.35, zorder=0)),
         # Segment 4
-        (_sweep_poly(sweep_seg4, 0), dict(facecolor='#7fc97f', edgecolor='none', alpha=0.35, zorder=0, label='Sweep inside seg4')),
-        (_sweep_poly(sweep_seg4, 5), dict(facecolor='#ff9999', edgecolor='none', alpha=0.35, zorder=0, label='Sweep outside seg4')),
+        (_sweep_poly(sweep_seg4, 0), dict(facecolor='#7fc97f', edgecolor='none', alpha=0.35, zorder=0)),
+        (_sweep_poly(sweep_seg4, 5), dict(facecolor='#ff9999', edgecolor='none', alpha=0.35, zorder=0)),
     ]
     for poly, opts in coverage_polys_for_plot:
         if poly is None or Point is None:
@@ -2094,7 +2078,7 @@ if FIG_FLAGS.get("interactive", True):
         size_emb = 48
         alpha_base = 0.32
         alpha_emb = 0.95
-        line, = ax.plot([], [], linewidth=lw_base, alpha=alpha_base, label=name, color=col)
+        line, = ax.plot([], [], linewidth=lw_base, alpha=alpha_base, label=None, color=col)
         mark = ax.scatter([], [], s=size_base, marker='o', color=col if col else None, zorder=3)
         drone_lines[name] = line
         drone_markers[name] = mark
@@ -2206,8 +2190,5 @@ if FIG_FLAGS.get("interactive", True):
         fig.canvas.draw_idle()
 
     btn_sweep.on_clicked(on_btn_sweep)
-
-    # Legend (comment out if too many drones)
-    ax.legend(loc="best", fontsize=8, ncol=1)
 
     _show_with_raise()
