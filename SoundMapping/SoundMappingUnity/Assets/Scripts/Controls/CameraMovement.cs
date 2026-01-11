@@ -67,7 +67,13 @@ public class CameraMovement : MonoBehaviour
                 // If a drone becomes embodied, start the animation to switch view.
                 if (embodiedDrone != null)
                 {
-                    BeginAnimation(embodiedDrone.transform.position);
+                    Vector3 targetPos;
+                    if (!TryGetSwarmCenter(out targetPos))
+                    {
+                        targetPos = embodiedDrone.transform.position;
+                    }
+                    targetPos.y = heightCamera;
+                    BeginAnimation(targetPos);
                     currentState = CameraState.Animation;
                 }
                 break;
@@ -99,19 +105,41 @@ public class CameraMovement : MonoBehaviour
 
     //setup of the crash animation
 
-    // TDView mode: Camera follows a “center of mass” of the drones.
-    void UpdateTDView()
+    private bool TryGetSwarmCenter(out Vector3 center)
     {
-        // Update the camera position to center on all drones.
-        List<DroneFake> drones = swarmModel.dronesInMainNetwork; // Assumes swarmModel exists.
-        if (drones.Count > 0)
+        center = Vector3.zero;
+        List<DroneFake> drones = swarmModel.dronesInMainNetwork;
+        if (drones != null && drones.Count > 0)
         {
-            Vector3 center = Vector3.zero;
             foreach (DroneFake drone in drones)
             {
                 center += drone.position;
             }
             center /= drones.Count;
+            return true;
+        }
+
+        List<DroneFake> allDrones = swarmModel.drones;
+        if (allDrones != null && allDrones.Count > 0)
+        {
+            foreach (DroneFake drone in allDrones)
+            {
+                center += drone.position;
+            }
+            center /= allDrones.Count;
+            return true;
+        }
+
+        return false;
+    }
+
+    // TDView mode: Camera follows a “center of mass” of the drones.
+    void UpdateTDView()
+    {
+        // Update the camera position to center on all drones.
+        Vector3 center;
+        if (TryGetSwarmCenter(out center))
+        {
             center.y = heightCamera;
             cam.transform.position = Vector3.Lerp(cam.transform.position, center, Time.deltaTime * 2f);
         }
@@ -125,7 +153,7 @@ public class CameraMovement : MonoBehaviour
         cam.GetComponent<Camera>().orthographicSize = Mathf.Lerp(cam.GetComponent<Camera>().orthographicSize, targetSize, Time.deltaTime * 2f);
     }
 
-    // DroneView mode: Camera follows the embodied drone.
+    // DroneView mode: Camera follows the swarm center while the embodied drone stays controllable.
     void UpdateDroneView()
     {
         // Rotate the drone with joystick input.
@@ -133,8 +161,16 @@ public class CameraMovement : MonoBehaviour
         if (embodiedDrone != null)
         {
             embodiedDrone.transform.Rotate(Vector3.up, rightStickHorizontal * Time.deltaTime * rotationSpeed);
-            // The camera follows the drone at the set height.
-            cam.transform.position = new Vector3(embodiedDrone.transform.position.x, heightCamera, embodiedDrone.transform.position.z);
+            Vector3 center;
+            if (TryGetSwarmCenter(out center))
+            {
+                cam.transform.position = new Vector3(center.x, heightCamera, center.z);
+            }
+            else
+            {
+                // Fallback to the embodied drone if no swarm data is available.
+                cam.transform.position = new Vector3(embodiedDrone.transform.position.x, heightCamera, embodiedDrone.transform.position.z);
+            }
             SyncMainCameraOrientationToEmbodied();
         }
 
@@ -156,7 +192,7 @@ public class CameraMovement : MonoBehaviour
         animTimer += Time.deltaTime;
         float t = Mathf.Clamp01(animTimer / animationTime);
         cam.transform.position = Vector3.Lerp(animStartPos, animTargetPos, t);
-        cam.GetComponent<Camera>().orthographicSize = Mathf.Lerp(cam.GetComponent<Camera>().orthographicSize, 12, t);
+        cam.GetComponent<Camera>().orthographicSize = Mathf.Lerp(cam.GetComponent<Camera>().orthographicSize, 8, t);
         SyncMainCameraOrientationToEmbodied();
 
         // When the animation completes, update the embodied drone’s forward direction and switch to DroneView.
