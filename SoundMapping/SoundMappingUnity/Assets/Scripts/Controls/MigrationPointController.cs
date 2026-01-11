@@ -60,6 +60,9 @@ public class MigrationPointController : MonoBehaviour
     public bool allowManualSelection = false;    // disables selection by buttons 4/5 when false
     public bool allowManualEmbodiment = false;   // disables button 0 embodiment when false
 
+    [Header("Debug")]
+    public bool showAlignmentRay = false;
+
     [Header("Frontmost Sensitivity")]
     [Tooltip("Candidate must be at least this much farther forward than the current embodied drone (in meters).")]
     public float frontLeadThreshold = 0.5f;
@@ -683,7 +686,10 @@ public class MigrationPointController : MonoBehaviour
         
         alignementVector = deltaMigration;
 
-        Debug.DrawRay(body.position, alignementVector, Color.red, 0.01f);
+        if (showAlignmentRay)
+        {
+            Debug.DrawRay(body.position, alignementVector, Color.red, 0.01f);
+        }
     }
 
 }
