@@ -57,10 +57,6 @@ public class ObstacleAudioManager : MonoBehaviour
     [Tooltip("Minimal length of the swarm envelope, even if speed is zero.")]
     public float minEnvelopeLength = 30f;
 
-    [Header("Look Envelope")]
-    [Tooltip("Fixed length for the look-direction rectangle.")]
-    public float lookEnvelopeLength = 30f;
-
     [Header("Velocity Envelope Tuning")]
     [Tooltip("If speed is below this, keep the last velocity direction (freeze).")]
     public float velocityDirectionThreshold = 1f;
@@ -70,10 +66,18 @@ public class ObstacleAudioManager : MonoBehaviour
     public float safety_radius_scale = 1.0f;
 
     [Tooltip("Offset")]
-    public float safety_radius_offset = 1.5f;
+    public float safety_radius_offset = 2f;
 
     [Tooltip("Width Safety")]
     public float envelopeWidthSafety = 0.5f;
+
+    [Header("Gizmos Colors")]
+    public Color gizmoVelocityEnvelopeColor = new Color(1f, 1f, 0f, 1f);
+    public Color gizmoLookEnvelopeColor = new Color(0f, 0.4f, 1f, 1f);
+    public Color gizmoSafetyEnvelopeColor = new Color(1f, 0.2f, 0.2f, 1f);
+    public Color gizmoCentroidColor = Color.cyan;
+    public Color gizmoProjectionColor = Color.red;
+    public Color gizmoRoiLineColor = new Color(1f, 0.5f, 0f, 0.9f);
 
     // ===== Runtime containers =====
     private Transform listenerTransform;
@@ -390,7 +394,7 @@ public class ObstacleAudioManager : MonoBehaviour
         float forwardCoord = Vector3.Dot(local, _swarmForwardXZ);
         float sideCoord = Vector3.Dot(local, _swarmRightXZ);
 
-        float fullLength = _envelopeLength;   // same length as before
+        float fullLength = _envelopeLength + _envelopeRadius;
 
         bool inSide = Mathf.Abs(sideCoord) <= _envelopeRadius;
         bool inFront = forwardCoord >= 0f && forwardCoord <= fullLength;
@@ -416,7 +420,7 @@ public class ObstacleAudioManager : MonoBehaviour
         float forwardCoord = Vector3.Dot(local, _lookForwardXZ);
         float sideCoord = Vector3.Dot(local, _lookRightXZ);
 
-        float fullLength = lookEnvelopeLength;
+        float fullLength = _envelopeLength + _envelopeRadius;
 
         bool inSide = Mathf.Abs(sideCoord) <= _envelopeRadius;
         bool inFront = forwardCoord >= 0f && forwardCoord <= fullLength;
@@ -781,7 +785,7 @@ private void OnDrawGizmos()
         float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;
         center.y = y;
 
-        float fullL = _envelopeLength;      // full forward length
+        float fullL = _envelopeLength + _envelopeRadius;      // full forward length
         float halfW = _envelopeRadius;
 
         Vector3 f = _swarmForwardXZ.normalized * fullL;
@@ -796,7 +800,7 @@ private void OnDrawGizmos()
         Vector3 p2 = front + r;
         Vector3 p3 = front - r;
 
-        Handles.color = new Color(1f, 1f, 0f, 0.8f); // thick yellow
+        Handles.color = gizmoVelocityEnvelopeColor;
         Handles.DrawAAPolyLine(
             6f,
             p0, p1, p2, p3, p0
@@ -810,7 +814,7 @@ private void OnDrawGizmos()
         float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;
         center.y = y;
 
-        float fullL = lookEnvelopeLength;
+        float fullL = _envelopeLength + _envelopeRadius;
         float halfW = _envelopeRadius;
 
         Vector3 f = _lookForwardXZ.normalized * fullL;
@@ -825,7 +829,7 @@ private void OnDrawGizmos()
         Vector3 p2b = frontB + r;
         Vector3 p3b = frontB - r;
 
-        Handles.color = new Color(0f, 0.4f, 1f, 0.8f); // blue
+        Handles.color = gizmoLookEnvelopeColor;
         Handles.DrawAAPolyLine(
             6f,
             p0b, p1b, p2b, p3b, p0b
@@ -841,7 +845,7 @@ private void OnDrawGizmos()
         float y = (listenerTransform != null) ? listenerTransform.position.y : center.y;
         center.y = y;
 
-        Handles.color = new Color(1f, 0.2f, 0.2f, 0.9f);
+        Handles.color = gizmoSafetyEnvelopeColor;
 
         const int segments = 64;
         Vector3[] pts = new Vector3[segments + 1];
@@ -863,14 +867,14 @@ private void OnDrawGizmos()
     // ===== Centroid Debug Marker =====
     if (_hasPointC)
     {
-        Gizmos.color = Color.cyan;
+        Gizmos.color = gizmoCentroidColor;
         Vector3 c = _lastPointC;
-        c.y += 0.2f;
+        c.y += 5f;
         Gizmos.DrawSphere(c, 0.2f);
     }
 
     // ===== Projection Debug Marker =====
-    Gizmos.color = Color.red;
+    Gizmos.color = gizmoProjectionColor;
     foreach (var p in allPointsP)
     {
         Vector3 pos = p;
@@ -879,7 +883,7 @@ private void OnDrawGizmos()
     }
 
     // ===== ROI Distance Lines (drone -> obstacle) =====
-    Handles.color = new Color(1f, 0.5f, 0f, 0.9f);
+    Handles.color = gizmoRoiLineColor;
     foreach (var kvp in _rt)
     {
         var r = kvp.Value;

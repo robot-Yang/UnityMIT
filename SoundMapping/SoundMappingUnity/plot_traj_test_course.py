@@ -18,6 +18,7 @@ import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 from matplotlib import transforms
 import numpy as np
@@ -33,12 +34,15 @@ INCLUDE_ALL_BATCH = True
 BATCH_ID = "0"
 
 # Interactive trajectory preview (set batch/uid/condition to pick a run)
-TRAJ_BATCH = "B1"
+TRAJ_BATCH = "B2"
 TRAJ_UID = "0"
-TRAJ_CONDITION = "no_sound"  # "sound" or "no_sound"
+TRAJ_CONDITION = "sound"  # "sound" or "no_sound"
 ENABLE_TRAJECTORY_SLIDER = True
+# Swap axes for landscape view (Z on x-axis, X on y-axis)
+PLOT_SWAP_XZ = True
 # View window for the interactive slider (meters)
-CORRIDOR_WIDTH = 30.0  # initial width; height is 1.5× this value in the viewer
+CORRIDOR_WIDTH = 30.0  # initial width
+CORRIDOR_HEIGHT_SCALE = 1.0  # height = width * scale in the viewer
 OBSTACLE_JSON_DEFAULT = Path("Assets/Data/default/ObstacleCourse/TestCourse.json")
 OBSTACLE_JSON_BATCH = {
     "B3": Path("Assets/Data/default/ObstacleCourse/SimpleCourse.json"),
@@ -649,41 +653,143 @@ def _plot_selected_trajectory_slider():
     ax.set_facecolor("white")
     plt.subplots_adjust(left=0.08, right=0.98, top=0.92, bottom=0.16)
 
-    try:
-        cmap = plt.get_cmap("tab20")
-        names_sorted = sorted(drone_tracks.keys())
-        N = getattr(cmap, "N", 20)
-        name_to_color = {n: cmap(i % N) for i, n in enumerate(names_sorted)}
-    except Exception:
-        name_to_color = {}
+    def _plot_coords(xs, zs):
+        if PLOT_SWAP_XZ:
+            return zs, xs
+        return xs, zs
 
     drone_lines = {}
     drone_markers = {}
+    traj_color = "#b0b0b0"
+    traj_alpha = 0.6
     for name, tr in drone_tracks.items():
-        col = name_to_color.get(name, None)
-        line, = ax.plot([], [], linewidth=2.2, alpha=0.9, label=name, color=col)
-        mark = ax.scatter([], [], s=36, marker="o", color=col if col else None, zorder=3)
+        line, = ax.plot([], [], linewidth=2.2, alpha=traj_alpha, color=traj_color)
+        mark = ax.scatter([], [], s=36, marker="o", color=traj_color, alpha=traj_alpha, zorder=3)
         drone_lines[name] = line
         drone_markers[name] = mark
 
-    centroid_marker = ax.scatter([], [], s=64, marker="x", color="k", zorder=4, label="Centroid @T")
+    centroid_line, = ax.plot([], [], linewidth=2.4, alpha=1.0, color="#1f77b4")
+    centroid_marker = ax.scatter([], [], s=64, marker="x", color="#1f77b4", zorder=4)
+    lost_markers = ax.scatter([], [], s=52, marker="x", color="#d62728", linewidths=1.2, zorder=5)
 
     # Track extents for zoom slider bounds
     xs_all = np.concatenate([np.asarray(tr["x"], dtype=float) for tr in drone_tracks.values()])
     zs_all = np.concatenate([np.asarray(tr["z"], dtype=float) for tr in drone_tracks.values()])
+    plot_xs_all, plot_zs_all = _plot_coords(xs_all, zs_all)
     width_min = 5.0
-    width_max = max(width_min * 2, float(np.max([np.ptp(xs_all), np.ptp(zs_all)])) * 2.0 if len(xs_all) else 100.0)
+    width_max = max(
+        width_min * 2,
+        float(np.max([np.ptp(plot_xs_all), np.ptp(plot_zs_all)])) * 2.0 if len(plot_xs_all) else 100.0,
+    )
     width_state = {"w": float(np.clip(CORRIDOR_WIDTH, width_min, width_max))}
 
     ax.set_aspect("equal", adjustable="box")
-    ax.set_xlabel("X (m)")
-    ax.set_ylabel("Z (m)")
+    ax.set_xlabel("Z (m)" if PLOT_SWAP_XZ else "X (m)")
+    ax.set_ylabel("X (m)" if PLOT_SWAP_XZ else "Z (m)")
     ax.set_title(
         f"Trajectory slider: {TRAJ_BATCH}_{TRAJ_UID}_{TRAJ_CONDITION}\nFile: {traj_path.name}"
     )
     ax.grid(True, alpha=0.25)
     ax.set_xlim(-width_state["w"] / 2.0, width_state["w"] / 2.0)
-    ax.set_ylim(-width_state["w"] * 0.75, width_state["w"] * 0.75)
+    ax.set_ylim(
+        -width_state["w"] * (CORRIDOR_HEIGHT_SCALE / 2.0),
+        width_state["w"] * (CORRIDOR_HEIGHT_SCALE / 2.0),
+    )
+
+    def _centroid_path():
+        if global_t_max <= global_t_min:
+            return np.array([]), np.array([]), np.array([])
+        step = 1.0 / float(sample_hz) if sample_hz else 0.2
+        if step <= 0:
+            step = 0.2
+        ts = np.arange(global_t_min, global_t_max + step * 0.5, step)
+        if len(ts) == 0:
+            return np.array([]), np.array([]), np.array([])
+        xs = []
+        zs = []
+        for t in ts:
+            pts = []
+            for name, tr in drone_tracks.items():
+                t_arr = per_drone_times[name]
+                if len(t_arr) == 0:
+                    continue
+                idx = np.searchsorted(t_arr, t, side="right") - 1
+                if idx < 0:
+                    continue
+                g_arr = tr.get("g")
+                if g_arr is not None and len(g_arr) > idx and g_arr[idx] != 1:
+                    continue
+                pts.append((tr["x"][idx], tr["z"][idx]))
+            if pts:
+                arr = np.asarray(pts, dtype=float)
+                xs.append(np.mean(arr[:, 0]))
+                zs.append(np.mean(arr[:, 1]))
+            else:
+                xs.append(np.nan)
+                zs.append(np.nan)
+        return ts, np.asarray(xs, dtype=float), np.asarray(zs, dtype=float)
+
+    centroid_ts, centroid_xs, centroid_zs = _centroid_path()
+
+    def _lost_events():
+        events_t = []
+        events_x = []
+        events_z = []
+        for name, tr in drone_tracks.items():
+            g_arr = tr.get("g")
+            if g_arr is None or len(g_arr) < 2:
+                continue
+            t_arr = per_drone_times[name]
+            xs = np.asarray(tr["x"], dtype=float)
+            zs = np.asarray(tr["z"], dtype=float)
+            for i in range(1, len(g_arr)):
+                if g_arr[i - 1] == 1 and g_arr[i] == 0:
+                    if i < len(t_arr) and i < len(xs) and i < len(zs):
+                        events_t.append(float(t_arr[i]))
+                        events_x.append(float(xs[i]))
+                        events_z.append(float(zs[i]))
+        return np.asarray(events_t), np.asarray(events_x), np.asarray(events_z)
+
+    lost_ts, lost_xs, lost_zs = _lost_events()
+
+    snap_state = {"enabled": True}
+    drag_state = {"press": None, "xlim": None, "ylim": None}
+    btn_snap_holder = {"btn": None}
+
+    def _on_press(event):
+        if event.inaxes != ax or event.button != 1:
+            return
+        drag_state["press"] = (event.xdata, event.ydata)
+        drag_state["xlim"] = ax.get_xlim()
+        drag_state["ylim"] = ax.get_ylim()
+        if snap_state["enabled"]:
+            snap_state["enabled"] = False
+            if btn_snap_holder["btn"] is not None:
+                btn_snap_holder["btn"].label.set_text("Snap to center: OFF")
+                fig.canvas.draw_idle()
+
+    def _on_release(event):
+        drag_state["press"] = None
+        drag_state["xlim"] = None
+        drag_state["ylim"] = None
+
+    def _on_motion(event):
+        if drag_state["press"] is None or event.inaxes != ax:
+            return
+        x0, y0 = drag_state["press"]
+        if event.xdata is None or event.ydata is None:
+            return
+        dx = event.xdata - x0
+        dy = event.ydata - y0
+        x0_lim, x1_lim = drag_state["xlim"]
+        y0_lim, y1_lim = drag_state["ylim"]
+        ax.set_xlim(x0_lim - dx, x1_lim - dx)
+        ax.set_ylim(y0_lim - dy, y1_lim - dy)
+        fig.canvas.draw_idle()
+
+    fig.canvas.mpl_connect("button_press_event", _on_press)
+    fig.canvas.mpl_connect("button_release_event", _on_release)
+    fig.canvas.mpl_connect("motion_notify_event", _on_motion)
 
     obstacle_path = _obstacle_json_path_for_batch(TRAJ_BATCH)
     obstacles = _load_obstacle_course(obstacle_path)
@@ -699,6 +805,9 @@ def _plot_selected_trajectory_slider():
         rot = wall.get("rotationY", 0.0)
         if None in (x, z, w, l):
             return
+        if PLOT_SWAP_XZ:
+            x, z = z, x
+            w, l = l, w
         rect = Rectangle(
             (x - w * 0.5, z - l * 0.5),
             w,
@@ -725,6 +834,7 @@ def _plot_selected_trajectory_slider():
     if star_records:
         xs = [s["x"] for s in star_records]
         zs = [s["z"] for s in star_records]
+        xs, zs = _plot_coords(xs, zs)
         ax.scatter(
             xs,
             zs,
@@ -737,6 +847,16 @@ def _plot_selected_trajectory_slider():
             label="Stars",
         )
 
+    legend_handles = [
+        Line2D([0], [0], color=traj_color, linewidth=2.2, alpha=traj_alpha, label="Drone trajectory"),
+        Line2D([0], [0], color="#1f77b4", linewidth=2.4, alpha=1.0, label="Swarm centroid"),
+        Line2D([0], [0], marker="*", linestyle="None", markersize=10, markerfacecolor="#f5c400",
+               markeredgecolor="k", label="Stars"),
+        Line2D([0], [0], marker="x", linestyle="None", markersize=8, color="#d62728", label="Lost drone"),
+        Rectangle((0, 0), 1, 1, facecolor="#000000", edgecolor="#000000", label="Obstacle"),
+    ]
+    ax.legend(handles=legend_handles, loc="upper right", framealpha=0.9, fontsize=9)
+
     ax_T = plt.axes([0.14, 0.06, 0.74, 0.04])
     slider = Slider(ax=ax_T, label="Time (s)", valmin=slider_t0, valmax=slider_t1, valinit=slider_t0)
 
@@ -746,9 +866,11 @@ def _plot_selected_trajectory_slider():
     def _set_view(cx, cz):
         """Center the view on centroid and use fixed corridor extents."""
         half_w = width_state["w"] / 2.0
-        half_h = width_state["w"] * 0.75
-        ax.set_xlim(cx - half_w, cx + half_w)
-        ax.set_ylim(cz - half_h, cz + half_h)
+        half_h = width_state["w"] * (CORRIDOR_HEIGHT_SCALE / 2.0)
+        view_x = cz if PLOT_SWAP_XZ else cx
+        view_z = cx if PLOT_SWAP_XZ else cz
+        ax.set_xlim(view_x - half_w, view_x + half_w)
+        ax.set_ylim(view_z - half_h, view_z + half_h)
 
     def _update_plot(T):
         centroid_pts = []
@@ -757,17 +879,35 @@ def _plot_selected_trajectory_slider():
             zs = np.asarray(tr["z"], dtype=float)
             ts = per_drone_times[name]
             xseg, zseg = _clip_to_time(xs, zs, ts, T)
+            xseg, zseg = _plot_coords(xseg, zseg)
             drone_lines[name].set_data(xseg, zseg)
             if len(xseg) > 0:
                 drone_markers[name].set_offsets(np.c_[xseg[-1], zseg[-1]])
-                centroid_pts.append((xseg[-1], zseg[-1]))
+                g_arr = tr.get("g")
+                idx = np.searchsorted(ts, T, side="right") - 1
+                if g_arr is None or (idx >= 0 and idx < len(g_arr) and g_arr[idx] == 1):
+                    centroid_pts.append((xseg[-1], zseg[-1]))
             else:
                 drone_markers[name].set_offsets(np.c_[[], []])
 
+        if len(centroid_ts) > 0:
+            cx_seg, cz_seg = _clip_to_time(centroid_xs, centroid_zs, centroid_ts, T)
+            cx_seg, cz_seg = _plot_coords(cx_seg, cz_seg)
+            centroid_line.set_data(cx_seg, cz_seg)
+        if len(lost_ts) > 0:
+            lx, lz = _clip_to_time(lost_xs, lost_zs, lost_ts, T)
+            lx, lz = _plot_coords(lx, lz)
+            if len(lx) > 0:
+                lost_markers.set_offsets(np.c_[lx, lz])
+            else:
+                lost_markers.set_offsets(np.c_[[], []])
+
         if centroid_pts:
             cx, cz = np.mean(np.asarray(centroid_pts), axis=0)
-            centroid_marker.set_offsets(np.c_[cx, cz])
-            _set_view(cx, cz)
+            cx_plot, cz_plot = _plot_coords(cx, cz)
+            centroid_marker.set_offsets(np.c_[cx_plot, cz_plot])
+            if snap_state["enabled"]:
+                _set_view(cx, cz)
         else:
             centroid_marker.set_offsets(np.c_[[], []])
 
@@ -814,9 +954,22 @@ def _plot_selected_trajectory_slider():
 
     btn_play.on_clicked(on_play)
 
+    ax_snap = plt.axes([0.14, 0.0, 0.22, 0.03])
+    btn_snap = Button(ax_snap, "Snap to center: ON", hovercolor="#d0d0d0")
+    btn_snap_holder["btn"] = btn_snap
+
+    def on_snap(event):
+        snap_state["enabled"] = not snap_state["enabled"]
+        btn_snap.label.set_text("Snap to center: ON" if snap_state["enabled"] else "Snap to center: OFF")
+        if snap_state["enabled"]:
+            _update_plot(slider.val)
+        else:
+            fig.canvas.draw_idle()
+
+    btn_snap.on_clicked(on_snap)
+
     # Keep references so widgets stay responsive
-    _SLIDER_FIGS.append((fig, slider, zoom_slider, btn_play))
-    ax.legend(loc="center left", bbox_to_anchor=(-0.22, 0.5), fontsize=8)
+    _SLIDER_FIGS.append((fig, slider, zoom_slider, btn_play, btn_snap))
     print(f"[INFO] Loaded trajectory for slider from {traj_path}")
 
 def main():
