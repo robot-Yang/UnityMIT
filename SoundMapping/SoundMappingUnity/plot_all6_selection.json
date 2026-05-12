@@ -1,0 +1,122 @@
+[
+  {
+    "participant_can": "12",
+    "condition": "Mini Map"
+  },
+  {
+    "participant_can": "13",
+    "condition": "Mini Map"
+  },
+  {
+    "participant_can": "15",
+    "condition": "Mini Map"
+  },
+  {
+    "participant_can": "16",
+    "condition": "Mini Map"
+  },
+  {
+    "participant_can": "18",
+    "condition": "Mini Map"
+  },
+  {
+    "participant_can": "19",
+    "condition": "Mini Map"
+  },
+  {
+    "participant_can": "3",
+    "condition": "Mini Map"
+  },
+  {
+    "participant_can": "4",
+    "condition": "Mini Map"
+  },
+  {
+    "participant_can": "5",
+    "condition": "Mini Map"
+  },
+  {
+    "participant_can": "6",
+    "condition": "Mini Map"
+  },
+  {
+    "participant_can": "25",
+    "condition": "With Haptic"
+  },
+  {
+    "participant_can": "27",
+    "condition": "With Haptic"
+  },
+  {
+    "participant_can": "28",
+    "condition": "With Haptic"
+  },
+  {
+    "participant_can": "29",
+    "condition": "With Haptic"
+  },
+  {
+    "participant_can": "30",
+    "condition": "With Haptic"
+  },
+  {
+    "participant_can": "31",
+    "condition": "With Haptic"
+  },
+  {
+    "participant_can": "32",
+    "condition": "With Haptic"
+  },
+  {
+    "participant_can": "33",
+    "condition": "With Haptic"
+  },
+  {
+    "participant_can": "34",
+    "condition": "With Haptic"
+  },
+  {
+    "participant_can": "35",
+    "condition": "With Haptic"
+  },
+  {
+    "participant_can": "11",
+    "condition": "Without Haptic"
+  },
+  {
+    "participant_can": "14",
+    "condition": "Without Haptic"
+  },
+  {
+    "participant_can": "17",
+    "condition": "Without Haptic"
+  },
+  {
+    "participant_can": "2",
+    "condition": "Without Haptic"
+  },
+  {
+    "participant_can": "20",
+    "condition": "Without Haptic"
+  },
+  {
+    "participant_can": "21",
+    "condition": "Without Haptic"
+  },
+  {
+    "participant_can": "22",
+    "condition": "Without Haptic"
+  },
+  {
+    "participant_can": "23",
+    "condition": "Without Haptic"
+  },
+  {
+    "participant_can": "24",
+    "condition": "Without Haptic"
+  },
+  {
+    "participant_can": "7",
+    "condition": "Without Haptic"
+  }
+]
