@@ -10,6 +10,21 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 
+.DS_Store
+Icon?
+__pycache__/
+*.pyc
+*.bak
+*.bbk
+*.bk
+*.bk?
+*.bkk
+*.original
+*.curve
+*.smallcurve
+*.3phase
+*.zip
+/outputs/
 
 .vsconfig
 
