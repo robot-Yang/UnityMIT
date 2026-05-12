@@ -7,23 +7,32 @@ public class TactorVisualizer : MonoBehaviour
     public HapticsTest haptics;          // drag your existing script
     public Canvas prefab;               // drag the prefab from step 1
     public Gradient colourRamp;         // edit → blue (0) to red (14)
+    public KeyCode toggleKey = KeyCode.N;
+    public bool visibleOnStart = true;
 
     Image[] _cells;
+    Canvas _panel;
 
     void Start()
     {
         // Spawn UI in front of camera or as a child of the GameObject that owns this script
-        Canvas panel = Instantiate(prefab, transform);
-        panel.transform.localPosition = new Vector3(0.3f, 120f, 0.6f); // tweak in Scene
-        panel.transform.localRotation = Quaternion.identity;
+        _panel = Instantiate(prefab, transform);
+        _panel.transform.localPosition = new Vector3(0.3f, 120f, 0.6f); // tweak in Scene
+        _panel.transform.localRotation = Quaternion.identity;
+        _panel.gameObject.SetActive(visibleOnStart);
 
-        _cells = panel.GetComponentsInChildren<Image>();
+        _cells = _panel.GetComponentsInChildren<Image>();
         if (_cells.Length != 20)
             Debug.LogWarning("Need exactly 20 Image children for 5×4 matrix.");
     }
 
     void Update()
     {
+        if (Input.GetKeyDown(toggleKey) && _panel != null)
+            _panel.gameObject.SetActive(!_panel.gameObject.activeSelf);
+
+        if (_panel != null && !_panel.gameObject.activeSelf) return;
+
         if (haptics == null) { Debug.LogError("Visualizer: Haptics reference missing"); return; }
 
         // Read the latest duty table from HapticsTest

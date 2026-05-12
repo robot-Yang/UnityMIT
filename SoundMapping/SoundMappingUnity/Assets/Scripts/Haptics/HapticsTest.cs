@@ -44,7 +44,7 @@ public class HapticsTest : MonoBehaviour
             return LevelConfiguration._Haptics_Obstacle;
         }
     }
-    public bool Haptics_Network
+    public bool Haptcs_Network
     {
         get
         {
@@ -280,6 +280,13 @@ public class HapticsTest : MonoBehaviour
         SetDroneTint(_highlightedDrone, _highlightColor);
     }
 
+    [Header("Gizmos")]
+    public bool showSwarmFrameGizmo = true;
+    [Tooltip("If set, hide the swarm-frame gizmo when this camera is rendering (e.g., top-down Game view).")]
+    public Camera hideSwarmFrameInCamera;
+    [Tooltip("Hide the swarm-frame gizmo in Game view cameras (still visible in Scene view).")]
+    public bool hideSwarmFrameInGameView = true;
+
     /*---------------------------------------------------------------*/
     /* visualization of swarm centroid                          */
     /*---------------------------------------------------------------*/
@@ -300,6 +307,10 @@ public class HapticsTest : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
+        if (!showSwarmFrameGizmo) return;
+        if (hideSwarmFrameInGameView && Camera.current != null && Camera.current.cameraType == CameraType.Game) return;
+        if (hideSwarmFrameInCamera != null && Camera.current == hideSwarmFrameInCamera) return;
+
         // var drones = FindObjectsOfType<DroneController>()
         //      .Select(d => d.transform).ToList();
         // if (drones == null || drones.Count == 0) { return; }
@@ -438,16 +449,17 @@ public class HapticsTest : MonoBehaviour
     private const float ROWS_MINUS1 = ROWS - 1f;  // OK
 
     // --- Size-change gate config ---
-    [SerializeField] float refWorldHalfW = 4.1f;  // reference half-width (meters)
-    [SerializeField] float SIZE_EPS01 = 0.001f;    // “small change” threshold in normalized units
+    [SerializeField] float refWorldHalfW = 3.7f; //4.1f;  // reference half-width (meters)
+    [SerializeField] float SIZE_EPS01 = 0.001f;    // “small change” threshold for avgDist delta (normalized units)
     [SerializeField] float SIZE_STABLE_FOR = 0.50f; // must stay small for this long (s)
     [SerializeField] int embodiedBlinkDuty = 9; // peak duty for embodied blink mode
 
     // --- Size-change gate state ---
     float _lastHalfW01 = -1f;
+    float _lastAvgDist01 = -1f;
     float _sizeStableTimer = 0f;
 
-    private const float max_half_width= 4.1f; //4f;
+    private const float max_half_width= 3.7f; //4.1f; //4f;
     [SerializeField] float embodiedHorizontalMaxMeters = 2.2f; // maps edge actuators
 
     // —— 断连提示（中间两列动态条）——
@@ -510,6 +522,33 @@ public class HapticsTest : MonoBehaviour
         halfHeight = Mathf.Max(maxAbsY, 0.01f);
     }
 
+    // Average pairwise distance of the main swarm group (component containing embodied/leader),
+    // normalized by desiredSeparation.
+    private static float GetMainGroupAvgDist01()
+    {
+        var net = swarmModel.network;
+        if (net == null || net.largestComponent == null) return 0f;
+
+        var main = net.largestComponent.Where(df => df != null).ToList();
+        int n = main.Count;
+        if (n < 2) return 0f;
+
+        float sumDistance = 0f;
+        int pairCount = 0;
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = i + 1; j < n; j++)
+            {
+                sumDistance += Vector3.Distance(main[i].position, main[j].position);
+                pairCount++;
+            }
+        }
+
+        if (pairCount == 0) return 0f;
+        float dRef = Mathf.Max(DroneFake.desiredSeparation, 1e-4f);
+        return (sumDistance / pairCount) / dRef;
+    }
+
     // returns a continuous column coordinate in [0, COLS-1]
     float ColUFromX(float xLocal)
     {
@@ -522,7 +561,7 @@ public class HapticsTest : MonoBehaviour
     float ColUFromXSize(float xLocal)
     {
         // Fixed mapping: ±embodiedHorizontalMaxMeters → side actuators
-        float range = Mathf.Max(3.1f, 0.01f);
+        float range = Mathf.Max(2.9f, 0.01f);
         float t = Mathf.Clamp01((xLocal + range) / (2f * range)); // -range→0, +range→1
         return Mathf.Lerp(0f, COLS_MINUS1, t);
     }
@@ -658,7 +697,13 @@ public class HapticsTest : MonoBehaviour
         float halfW01 = Mathf.Clamp01(halfW / refWorldHalfW);     // normalize width to [0,1]
         Debug.Log($"halfW01: {halfW01:F3}");
         Debug.Log($"halfW: {halfW:F3}");
-        float sizeDiff01 = (_lastHalfW01 < 0f) ? 1f : Mathf.Abs(halfW01 - _lastHalfW01);
+
+        // Gate by frame-to-frame delta of average pairwise distance in the main swarm group only
+        // (component containing embodied/leader), normalized by desiredSeparation.
+        float avgDist01 = GetMainGroupAvgDist01();
+        if (float.IsNaN(avgDist01) || float.IsInfinity(avgDist01))
+            avgDist01 = (_lastAvgDist01 < 0f) ? 0f : _lastAvgDist01;
+        float sizeDiff01 = (_lastAvgDist01 < 0f) ? 1f : Mathf.Abs(avgDist01 - _lastAvgDist01);
 
         // hysteresis on size: must stay “small change” for a while
         if (sizeDiff01 < SIZE_EPS01) _sizeStableTimer += dt;
@@ -666,12 +711,13 @@ public class HapticsTest : MonoBehaviour
 
         bool muteTargetRow = (_sizeStableTimer >= SIZE_STABLE_FOR);
 
-        // Debug.Log($"_lastHalfW01: {_lastHalfW01:F3}, Current halfW01: {halfW01:F3}, Difference: {sizeDiff01:F3}");
+        // Debug.Log($"_lastAvgDist01: {_lastAvgDist01:F3}, Current avgDist01: {avgDist01:F3}, Difference: {sizeDiff01:F3}");
 
         _lastHalfW01 = halfW01;
+        _lastAvgDist01 = avgDist01;
 
         // Debug.Log($"halfW = {halfW:F2} m, halfH = {halfH:F2} m " +
-        //           $"(norm {halfW01:F3}, Δ {sizeDiff01:F3}, " +
+        //           $"(avgDist01 {avgDist01:F3}, Δ {sizeDiff01:F3}, " +
         //           $"{_sizeStableTimer:F2}s stable, " +
         //           $"{(muteTargetRow ? "MUTING" : "active")})");
 
@@ -705,49 +751,49 @@ public class HapticsTest : MonoBehaviour
         System.Array.Clear(dutyByTile, 0, dutyByTile.Length);
 
         // 2) 每架无人机 -> 对周围4格做双线性分配
-        foreach (Transform d in connectedDrones)
-        {
-            Vector3 local = _swarmFrame.InverseTransformPoint(d.position);
+        // foreach (Transform d in connectedDrones)
+        // {
+        //     Vector3 local = _swarmFrame.InverseTransformPoint(d.position);
 
-            // ---- 连续坐标（0..W-1 / 0..H-1），保证在边界内 ----
-            // float u = Mathf.Clamp01((local.x*2f) / (max_half_width)) * COLS_MINUS1;
-            // float v = Mathf.Clamp01((local.z + halfH) / (max_half_width)) * ROWS_MINUS1;
+        //     // ---- 连续坐标（0..W-1 / 0..H-1），保证在边界内 ----
+        //     // float u = Mathf.Clamp01((local.x*2f) / (max_half_width)) * COLS_MINUS1;
+        //     // float v = Mathf.Clamp01((local.z + halfH) / (max_half_width)) * ROWS_MINUS1;
 
-            // float t = local.x / max_half_width * 2f;      // → [0..1]
-            float u = Mathf.Clamp(local.x / max_half_width * 1.5f + center_W, 0, Mathf.RoundToInt(initial_actuator_W));
-            float v = Mathf.Clamp(-local.z / max_half_width * 1.5f + center_H, 0, Mathf.RoundToInt(initial_actuator_H));
+        //     // float t = local.x / max_half_width * 2f;      // → [0..1]
+        //     float u = Mathf.Clamp(local.x / max_half_width * 1.5f + center_W, 0, Mathf.RoundToInt(initial_actuator_W));
+        //     float v = Mathf.Clamp(-local.z / max_half_width * 1.5f + center_H, 0, Mathf.RoundToInt(initial_actuator_H));
 
-            // find the nearest grid cell locations
-            int c0 = Mathf.FloorToInt(u);
-            int r0 = Mathf.FloorToInt(v);
-            int c1 = Mathf.Min(c0 + 1, COLS - 1);
-            int r1 = Mathf.Min(r0 + 1, ROWS - 1);
+        //     // find the nearest grid cell locations
+        //     int c0 = Mathf.FloorToInt(u);
+        //     int r0 = Mathf.FloorToInt(v);
+        //     int c1 = Mathf.Min(c0 + 1, COLS - 1);
+        //     int r1 = Mathf.Min(r0 + 1, ROWS - 1);
 
-            // weights
-            float wc1 = u - c0, wc0 = 1f - wc1;
-            float wr1 = v - r0, wr0 = 1f - wr1;
+        //     // weights
+        //     float wc1 = u - c0, wc0 = 1f - wc1;
+        //     float wr1 = v - r0, wr0 = 1f - wr1;
 
-            // weights for neighboring cells
-            float w00 = wc0 * wr0;
-            float w10 = wc1 * wr0;
-            float w01 = wc0 * wr1;
-            float w11 = wc1 * wr1;
+        //     // weights for neighboring cells
+        //     float w00 = wc0 * wr0;
+        //     float w10 = wc1 * wr0;
+        //     float w01 = wc0 * wr1;
+        //     float w11 = wc1 * wr1;
 
-            // 每架无人机的总贡献为 GAIN_PER_DRONE，按权重分摊
-            void Add(int rr, int cc, float w)
-            {
-                int addr = matrix[rr, cc];
-                // If swarm is narrower than 0.68, boost contribution (>1); otherwise keep 1
-                // float coeff = (halfW01 <= 0.32f) ? (1f + (0.32f - halfW01)) : 1f;
-                float coeff = Mathf.Clamp(1 - halfW01, 0.35f, 0.78f);
-                targetDuty[addr] += gainPerDrone * coeff * w;
-            }
+        //     // 每架无人机的总贡献为 GAIN_PER_DRONE，按权重分摊
+        //     void Add(int rr, int cc, float w)
+        //     {
+        //         int addr = matrix[rr, cc];
+        //         // If swarm is narrower than 0.68, boost contribution (>1); otherwise keep 1
+        //         // float coeff = (halfW01 <= 0.32f) ? (1f + (0.32f - halfW01)) : 1f;
+        //         float coeff = 1; //Mathf.Clamp(1 - halfW01, 0.35f, 0.78f);
+        //         targetDuty[addr] += gainPerDrone * coeff * w;
+        //     }
 
-            Add(r0, c0, w00);
-            Add(r0, c1, w10);
-            Add(r1, c0, w01);
-            Add(r1, c1, w11);
-        }
+        //     Add(r0, c0, w00);
+        //     Add(r0, c1, w10);
+        //     Add(r1, c0, w01);
+        //     Add(r1, c1, w11);
+        // }
 
 
         // float dt = Time.deltaTime;
@@ -849,7 +895,7 @@ public class HapticsTest : MonoBehaviour
                 int addr = matrix[TARGET_ROW, col];
                 duty[addr] = dutyVal;
                 dutyByTile[TARGET_ROW * COLS + col] = dutyVal;
-            }
+        }
         }
         else
         {

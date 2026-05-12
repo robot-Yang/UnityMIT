@@ -61,6 +61,8 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
     [Header("Output naming")]
     [Tooltip("Override scene label in filename (otherwise inferred).")]
     public string sceneLabelOverride = "";
+    [Tooltip("Optional custom token to replace '<haptics>_<order>' in filename (e.g., 'FPV_only').")]
+    public string namingTagOverride = "";
     [Tooltip("Name of the setup scene (only used to disambiguate labels).")]
     public string setupSceneName = "Scene Selector";
 
@@ -101,6 +103,34 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
     public string embodiedFlagFieldOrProperty = "isEmbodied";
     public string embodiedFlagAltProperty = "IsEmbodied";
 
+    [Header("Scene layout capture")]
+    [Tooltip("Include a snapshot of path/obstacle layout in the JSON output.")]
+    public bool captureSceneLayout = true;
+    [Tooltip("Root GameObject name that contains path segments.")]
+    public string pathRootName = "Path Holder";
+    [Tooltip("Root GameObject name that contains obstacles.")]
+    public string obstacleRootName = "Obstacles";
+    [Tooltip("Path object name prefix (fallback mode).")]
+    public string pathNamePrefix = "Path";
+    [Tooltip("Obstacle tag (fallback mode).")]
+    public string obstacleTag = "Obstacle";
+    [Tooltip("Name of the starting square path.")]
+    public string startSquareName = "Starting_square";
+    [Tooltip("Name of the starting line path.")]
+    public string startLineName = "Starting_line";
+    [Tooltip("Name of the ending line path.")]
+    public string endLineName = "Ending_line";
+    [Tooltip("Multiply yaw by this value (matches plot_scene_positions_randomized.py).")]
+    public float layoutYawSign = -1f;
+    [Tooltip("Include inactive GameObjects when building layout.")]
+    public bool layoutIncludeInactive = false;
+    [Tooltip("How often to retry layout capture until success (sec).")]
+    public float layoutCaptureRetrySec = 0.5f;
+    [Tooltip("Stop retrying after this many seconds (0 = keep trying).")]
+    public float layoutCaptureMaxWaitSec = 5f;
+    [Tooltip("If true, allow an empty layout snapshot to be stored.")]
+    public bool layoutCaptureAllowEmpty = false;
+
     // -------------------- Internals --------------------
     public Transform swarmRoot;
     private readonly Dictionary<int, DroneTraj> _trajById = new Dictionary<int, DroneTraj>();
@@ -113,6 +143,10 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
     // Recording schedule
     private float _recordAccum = 0f;
     private int _sampleIndex = 0;
+
+    // UTC anchor for per-frame timestamps
+    private long _utcStartMs = 0;
+    private float _utcStartRealtime = 0f;
 
     // Singleton + save debounce
     private static SwarmTrajectoryRecorder _instance;
@@ -135,6 +169,12 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
     private Transform _embodiedTransform;
     private int _embodiedStableId = int.MinValue;
 
+    // --- Scene layout cache ---
+    private SceneLayout _sceneLayoutCache;
+    private bool _layoutCaptured;
+    private float _layoutRetryTimer;
+    private float _layoutElapsed;
+
     // -------------------- Data types --------------------
     [Serializable]
     public struct TrajFrame
@@ -145,6 +185,8 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         public byte e; // 1 = embodied drone at this frame, 0 = not embodied
         // Drone orientation (Unity world rotation quaternion)
         public float qx, qy, qz, qw;
+        // UTC timestamp in milliseconds since Unix epoch
+        public long utcMs;
     }
 
     [Serializable]
@@ -179,6 +221,51 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         // --- NEW: embodied metadata written once per file ---
         public int embodiedId;        // -2147483648 (int.MinValue) if unknown
         public string embodiedName;   // empty if unknown
+
+        // --- NEW: scene layout snapshot ---
+        public SceneLayout layout;
+
+        // --- NEW: UTC anchors (ms since Unix epoch) ---
+        public long utcStartMs;
+        public long utcEndMs;
+    }
+
+    [Serializable]
+    public class SceneLayout
+    {
+        public string scene;
+        public int seed = -1; // unknown at runtime
+        public List<LayoutCorner> corners = new List<LayoutCorner>();
+        public List<LayoutPath> paths = new List<LayoutPath>();
+        public List<LayoutObstacle> obstacles = new List<LayoutObstacle>();
+    }
+
+    [Serializable]
+    public class LayoutCorner
+    {
+        public float cx, cz, size;
+    }
+
+    [Serializable]
+    public class LayoutPath
+    {
+        public string name;
+        public int go_id;
+        public int tr_id;
+        public float cx, cz;
+        public float width, length;
+        public float angle;
+    }
+
+    [Serializable]
+    public class LayoutObstacle
+    {
+        public string name;
+        public int go_id;
+        public int tr_id;
+        public float cx, cz;
+        public float width, length;
+        public float angle;
     }
 
     // Trial buffers
@@ -198,6 +285,8 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         _accum = _autosaveTimer = 0f;
         _recordAccum = 0f;
         _sampleIndex = 0;
+
+        ResetUtcAnchor();
     }
 
     private void OnDestroy()
@@ -292,6 +381,8 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
                 }
             }
         }
+
+        TryCaptureSceneLayout();
 
         if (!_samplingEnabled || _droneTransforms.Count == 0) return;
 
@@ -413,6 +504,20 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
 
         // also refresh embodied at scene begin
         RefreshEmbodiedLabeling();
+
+        ResetUtcAnchor();
+
+        // reset layout capture for the new scene
+        _sceneLayoutCache = null;
+        _layoutCaptured = false;
+        _layoutRetryTimer = 0f;
+        _layoutElapsed = 0f;
+    }
+
+    private void ResetUtcAnchor()
+    {
+        _utcStartMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        _utcStartRealtime = Time.realtimeSinceStartup;
     }
 
     private void ClearBuffers()
@@ -429,6 +534,11 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
 
         _embodiedTransform = null;
         _embodiedStableId = int.MinValue;
+
+        _sceneLayoutCache = null;
+        _layoutCaptured = false;
+        _layoutRetryTimer = 0f;
+        _layoutElapsed = 0f;
     }
 
     private System.Collections.IEnumerator EnsureSwarmAvailable()
@@ -628,6 +738,248 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
 
     }
 
+    // -------------------- Scene layout capture --------------------
+    private void TryCaptureSceneLayout()
+    {
+        if (!captureSceneLayout || _layoutCaptured) return;
+
+        _layoutElapsed += Time.deltaTime;
+        _layoutRetryTimer += Time.deltaTime;
+        if (_layoutRetryTimer < layoutCaptureRetrySec) return;
+        _layoutRetryTimer = 0f;
+
+        var layout = BuildSceneLayout();
+        if (layout == null) return;
+
+        bool hasAny = (layout.paths.Count > 0) || (layout.obstacles.Count > 0) || (layout.corners.Count > 0);
+        bool timedOut = (layoutCaptureMaxWaitSec > 0f) && (_layoutElapsed >= layoutCaptureMaxWaitSec);
+
+        if (hasAny || layoutCaptureAllowEmpty || timedOut)
+        {
+            _sceneLayoutCache = layout;
+            _layoutCaptured = true;
+        }
+    }
+
+    private SceneLayout BuildSceneLayout()
+    {
+        var scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid()) return null;
+
+        var layout = new SceneLayout
+        {
+            scene = scene.name,
+            seed = -1
+        };
+
+        var pathRoot = !string.IsNullOrEmpty(pathRootName) ? GameObject.Find(pathRootName) : null;
+        var obstacleRoot = !string.IsNullOrEmpty(obstacleRootName) ? GameObject.Find(obstacleRootName) : null;
+
+        if (pathRoot != null || obstacleRoot != null)
+        {
+            if (pathRoot != null) CollectPathsFromRoot(pathRoot.transform, layout.paths);
+            if (obstacleRoot != null) CollectObstaclesFromRoot(obstacleRoot.transform, layout.obstacles);
+        }
+        else
+        {
+            CollectLayoutFallback(layout);
+        }
+
+        layout.paths.Sort((a, b) => string.Compare(a.name, b.name, StringComparison.Ordinal));
+        layout.obstacles.Sort((a, b) => string.Compare(a.name, b.name, StringComparison.Ordinal));
+
+        return layout;
+    }
+
+    private void CollectPathsFromRoot(Transform root, List<LayoutPath> paths)
+    {
+        var transforms = root.GetComponentsInChildren<Transform>(layoutIncludeInactive);
+        foreach (var tr in transforms)
+        {
+            if (tr == root) continue;
+            if (!layoutIncludeInactive && !tr.gameObject.activeInHierarchy) continue;
+            if (!IsPathName(tr.name)) continue;
+
+            if (TryGetFootprint(tr, out var cx, out var cz, out var width, out var length, out var angle))
+            {
+                paths.Add(new LayoutPath
+                {
+                    name = tr.name,
+                    go_id = tr.gameObject.GetInstanceID(),
+                    tr_id = tr.GetInstanceID(),
+                    cx = cx,
+                    cz = cz,
+                    width = width,
+                    length = length,
+                    angle = angle
+                });
+            }
+        }
+    }
+
+    private void CollectObstaclesFromRoot(Transform root, List<LayoutObstacle> obstacles)
+    {
+        var transforms = root.GetComponentsInChildren<Transform>(layoutIncludeInactive);
+        foreach (var tr in transforms)
+        {
+            if (tr == root) continue;
+            if (!layoutIncludeInactive && !tr.gameObject.activeInHierarchy) continue;
+
+            if (TryGetFootprint(tr, out var cx, out var cz, out var width, out var length, out var angle))
+            {
+                obstacles.Add(new LayoutObstacle
+                {
+                    name = tr.name,
+                    go_id = tr.gameObject.GetInstanceID(),
+                    tr_id = tr.GetInstanceID(),
+                    cx = cx,
+                    cz = cz,
+                    width = width,
+                    length = length,
+                    angle = angle
+                });
+            }
+        }
+    }
+
+    private void CollectLayoutFallback(SceneLayout layout)
+    {
+        var scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid()) return;
+
+        var roots = scene.GetRootGameObjects();
+        var all = new List<Transform>(256);
+        foreach (var root in roots) CollectTransformsRecursive(root.transform, all);
+
+        foreach (var tr in all)
+        {
+            if (!layoutIncludeInactive && !tr.gameObject.activeInHierarchy) continue;
+            if (!string.IsNullOrEmpty(pathRootName) && tr.name == pathRootName) continue;
+            if (!string.IsNullOrEmpty(obstacleRootName) && tr.name == obstacleRootName) continue;
+
+            bool isPath = IsPathName(tr.name);
+            bool isObstacle = false;
+            if (!string.IsNullOrEmpty(obstacleTag))
+            {
+                try { isObstacle = tr.gameObject.CompareTag(obstacleTag); }
+                catch { isObstacle = false; }
+            }
+
+            if (isPath && TryGetFootprint(tr, out var pcx, out var pcz, out var pwidth, out var plength, out var pangle))
+            {
+                layout.paths.Add(new LayoutPath
+                {
+                    name = tr.name,
+                    go_id = tr.gameObject.GetInstanceID(),
+                    tr_id = tr.GetInstanceID(),
+                    cx = pcx,
+                    cz = pcz,
+                    width = pwidth,
+                    length = plength,
+                    angle = pangle
+                });
+            }
+
+            if (isObstacle && TryGetFootprint(tr, out var ocx, out var ocz, out var owidth, out var olength, out var oangle))
+            {
+                layout.obstacles.Add(new LayoutObstacle
+                {
+                    name = tr.name,
+                    go_id = tr.gameObject.GetInstanceID(),
+                    tr_id = tr.GetInstanceID(),
+                    cx = ocx,
+                    cz = ocz,
+                    width = owidth,
+                    length = olength,
+                    angle = oangle
+                });
+            }
+        }
+    }
+
+    private void CollectTransformsRecursive(Transform tr, List<Transform> output)
+    {
+        if (!layoutIncludeInactive && !tr.gameObject.activeInHierarchy) return;
+        output.Add(tr);
+        for (int i = 0; i < tr.childCount; i++)
+        {
+            CollectTransformsRecursive(tr.GetChild(i), output);
+        }
+    }
+
+    private bool IsPathName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return false;
+        if (!string.IsNullOrEmpty(pathNamePrefix) && name.StartsWith(pathNamePrefix, StringComparison.Ordinal)) return true;
+        if (!string.IsNullOrEmpty(startSquareName) && name == startSquareName) return true;
+        if (!string.IsNullOrEmpty(startLineName) && name == startLineName) return true;
+        if (!string.IsNullOrEmpty(endLineName) && name == endLineName) return true;
+        return false;
+    }
+
+    private bool TryGetFootprint(Transform tr, out float cx, out float cz, out float width, out float length, out float angle)
+    {
+        cx = cz = width = length = angle = 0f;
+        if (!tr) return false;
+        if (!layoutIncludeInactive && !tr.gameObject.activeInHierarchy) return false;
+
+        var go = tr.gameObject;
+        Vector3 centerWorld = tr.position;
+        Vector3 lossy = tr.lossyScale;
+        float sx = Mathf.Abs(lossy.x);
+        float sz = Mathf.Abs(lossy.z);
+
+        var box = go.GetComponent<BoxCollider>();
+        if (box != null)
+        {
+            if (!box.enabled) return false;
+            width = box.size.x * sx;
+            length = box.size.z * sz;
+            centerWorld = tr.TransformPoint(box.center);
+        }
+        else
+        {
+            var capsule = go.GetComponent<CapsuleCollider>();
+            if (capsule != null)
+            {
+                if (!capsule.enabled) return false;
+                float radius = capsule.radius;
+                float height = capsule.height;
+                switch (capsule.direction)
+                {
+                    case 0:
+                        width = height * sx;
+                        length = (2f * radius) * sz;
+                        break;
+                    case 2:
+                        width = (2f * radius) * sx;
+                        length = height * sz;
+                        break;
+                    default:
+                        width = (2f * radius) * sx;
+                        length = (2f * radius) * sz;
+                        break;
+                }
+                centerWorld = tr.TransformPoint(capsule.center);
+            }
+            else
+            {
+                width = sx;
+                length = sz;
+                centerWorld = tr.position;
+            }
+        }
+
+        cx = centerWorld.x;
+        cz = centerWorld.z;
+
+        float yaw = tr.rotation.eulerAngles.y;
+        if (yaw > 180f) yaw -= 360f;
+        angle = layoutYawSign * yaw;
+
+        return true;
+    }
+
     private Transform TryFindEmbodiedTransform()
     {
         // 1) Inspector override
@@ -710,6 +1062,7 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         if (n == 0) return;
 
         float t = Time.time;
+        long utcMs = _utcStartMs + (long)Math.Round((Time.realtimeSinceStartup - _utcStartRealtime) * 1000.0);
 
         if (!writeThisSample) return;
 
@@ -752,7 +1105,8 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
                 x = p.x, y = p.y, z = p.z,
                 g = (byte)(inMain[i] ? 1 : 0),
                 e = (byte)((ids[i] == _embodiedStableId) ? 1 : 0),
-                qx = rotations[i].x, qy = rotations[i].y, qz = rotations[i].z, qw = rotations[i].w
+                qx = rotations[i].x, qy = rotations[i].y, qz = rotations[i].z, qw = rotations[i].w,
+                utcMs = utcMs
             });
         }
     }
@@ -889,6 +1243,17 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         // Make sure embodied flags are up-to-date right before write
         RefreshEmbodiedLabeling();
 
+        // Ensure layout snapshot is captured while the scene is still alive
+        if (captureSceneLayout && !_layoutCaptured)
+        {
+            var layout = BuildSceneLayout();
+            if (layout != null)
+            {
+                _sceneLayoutCache = layout;
+                _layoutCaptured = true;
+            }
+        }
+
         var log = new TrajectoryLog
         {
             scene = SceneManager.GetActiveScene().name,  // for reference
@@ -901,7 +1266,14 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
 
             // NEW: embodied metadata
             embodiedId = _embodiedStableId,
-            embodiedName = _embodiedTransform ? _embodiedTransform.name : string.Empty
+            embodiedName = _embodiedTransform ? _embodiedTransform.name : string.Empty,
+
+            // NEW: scene layout snapshot
+            layout = captureSceneLayout ? _sceneLayoutCache : null,
+
+            // NEW: UTC anchors
+            utcStartMs = _utcStartMs,
+            utcEndMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
         };
 
         string root;
@@ -918,7 +1290,8 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
             : MakeFileSafe(SceneManager.GetActiveScene().name);
 
         string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        string fileName = $"{safeScene}_{log.haptics}_{log.order}_{stamp}_traj.json";
+        string namingTag = ResolveNamingTag(log.haptics, log.order);
+        string fileName = $"{safeScene}_{namingTag}_{stamp}_traj.json";
         string full = Path.Combine(root, fileName);
 
         File.WriteAllText(full, JsonUtility.ToJson(log, true));
@@ -936,6 +1309,17 @@ public class SwarmTrajectoryRecorder : MonoBehaviour
         s = Regex.Replace(s, @"\s+", "_");
         foreach (char c in Path.GetInvalidFileNameChars()) s = s.Replace(c.ToString(), "");
         return s;
+    }
+
+    private string ResolveNamingTag(string haptics, string order)
+    {
+        if (!string.IsNullOrWhiteSpace(namingTagOverride))
+        {
+            string safe = MakeFileSafe(namingTagOverride.Trim());
+            if (!string.IsNullOrEmpty(safe) && safe != "Scene")
+                return safe;
+        }
+        return $"{haptics}_{order}";
     }
 
     private string ResolvePid()
