@@ -5,6 +5,8 @@ using System.IO;
 [CustomEditor(typeof(SceneSelectorScript))]
 public class SceneSelectorScriptEditor : Editor
 {
+    private const string SceneStudyPath = "Assets/Scenes/SceneStudy";
+
     public override void OnInspectorGUI()
     {
         // Draw the default inspector fields (any public fields, etc.)
@@ -41,6 +43,25 @@ public class SceneSelectorScriptEditor : Editor
             style.normal.textColor = Color.white;
         }
         EditorGUILayout.LabelField("TDV First : " + SceneSelectorScript._order, style);
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Set FPVObs_2 Scene", EditorStyles.boldLabel);
+        if (GUILayout.Button("Use FPVObs_2_startSqaure as FPVObs_2"))
+        {
+            ReplaceFpvObs2With("FPVObs_2_startSqaure");
+        }
+        if (GUILayout.Button("Use FPVObs_2_practice as FPVObs_2"))
+        {
+            ReplaceFpvObs2With("FPVObs_2_practice");
+        }
+        if (GUILayout.Button("Use FPVObs_2_trial_1 as FPVObs_2"))
+        {
+            ReplaceFpvObs2With("FPVObs_2_trial_1");
+        }
+        if (GUILayout.Button("Use FPVObs_2_trial_2 as FPVObs_2"))
+        {
+            ReplaceFpvObs2With("FPVObs_2_trial_2");
+        }
 
         // Find all scenes in "Assets/Scenes/Training"
         string[] sceneGuids = AssetDatabase.FindAssets("t:Scene", new[] { myScript.assetPathTraining });
@@ -133,5 +154,33 @@ public class SceneSelectorScriptEditor : Editor
         //
 
 
+    }
+
+    private static void ReplaceFpvObs2With(string sourceSceneName)
+    {
+        string sourcePath = Path.Combine(SceneStudyPath, sourceSceneName + ".unity");
+        string destPath = Path.Combine(SceneStudyPath, "FPVObs_2.unity");
+
+        if (!File.Exists(sourcePath))
+        {
+            Debug.LogError("Source scene not found: " + sourcePath);
+            return;
+        }
+
+        if (!EditorUtility.DisplayDialog(
+                "Copy To FPVObs_2",
+                $"Copy {sourceSceneName}.unity to FPVObs_2.unity? (Original stays untouched)",
+                "Copy",
+                "Cancel"))
+        {
+            return;
+        }
+
+        // Copy the source scene into FPVObs_2.unity without touching the original.
+        File.Copy(sourcePath, destPath, true);
+
+        AssetDatabase.ImportAsset(destPath);
+        AssetDatabase.Refresh();
+        Debug.Log($"FPVObs_2.unity updated from copy of {sourceSceneName}.unity");
     }
 }

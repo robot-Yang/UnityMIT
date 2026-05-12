@@ -12,16 +12,16 @@ EditorBuildSettings:
     path: Assets/Scenes/Scene Selector.unity
     guid: c77175f23713e314cb6cdd510f9dae02
   - enabled: 1
-    path: Assets/Scenes/SceneStudy/TDVObs.unity
+    path: Assets/Scenes/SceneStudy/New Folder/TDVObs.unity
     guid: 4497d5166e82f5d44bbc5c4c40bba8d6
   - enabled: 1
-    path: Assets/Scenes/SceneStudy/FPVObs.unity
+    path: Assets/Scenes/SceneStudy/New Folder/FPVObs.unity
     guid: d4e5207ba5ffd4d46bb8d1ebe0983b9c
   - enabled: 1
     path: Assets/Scenes/SceneStudy/TDVCollectibles.unity
     guid: 2cbebe0aeda77464b8cb0fad115b9baa
   - enabled: 1
-    path: Assets/Scenes/SceneStudy/FPVCollectibles.unity
+    path: Assets/Scenes/SceneStudy/New Folder/FPVCollectibles.unity
     guid: 75dd737bdce000543926d90d479c47fc
   - enabled: 1
     path: Assets/Scenes/TrainingFinal/1 Single Drone TDV.unity
@@ -60,18 +60,27 @@ EditorBuildSettings:
     path: Assets/Scenes/TrainingFinal/12 go Fast FPV.unity
     guid: 1fe108dba75e21d44bd4381364f20dd5
   - enabled: 1
-    path: Assets/Scenes/SceneStudy/TDVObs_1.unity
+    path: Assets/Scenes/SceneStudy/New Folder/TDVObs_1.unity
     guid: 26d281e6b2b783f43b0a3cec90b1b07f
   - enabled: 1
-    path: Assets/Scenes/SceneStudy/FPVObs_1.unity
+    path: Assets/Scenes/SceneStudy/New Folder/FPVObs_1.unity
     guid: 147cc51fb3cda4147bd505281c942c76
   - enabled: 1
     path: Assets/Scenes/SceneStudy/FPVObs_2.unity
-    guid: 4c425c391548e458fa709cd452df78e4
+    guid: 863f59bddcf224fb4bba99783fde2faf
   - enabled: 1
-    path: Assets/Scenes/SceneStudy/TDVCollectibles_1.unity
+    path: Assets/Scenes/SceneStudy/FPVObs_2_practice.unity
+    guid: e42efa929c6fe4b8da15696f1fb25490
+  - enabled: 1
+    path: Assets/Scenes/SceneStudy/FPVObs_2_trial_1.unity
+    guid: 2d490c0fa5929438d9822a0f889da177
+  - enabled: 1
+    path: Assets/Scenes/SceneStudy/FPVObs_2_trial_2.unity
+    guid: 1aef72ee116f2472abf094cb09959547
+  - enabled: 1
+    path: Assets/Scenes/SceneStudy/New Folder/TDVCollectibles_1.unity
     guid: 5ecc77ba7e7922145bcd39f9859cf89e
   - enabled: 1
-    path: Assets/Scenes/SceneStudy/FPVCollectibles_1.unity
+    path: Assets/Scenes/SceneStudy/New Folder/FPVCollectibles_1.unity
     guid: 66120afd4c0ad6c498427499b1b16fcd
   m_configObjects: {}
