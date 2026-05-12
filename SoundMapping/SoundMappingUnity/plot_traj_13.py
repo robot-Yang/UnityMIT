@@ -29,6 +29,7 @@ SEG_IDX_1 = 0   # first line of REF_STEPS
 SEG_IDX_2 = 1   # second line
 SEG_IDX_4 = 3   # fourth line
 
+
 # Per-segment workspace widths in *world meters*, scaled by REF_SCALE to match ref_poly units
 SEG_WIDTHS = {
     SEG_IDX_1: 14.0 * REF_SCALE,  # originally 16 m wide
