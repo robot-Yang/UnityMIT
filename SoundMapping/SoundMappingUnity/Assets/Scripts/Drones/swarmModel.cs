@@ -65,6 +65,88 @@ public class swarmModel : MonoBehaviour
     public int PRIORITYWHENEMBODIED = 15;
     public float dampingFactor = 0.98f;
 
+    [Header("Command Dynamics")]
+    [Tooltip("Toggle inertial command dynamics. Disable to recover legacy behavior.")]
+    public bool useInertialDynamics = true;
+    [Tooltip("Low-pass filtering time constant for input commands (seconds).")]
+    public float commandTimeConstant = 0.25f;
+    [Tooltip("Velocity-tracking time constant for command following (seconds).")]
+    public float velocityTimeConstant = 0.35f;
+    [Tooltip("Maximum control acceleration from command following (m/s^2).")]
+    public float maxAcceleration = 12f;
+    [Tooltip("Maximum acceleration slew rate (m/s^3).")]
+    public float maxJerk = 60f;
+    [Tooltip("Linear drag coefficient applied to velocity.")]
+    public float linearDrag = 0.35f;
+
+    [Header("Motion Mode")]
+    [Tooltip("Use Rigidbody + cascaded velocity/attitude control. Disable for legacy kinematic integration.")]
+    public bool useRigidbodyCascadeController = false;
+
+    [Header("Rigidbody Cascade Control")]
+    [Tooltip("Preview horizon to convert current acceleration command into a velocity target.")]
+    public float cascadeVelocityPreview = 0.30f;
+    [Tooltip("Scale applied to DroneFake acceleration command before cascade tracking.")]
+    public float cascadeCommandGain = 0.5f;
+    [Tooltip("Low-pass filter coefficient for acceleration command (0..1).")]
+    [Range(0f, 1f)] public float cascadeCommandFilterCoefficient = 0.03f;
+    [Tooltip("Max magnitude of acceleration command injected into cascade controller (m/s^2).")]
+    public float cascadeMaxCommandAcceleration = 3f;
+    [Tooltip("Ignore vertical swarm command in cascade mode (improves hover stability).")]
+    public bool cascadeIgnoreVerticalCommand = true;
+    [Tooltip("Pilot command deadband (m/s equivalent). Under this, command decays to zero.")]
+    public float cascadePilotCommandDeadband = 0.05f;
+    [Tooltip("Decay rate of command when pilot command is near zero (1/s).")]
+    public float cascadeNoInputCommandDecay = 2.0f;
+    [Tooltip("Enable position hold when there is no pilot translation command.")]
+    public bool cascadeEnablePositionHold = true;
+    [Tooltip("Position-hold proportional gain (velocity from position error).")]
+    public float cascadePositionHoldKp = 1.2f;
+    [Tooltip("Position-hold damping gain (velocity feedback).")]
+    public float cascadePositionHoldKd = 0.9f;
+    [Tooltip("Max commanded speed in position-hold mode (m/s).")]
+    public float cascadePositionHoldMaxSpeed = 1.5f;
+    [Tooltip("Velocity filter coefficient used in position-hold mode (0..1).")]
+    [Range(0f, 1f)] public float cascadePositionHoldFilterCoefficient = 0.20f;
+    [Tooltip("Velocity tracking time constant (seconds).")]
+    public float cascadeVelocityTimeConstant = 0.50f;
+    [Tooltip("Attitude (roll/pitch) rate time constant (seconds).")]
+    public float cascadeAttitudeTimeConstant = 0.10f;
+    [Tooltip("Angular acceleration time constant for roll/pitch (seconds).")]
+    public float cascadeAngularTimeConstantXY = 0.05f;
+    [Tooltip("Angular acceleration time constant for yaw (seconds).")]
+    public float cascadeAngularTimeConstantZ = 0.05f;
+    [Tooltip("Max pitch angle command (degrees).")]
+    public float cascadeMaxPitchDeg = 10f;
+    [Tooltip("Max roll angle command (degrees).")]
+    public float cascadeMaxRollDeg = 10f;
+    [Tooltip("Max yaw rate command (rad/s).")]
+    public float cascadeMaxYawRate = 0.5f;
+    [Tooltip("Embodied yaw input gain from JoystickRightHorizontal (rad/s at full deflection).")]
+    public float cascadeEmbodiedYawInputGain = 0.5f;
+    [Tooltip("In cascade mode, force non-embodied drones to align yaw with embodied heading.")]
+    public bool cascadeAlignYawToEmbodied = true;
+    [Tooltip("Max angular acceleration command (rad/s^2).")]
+    public float cascadeMaxAngularAccel = 10f;
+    [Tooltip("Additional body-rate damping applied on angular acceleration command.")]
+    public float cascadeAngularRateDamping = 0.4f;
+    [Tooltip("Low-pass filter coefficient for velocity target (0..1).")]
+    [Range(0f, 1f)] public float cascadeVelocityFilterCoefficient = 0.05f;
+    [Tooltip("Low-pass filter coefficient for yaw-rate command (0..1).")]
+    [Range(0f, 1f)] public float cascadeYawFilterCoefficient = 0.15f;
+    [Tooltip("Gravity compensation in thrust computation.")]
+    public bool cascadeUseGravityCompensation = true;
+    [Tooltip("Max thrust as multiple of g.")]
+    public float cascadeMaxThrustMultiplier = 2.7f;
+    [Tooltip("Runtime Rigidbody mass used in cascade mode.")]
+    public float cascadeRigidbodyMass = 3f;
+    [Tooltip("Runtime Rigidbody linear drag used in cascade mode.")]
+    public float cascadeRigidbodyDrag = 0.3f;
+    [Tooltip("Runtime Rigidbody angular drag used in cascade mode.")]
+    public float cascadeRigidbodyAngularDrag = 5f;
+    [Tooltip("Whether Rigidbody gravity is enabled in cascade mode.")]
+    public bool cascadeRigidbodyUseGravity = true;
+
     public static NetworkCreator network;
 
     public static float minDistance = float.MaxValue;
@@ -88,6 +170,11 @@ public class swarmModel : MonoBehaviour
     public bool showDroneAllignementForces = false;
     public bool showSwarmObstacleForces = true;
     public bool showSwarmOlfati = false;
+    public bool showSwarmCentroidGizmo = true;
+    [Tooltip("If set, hide the centroid gizmo when this camera is rendering (e.g., top-down Game view).")]
+    public Camera hideCentroidInCamera;
+    [Tooltip("If set, hide swarm force gizmos (red arrows) when this camera is rendering (e.g., top-down Game view).")]
+    public Camera hideSwarmForceInCamera;
 
     [Header("Ellipsoid Force Gizmos")]
     [Tooltip("Draw actuator rays colored by intensity (from centroid).")]
@@ -356,6 +443,13 @@ public class swarmModel : MonoBehaviour
         DroneFake.neighborRadius = neighborRadius;
         DroneFake.PRIORITYWHENEMBODIED = PRIORITYWHENEMBODIED;
         DroneFake.dampingFactor = dampingFactor;
+        DroneFake.useInertialDynamics = useInertialDynamics;
+        DroneFake.useRigidbodyCascadeControl = useRigidbodyCascadeController;
+        DroneFake.commandTimeConstant = Mathf.Max(commandTimeConstant, 1e-3f);
+        DroneFake.velocityTimeConstant = Mathf.Max(velocityTimeConstant, 1e-3f);
+        DroneFake.maxAcceleration = Mathf.Max(maxAcceleration, 0f);
+        DroneFake.maxJerk = Mathf.Max(maxJerk, 0f);
+        DroneFake.linearDrag = Mathf.Max(linearDrag, 0f);
         DroneFake.spawnHeight = spawnHeight;
         DroneFake.desiredSeparationObs = desiredSeparationObs;
     }
@@ -363,6 +457,16 @@ public class swarmModel : MonoBehaviour
     void refreshSwarm()
     {
         refreshParameters();
+
+        if (useRigidbodyCascadeController)
+        {
+            foreach (Transform child in swarmHolder.transform)
+            {
+                var dc = child.GetComponent<DroneController>();
+                if (dc == null || dc.droneFake == null) continue;
+                dc.SyncDroneFakeFromRigidbody();
+            }
+        }
 
         network = new NetworkCreator(drones);
         network.refreshNetwork();
@@ -384,7 +488,15 @@ public class swarmModel : MonoBehaviour
             var dc = child.GetComponent<DroneController>();
             if (dc == null || dc.droneFake == null) continue;
 
-            dc.droneFake.UpdatePosition();
+            if (useRigidbodyCascadeController)
+            {
+                dc.ApplyRigidbodyCascadeControl(this);
+                dc.SyncDroneFakeFromRigidbody();
+            }
+            else
+            {
+                dc.droneFake.UpdatePosition();
+            }
             if (dc.droneFake.hasCrashed)
                 dc.crash();
         }
@@ -444,6 +556,11 @@ public class swarmModel : MonoBehaviour
         }
 
         getDummies();
+
+        if (startEmbodied)
+        {
+            AlignEmbodiedToStartingLine();
+        }
     }
 
     void spawnless()
@@ -484,6 +601,56 @@ public class swarmModel : MonoBehaviour
         }
 
         getDummies();
+
+        if (startEmbodied)
+        {
+            AlignEmbodiedToStartingLine();
+        }
+    }
+
+    Transform FindStartingLineTransform()
+    {
+        GameObject startingLine = GameObject.Find("Starting_line");
+        if (startingLine != null) return startingLine.transform;
+
+        foreach (Transform t in Resources.FindObjectsOfTypeAll<Transform>())
+        {
+            if (t == null) continue;
+            if (!t.gameObject.scene.IsValid() || !t.gameObject.scene.isLoaded) continue;
+            if (t.name == "Starting_line") return t;
+        }
+
+        GameObject startingSquare = GameObject.Find("Starting_square");
+        if (startingSquare != null) return startingSquare.transform;
+
+        foreach (Transform t in Resources.FindObjectsOfTypeAll<Transform>())
+        {
+            if (t == null) continue;
+            if (!t.gameObject.scene.IsValid() || !t.gameObject.scene.isLoaded) continue;
+            if (t.name == "Starting_square") return t;
+        }
+
+        return null;
+    }
+
+    void AlignEmbodiedToStartingLine()
+    {
+        if (CameraMovement.embodiedDrone == null) return;
+
+        Transform startingLine = FindStartingLineTransform();
+        if (startingLine == null) return;
+
+        Transform droneTf = CameraMovement.embodiedDrone.transform;
+        Vector3 lineForward = Vector3.ProjectOnPlane(startingLine.forward, Vector3.up);
+        Vector3 toLine = Vector3.ProjectOnPlane(startingLine.position - droneTf.position, Vector3.up);
+        if (toLine.sqrMagnitude < 1e-6f) return;
+        if (Vector3.Dot(lineForward, toLine) < 0f)
+        {
+            lineForward = -lineForward;
+        }
+        if (lineForward.sqrMagnitude < 1e-6f) return;
+
+        droneTf.rotation = Quaternion.LookRotation(lineForward, Vector3.up);
     }
 
     void getDummies()
@@ -955,9 +1122,14 @@ public class swarmModel : MonoBehaviour
         var (centroid, axes) = ComputeSwarmEllipsoidAxes(pts, axisFloor, axisScale);
 
         // -------- Draw centroid marker --------
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawSphere(centroid, 0.2f); //0.2f
-        Gizmos.DrawLine(centroid, centroid + Vector3.up * 0.5f);
+        bool hideCentroidForCamera = hideCentroidInCamera != null && Camera.current == hideCentroidInCamera;
+        bool hideForceForCamera = hideSwarmForceInCamera != null && Camera.current == hideSwarmForceInCamera;
+        if (showSwarmCentroidGizmo && !hideCentroidForCamera)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(centroid, 0.2f); //0.2f
+            Gizmos.DrawLine(centroid, centroid + Vector3.up * 0.5f);
+        }
 
         // -------- Draw ellipsoid wireframe --------
         Gizmos.color = new Color(0f, 0.5f, 1f, 0.8f);
@@ -968,7 +1140,7 @@ public class swarmModel : MonoBehaviour
         // ============================================================================================
         bool drewAnyRuntimeForces = false;
 
-        if (Application.isPlaying && showSwarmObstacleForces && swarmObstacleForces != null && swarmObstacleForces.Count > 0)
+        if (!hideForceForCamera && Application.isPlaying && showSwarmObstacleForces && swarmObstacleForces != null && swarmObstacleForces.Count > 0)
         {
             foreach (var f in swarmObstacleForces)
             {
@@ -986,7 +1158,7 @@ public class swarmModel : MonoBehaviour
         // ============================================================================================
         // Fallback previews from obstacles (when no runtime forces exist yet)
         // ============================================================================================
-        if (gizmoForcePreviewFallback && !drewAnyRuntimeForces)
+        if (!hideForceForCamera && gizmoForcePreviewFallback && !drewAnyRuntimeForces)
         {
             // Snapshot obstacles safely
             List<Obstacle> obsSnapshot = null;
@@ -1025,6 +1197,7 @@ public class swarmModel : MonoBehaviour
                 }
             }
         }
+        
 
         // -------- Optional: visualize the points used for the fit (comment in if helpful) --------
         // Gizmos.color = new Color(0.2f, 1f, 0.6f, 0.9f);

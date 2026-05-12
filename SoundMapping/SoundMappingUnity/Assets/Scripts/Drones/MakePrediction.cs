@@ -19,7 +19,6 @@ public class MakePrediction : MonoBehaviour
 
     Thread predictionThread;    
 
-
     void Start()
     {
         defaultMaterial = new Material(Shader.Find("Unlit/Color"));

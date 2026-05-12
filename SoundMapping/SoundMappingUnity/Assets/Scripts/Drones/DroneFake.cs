@@ -31,6 +31,13 @@ public class DroneFake
     public static float droneRadius = 0.17f;
 
     public static float dampingFactor = 0.96f;
+    public static bool useRigidbodyCascadeControl = false;
+    public static bool useInertialDynamics = true;
+    public static float commandTimeConstant = 0.25f;
+    public static float velocityTimeConstant = 0.35f;
+    public static float maxAcceleration = 12f;
+    public static float maxJerk = 60f;
+    public static float linearDrag = 0.35f;
 
     public static float lastDT = 0.02f;
 
@@ -59,6 +66,8 @@ public class DroneFake
 
     public Vector3 lastAllignement = Vector3.zero; //direction of migration
 
+    private Vector3 filteredAlignmentCommand = Vector3.zero;
+    private Vector3 lastAppliedAcceleration = Vector3.zero;
 
     public List<float> olfatiForce = new List<float>();
     public List<float> obstacleForce = new List<float>();
@@ -237,7 +246,19 @@ public class DroneFake
         float cPmObs = avoidanceForce;
 
                 // Reference velocity
+        float dt = Mathf.Max(Time.fixedDeltaTime, 1e-4f);
         Vector3 vRef = alignmentVector;
+        if (useInertialDynamics)
+        {
+            float tauCmd = Mathf.Max(commandTimeConstant, 1e-3f);
+            float cmdAlpha = 1f - Mathf.Exp(-dt / tauCmd);
+            filteredAlignmentCommand = Vector3.Lerp(filteredAlignmentCommand, alignmentVector, cmdAlpha);
+            vRef = filteredAlignmentCommand;
+        }
+        else
+        {
+            filteredAlignmentCommand = alignmentVector;
+        }
 
         Vector3 accCoh = Vector3.zero;
         Vector3 accVel = Vector3.zero;
@@ -279,10 +300,18 @@ public class DroneFake
            accVel += (neighbour.velocity - velocity) * neighborPriority;
         }
 
+        Vector3 commandAcceleration = cVm * (vRef - velocity);
+        if (useInertialDynamics)
+        {
+            float tauVel = Mathf.Max(velocityTimeConstant, 1e-3f);
+            commandAcceleration = cVm * (vRef - velocity) / tauVel;
+            commandAcceleration = Vector3.ClampMagnitude(commandAcceleration, Mathf.Max(maxAcceleration, 0f));
+        }
+
         if(totalPriority == 0){
-            accVel = cVm * (vRef - velocity); // 50% of the velocity matching force
+            accVel = commandAcceleration;
         }else{
-            accVel = (accVel + cVm * (vRef - velocity)) / 2; // 50% of the velocity matching force
+            accVel = (accVel + commandAcceleration) / 2;
         }
 
         // Obstacle avoidance
@@ -327,10 +356,30 @@ public class DroneFake
         lastAllignementSwarm = accVel;
         lastAllignement = accVel;
 
-        Vector3 fo = accCoh + accObs + accVel;
-        fo = Vector3.ClampMagnitude(fo, maxForce);
-        
-        acceleration = fo;
+        Vector3 desiredAcceleration = accCoh + accObs + accVel;
+
+        if (useInertialDynamics)
+        {
+            desiredAcceleration -= linearDrag * velocity;
+            desiredAcceleration = Vector3.ClampMagnitude(desiredAcceleration, maxForce);
+
+            float maxDeltaAcceleration = Mathf.Max(maxJerk, 0f) * dt;
+            if (maxDeltaAcceleration > 0f)
+            {
+                Vector3 deltaAcceleration = desiredAcceleration - lastAppliedAcceleration;
+                if (deltaAcceleration.magnitude > maxDeltaAcceleration)
+                {
+                    desiredAcceleration = lastAppliedAcceleration + deltaAcceleration.normalized * maxDeltaAcceleration;
+                }
+            }
+        }
+        else
+        {
+            desiredAcceleration = Vector3.ClampMagnitude(desiredAcceleration, maxForce);
+        }
+
+        acceleration = desiredAcceleration;
+        lastAppliedAcceleration = acceleration;
     }
 
     float getPriority(float basePriority, DroneFake neighbour)
@@ -462,9 +511,11 @@ public class DroneFake
 
     public void UpdatePositionPrediction(int numberOfTimeApplied)
     {
+        float dt = useInertialDynamics ? Mathf.Max(Time.fixedDeltaTime, 1e-4f) : 0.02f;
+        lastDT = dt;
         for (int i = 0; i < numberOfTimeApplied; i++)
         {
-            velocity += acceleration * 0.02f; //v(t+1) = v(t) + a(t) * dt  @ a(t) = f(t) w a(t) E Vec3
+            velocity += acceleration * dt; //v(t+1) = v(t) + a(t) * dt  @ a(t) = f(t) w a(t) E Vec3
             // if (layer == 1 && embodied)
             // {
             //     velocity = Vector3.ClampMagnitude(velocity, maxSpeed/2f);
@@ -474,9 +525,12 @@ public class DroneFake
             velocity = Vector3.ClampMagnitude(velocity, maxSpeed);
 
             // Apply damping to reduce the velocity over time
-            velocity *= dampingFactor;
+            float dampingPerStep = useInertialDynamics
+                ? Mathf.Pow(Mathf.Clamp01(dampingFactor), dt / 0.02f)
+                : dampingFactor;
+            velocity *= dampingPerStep;
 
-            position += velocity * 0.02f;
+            position += velocity * dt;
             //position.y = spawnHeight;
         }
 

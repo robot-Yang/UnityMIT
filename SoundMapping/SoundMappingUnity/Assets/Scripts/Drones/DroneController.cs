@@ -41,6 +41,11 @@ public class DroneController : MonoBehaviour
     public DroneFake droneFake;
 
     public bool dummy = false;
+    private Vector3 filteredCommandAccelerationWorld = Vector3.zero;
+    private Vector3 filteredTargetVelocityWorld = Vector3.zero;
+    private float filteredYawRate = 0f;
+    private Vector3 holdPositionWorld = Vector3.zero;
+    private bool holdPositionInitialized = false;
 
     float realScore
     {
@@ -132,6 +137,13 @@ public class DroneController : MonoBehaviour
     {
         try
         {
+            if (DroneFake.useRigidbodyCascadeControl)
+            {
+                SyncDroneFakeFromRigidbody();
+                updateColor();
+                return;
+            }
+
             Vector3 positionDrome = droneFake.position;
 
             //check if valid vector3 like nop Nan
@@ -159,6 +171,181 @@ public class DroneController : MonoBehaviour
             print("Error in drone update");
             print(e);
         }
+    }
+
+    public void SyncDroneFakeFromRigidbody()
+    {
+        if (droneFake == null) return;
+
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb == null)
+        {
+            droneFake.position = transform.position;
+            return;
+        }
+
+        droneFake.position = rb.position;
+        droneFake.velocity = rb.velocity;
+    }
+
+    public void ApplyRigidbodyCascadeControl(swarmModel cfg)
+    {
+        if (cfg == null || droneFake == null || !droneFake.isMovable) return;
+
+        Rigidbody rb = EnsureCascadeRigidbody(cfg);
+        float g = Mathf.Max(Physics.gravity.magnitude, 1e-3f);
+
+        Vector3 commandAccelerationWorld = droneFake.acceleration * Mathf.Max(cfg.cascadeCommandGain, 0f);
+        if (cfg.cascadeIgnoreVerticalCommand)
+        {
+            commandAccelerationWorld.y = 0f;
+        }
+
+        float maxCmdAccel = Mathf.Max(cfg.cascadeMaxCommandAcceleration, 0f);
+        if (maxCmdAccel > 0f)
+        {
+            commandAccelerationWorld = Vector3.ClampMagnitude(commandAccelerationWorld, maxCmdAccel);
+        }
+
+        filteredCommandAccelerationWorld = Vector3.Lerp(
+            filteredCommandAccelerationWorld,
+            commandAccelerationWorld,
+            Mathf.Clamp01(cfg.cascadeCommandFilterCoefficient));
+
+        bool hasPilotCommand = MigrationPointController.alignementVector.magnitude > Mathf.Max(cfg.cascadePilotCommandDeadband, 0f);
+        if (!hasPilotCommand)
+        {
+            float decayAlpha = 1f - Mathf.Exp(-Mathf.Max(cfg.cascadeNoInputCommandDecay, 0f) * Time.fixedDeltaTime);
+            filteredCommandAccelerationWorld = Vector3.Lerp(filteredCommandAccelerationWorld, Vector3.zero, decayAlpha);
+        }
+
+        Vector3 targetVelocityWorld;
+        bool usePositionHold = !hasPilotCommand && cfg.cascadeEnablePositionHold;
+        if (usePositionHold)
+        {
+            if (!holdPositionInitialized)
+            {
+                holdPositionWorld = rb.position;
+                holdPositionInitialized = true;
+            }
+
+            Vector3 positionError = holdPositionWorld - rb.position;
+            Vector3 holdVelocity = positionError * Mathf.Max(cfg.cascadePositionHoldKp, 0f)
+                                  - rb.velocity * Mathf.Max(cfg.cascadePositionHoldKd, 0f);
+            holdVelocity = Vector3.ClampMagnitude(holdVelocity, Mathf.Max(cfg.cascadePositionHoldMaxSpeed, 0f));
+            targetVelocityWorld = holdVelocity;
+        }
+        else
+        {
+            holdPositionWorld = rb.position;
+            holdPositionInitialized = true;
+            targetVelocityWorld = rb.velocity + filteredCommandAccelerationWorld * Mathf.Max(cfg.cascadeVelocityPreview, 0f);
+        }
+
+        targetVelocityWorld = Vector3.ClampMagnitude(targetVelocityWorld, DroneFake.maxSpeed);
+        float velocityFilter = usePositionHold
+            ? Mathf.Clamp01(cfg.cascadePositionHoldFilterCoefficient)
+            : Mathf.Clamp01(cfg.cascadeVelocityFilterCoefficient);
+        filteredTargetVelocityWorld = Vector3.Lerp(
+            filteredTargetVelocityWorld,
+            targetVelocityWorld,
+            velocityFilter);
+
+        Vector3 velocityBody = transform.InverseTransformDirection(rb.velocity);
+        Vector3 targetVelocityBody = transform.InverseTransformDirection(filteredTargetVelocityWorld);
+        Vector3 velocityError = velocityBody - targetVelocityBody;
+
+        float tauVel = Mathf.Max(cfg.cascadeVelocityTimeConstant, 1e-3f);
+        Vector3 desiredAccelerationBody = -velocityError / tauVel;
+
+        float maxPitch = cfg.cascadeMaxPitchDeg * Mathf.Deg2Rad;
+        float maxRoll = cfg.cascadeMaxRollDeg * Mathf.Deg2Rad;
+        Vector3 desiredTheta = new Vector3(
+            Mathf.Clamp(desiredAccelerationBody.z / g, -maxPitch, maxPitch),
+            0f,
+            Mathf.Clamp(-desiredAccelerationBody.x / g, -maxRoll, maxRoll));
+
+        Vector3 worldDown = transform.InverseTransformDirection(Vector3.down);
+        float pitch = worldDown.z;
+        float roll = -worldDown.x;
+
+        float tauAtt = Mathf.Max(cfg.cascadeAttitudeTimeConstant, 1e-3f);
+        Vector3 desiredOmegaBody = new Vector3(
+            -(pitch - desiredTheta.x) / tauAtt,
+            0f,
+            -(roll - desiredTheta.z) / tauAtt);
+
+        float targetYawRate = 0f;
+        Vector3 planarTargetVelocity = new Vector3(filteredTargetVelocityWorld.x, 0f, filteredTargetVelocityWorld.z);
+        if (droneFake.embodied && LevelConfiguration._control_rotation)
+        {
+            targetYawRate = Input.GetAxis("JoystickRightHorizontal") * Mathf.Max(cfg.cascadeEmbodiedYawInputGain, 0f);
+        }
+        else if (cfg.cascadeAlignYawToEmbodied && CameraMovement.embodiedDrone != null)
+        {
+            Vector3 embodiedForward = Vector3.ProjectOnPlane(CameraMovement.embodiedDrone.transform.forward, Vector3.up);
+            if (embodiedForward.sqrMagnitude > 1e-6f)
+            {
+                float targetYaw = Mathf.Atan2(embodiedForward.x, embodiedForward.z) * Mathf.Rad2Deg;
+                float currentYaw = transform.eulerAngles.y;
+                float yawError = Mathf.Deg2Rad * Mathf.DeltaAngle(currentYaw, targetYaw);
+                targetYawRate = yawError / tauAtt;
+            }
+        }
+        else if (planarTargetVelocity.sqrMagnitude > 1e-5f)
+        {
+            float targetYaw = Mathf.Atan2(planarTargetVelocity.x, planarTargetVelocity.z) * Mathf.Rad2Deg;
+            float currentYaw = transform.eulerAngles.y;
+            float yawError = Mathf.Deg2Rad * Mathf.DeltaAngle(currentYaw, targetYaw);
+            targetYawRate = yawError / tauAtt;
+        }
+        targetYawRate = Mathf.Clamp(
+            targetYawRate,
+            -Mathf.Max(cfg.cascadeMaxYawRate, 0f),
+            Mathf.Max(cfg.cascadeMaxYawRate, 0f));
+        filteredYawRate = Mathf.Lerp(filteredYawRate, targetYawRate, Mathf.Clamp01(cfg.cascadeYawFilterCoefficient));
+        desiredOmegaBody.y = filteredYawRate;
+
+        Vector3 angularVelocityBody = transform.InverseTransformDirection(rb.angularVelocity);
+        Vector3 omegaError = angularVelocityBody - desiredOmegaBody;
+
+        Vector3 desiredAlpha = new Vector3(
+            -omegaError.x / Mathf.Max(cfg.cascadeAngularTimeConstantXY, 1e-3f),
+            -omegaError.y / Mathf.Max(cfg.cascadeAngularTimeConstantZ, 1e-3f),
+            -omegaError.z / Mathf.Max(cfg.cascadeAngularTimeConstantXY, 1e-3f));
+        desiredAlpha -= angularVelocityBody * Mathf.Max(cfg.cascadeAngularRateDamping, 0f);
+        desiredAlpha = Vector3.ClampMagnitude(desiredAlpha, Mathf.Max(cfg.cascadeMaxAngularAccel, 0f));
+
+        Vector3 desiredTorque = Vector3.Scale(desiredAlpha, rb.inertiaTensor);
+        float thrust = desiredAccelerationBody.y + (cfg.cascadeUseGravityCompensation ? g : 0f);
+        float denom = Mathf.Cos(roll) * Mathf.Cos(pitch);
+        if (Mathf.Abs(denom) < 1e-3f) denom = 1e-3f * Mathf.Sign(denom == 0f ? 1f : denom);
+        thrust /= denom;
+        thrust = Mathf.Clamp(thrust, 0f, Mathf.Max(cfg.cascadeMaxThrustMultiplier, 0f) * g);
+        Vector3 desiredForce = Vector3.up * thrust * rb.mass;
+
+        // desiredTorque/desiredForce are physical torque/force terms; apply them in Force mode.
+        rb.AddRelativeTorque(desiredTorque, ForceMode.Force);
+        rb.AddRelativeForce(desiredForce, ForceMode.Force);
+
+        // Safety clamp to stay consistent with legacy speed limits.
+        rb.velocity = Vector3.ClampMagnitude(rb.velocity, DroneFake.maxSpeed);
+
+        droneFake.acceleration = transform.TransformDirection(desiredAccelerationBody);
+    }
+
+    Rigidbody EnsureCascadeRigidbody(swarmModel cfg)
+    {
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
+
+        rb.mass = Mathf.Max(cfg.cascadeRigidbodyMass, 0.01f);
+        rb.drag = Mathf.Max(cfg.cascadeRigidbodyDrag, 0f);
+        rb.angularDrag = Mathf.Max(cfg.cascadeRigidbodyAngularDrag, 0f);
+        rb.useGravity = cfg.cascadeRigidbodyUseGravity;
+        rb.isKinematic = false;
+
+        return rb;
     }
 
     #endregion
@@ -300,5 +487,3 @@ public class ObstacleInRange
         this.distance = distance;
     }
 }
-
-

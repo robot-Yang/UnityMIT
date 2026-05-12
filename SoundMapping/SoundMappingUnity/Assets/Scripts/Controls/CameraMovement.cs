@@ -23,6 +23,9 @@ public class CameraMovement : MonoBehaviour
     public GameObject lastEmbodiedDrone = null;
     public Quaternion initialCamRotation;
     private const float DEFAULT_HEIGHT_CAMERA = 20f;
+    [Header("MiniMap Toggle")]
+    public KeyCode toggleMinimapKey = KeyCode.M;
+    public bool minimapVisibleOnStart = true;
 
     // A simple state machine for the camera
     private enum CameraState { TDView, Animation, DroneView, Crash, AnimationDroneToDrone };
@@ -44,6 +47,7 @@ public class CameraMovement : MonoBehaviour
         cam.transform.position = new Vector3(0, DEFAULT_HEIGHT_CAMERA, 0);
         heightCamera = DEFAULT_HEIGHT_CAMERA;
         initialCamRotation = cam.transform.rotation;
+        SetMinimapVisible(minimapVisibleOnStart);
 
         // Begin in top-down view mode
         currentState = CameraState.TDView;
@@ -53,6 +57,11 @@ public class CameraMovement : MonoBehaviour
     {
 
       //  print("CameraMovement: " + idLeader + " Selected: " + MigrationPointController.idLeader);
+
+        if (Input.GetKeyDown(toggleMinimapKey))
+        {
+            ToggleMinimap();
+        }
 
         if (EmbodiedHasCrashed() && currentState != CameraState.Crash)
         {
@@ -160,7 +169,10 @@ public class CameraMovement : MonoBehaviour
         float rightStickHorizontal = (GetComponent<MigrationPointController>().control_rotation) ? Input.GetAxis("JoystickRightHorizontal") : 0;
         if (embodiedDrone != null)
         {
-            embodiedDrone.transform.Rotate(Vector3.up, rightStickHorizontal * Time.deltaTime * rotationSpeed);
+            if (!DroneFake.useRigidbodyCascadeControl)
+            {
+                embodiedDrone.transform.Rotate(Vector3.up, rightStickHorizontal * Time.deltaTime * rotationSpeed);
+            }
             Vector3 center;
             if (TryGetSwarmCenter(out center))
             {
@@ -174,8 +186,7 @@ public class CameraMovement : MonoBehaviour
             SyncMainCameraOrientationToEmbodied();
         }
 
-        // Update minimap camera if enabled.
-        camMinimap.GetComponent<Camera>().orthographicSize = swarmModel.desiredSeparation * 3;
+        // Keep minimap zoom fixed (edit the minimap camera's orthographic size in the Inspector).
     }
 
     // Begins an animation from the current camera position to a target position.
@@ -424,6 +435,43 @@ public class CameraMovement : MonoBehaviour
     public static GameObject _this; 
     public static void setNextEmbodiedDrone()
     {
+    }
+
+    private void ToggleMinimap()
+    {
+        bool currentlyVisible = false;
+        if (minimap != null)
+        {
+            currentlyVisible = minimap.activeSelf;
+        }
+        else if (camMinimap != null)
+        {
+            Camera miniCam = camMinimap.GetComponent<Camera>();
+            currentlyVisible = miniCam != null ? miniCam.enabled : camMinimap.activeSelf;
+        }
+
+        SetMinimapVisible(!currentlyVisible);
+    }
+
+    private void SetMinimapVisible(bool visible)
+    {
+        if (minimap != null)
+        {
+            minimap.SetActive(visible);
+        }
+
+        if (camMinimap != null)
+        {
+            Camera miniCam = camMinimap.GetComponent<Camera>();
+            if (miniCam != null)
+            {
+                miniCam.enabled = visible;
+            }
+            else
+            {
+                camMinimap.SetActive(visible);
+            }
+        }
     }
 
 }

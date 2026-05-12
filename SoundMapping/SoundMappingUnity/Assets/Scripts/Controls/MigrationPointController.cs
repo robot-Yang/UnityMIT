@@ -22,8 +22,8 @@ public class MigrationPointController : MonoBehaviour
     public static Vector3 alignementVector = new Vector3(0, 0, 0);
     public static Vector3 alignementVectorNonZero = new Vector3(0, 0, 0);
 
-    public static float maxSpreadness = 5f;
-    public static float minSpreadness = 1f;
+    public static float maxSpreadness = 4.5f;
+    public static float minSpreadness = 1.5f;
 
     public static bool InControl = true;
 
@@ -60,8 +60,31 @@ public class MigrationPointController : MonoBehaviour
     public bool allowManualSelection = false;    // disables selection by buttons 4/5 when false
     public bool allowManualEmbodiment = false;   // disables button 0 embodiment when false
 
+    [Header("Movement Gates")]
+    public bool allowAltitudeControl = false;
+
+    [Header("Spreadness Control")]
+    public bool useRawSpreadnessAxis = true;
+    public float spreadnessAxisMin = -1f;
+    public float spreadnessAxisMax = 1f;
+    public bool holdExtremeJoystickDropout = true;
+    public float joystickExtremeThreshold = 0.85f;
+    public float joystickZeroThreshold = 0.02f;
+    [SerializeField] private float spreadnessAxisReading = 0f;
+    [SerializeField] private float spreadnessAxisReadingRaw = 0f;
+    [SerializeField] private float spreadnessAxisUsed = 0f;
+    [SerializeField] private float spreadnessAxisNormalized = 0f;
+    [SerializeField] private float spreadnessAxisMinUsed = -1f;
+    [SerializeField] private float spreadnessAxisMaxUsed = 1f;
+    [SerializeField] private float spreadnessAxisLastJoystickStable = 0f;
+
     [Header("Debug")]
     public bool showAlignmentRay = false;
+    [Tooltip("If set, hide the alignment ray when this camera is rendering (e.g., top-down Game view).")]
+    public Camera hideAlignmentRayInCamera;
+
+    private Vector3 _alignmentRayOrigin = Vector3.zero;
+    private Vector3 _alignmentRayVector = Vector3.zero;
 
     [Header("Frontmost Sensitivity")]
     [Tooltip("Candidate must be at least this much farther forward than the current embodied drone (in meters).")]
@@ -382,6 +405,7 @@ public class MigrationPointController : MonoBehaviour
     void AlignOthersToEmbodiedHeading(float dt)
     {
         if (!alignHeadingToEmbodied) return;
+        if (DroneFake.useRigidbodyCascadeControl) return;
         if (swarmModel.swarmHolder == null) return;
         if (!_headingInitialized) return;
 
@@ -610,12 +634,47 @@ public class MigrationPointController : MonoBehaviour
 
     void SpreadnessUpdate()
     {
-        float spreadness = Input.GetAxis("LR");
-        if(spreadness != 0 && control_spreadness)
+        spreadnessAxisReading = Input.GetAxis("LR");
+        spreadnessAxisReadingRaw = Input.GetAxisRaw("LR");
+        float spreadnessAxis = useRawSpreadnessAxis ? spreadnessAxisReadingRaw : spreadnessAxisReading;
+        bool keyboardPressed = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S);
+
+        if (!keyboardPressed && Mathf.Abs(spreadnessAxis) > joystickZeroThreshold)
         {
-            swarmModel.desiredSeparation+= spreadness * Time.deltaTime * 1.3f;
-            swarmModel.desiredSeparation = Mathf.Clamp(swarmModel.desiredSeparation, minSpreadness, maxSpreadness);
+            spreadnessAxisLastJoystickStable = spreadnessAxis;
         }
+
+        if (!keyboardPressed &&
+            holdExtremeJoystickDropout &&
+            Mathf.Abs(spreadnessAxis) <= joystickZeroThreshold &&
+            Mathf.Abs(spreadnessAxisLastJoystickStable) >= joystickExtremeThreshold)
+        {
+            spreadnessAxisUsed = spreadnessAxisLastJoystickStable;
+        }
+        else
+        {
+            spreadnessAxisUsed = spreadnessAxis;
+        }
+
+        float min = spreadnessAxisMin;
+        float max = spreadnessAxisMax;
+        if (min > max)
+        {
+            float tmp = min;
+            min = max;
+            max = tmp;
+        }
+
+        spreadnessAxisMinUsed = min;
+        spreadnessAxisMaxUsed = max;
+        spreadnessAxisNormalized = Mathf.InverseLerp(min, max, spreadnessAxisUsed);
+
+        if (!control_spreadness)
+        {
+            return;
+        }
+
+        swarmModel.desiredSeparation = Mathf.Lerp(minSpreadness, maxSpreadness, spreadnessAxisNormalized);
     }
 
     void UpdateMigrationPoint()
@@ -629,7 +688,7 @@ public class MigrationPointController : MonoBehaviour
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
 
-        float heightControl = Input.GetAxis("JoystickRightVertical");
+        float heightControl = allowAltitudeControl ? Input.GetAxis("JoystickRightVertical") : 0f;
         Transform body = null;
         Vector3 right = new Vector3(0, 0, 0);
         Vector3 forward = new Vector3(0, 0, 0);
@@ -685,11 +744,21 @@ public class MigrationPointController : MonoBehaviour
         }
         
         alignementVector = deltaMigration;
-
-        if (showAlignmentRay)
-        {
-            Debug.DrawRay(body.position, alignementVector, Color.red, 0.01f);
-        }
+        _alignmentRayOrigin = body.position;
+        _alignmentRayVector = alignementVector;
     }
+
+#if UNITY_EDITOR
+    void OnDrawGizmos()
+    {
+        if (!Application.isPlaying) return;
+        if (!showAlignmentRay) return;
+        if (_alignmentRayVector.sqrMagnitude < 1e-6f) return;
+        if (hideAlignmentRayInCamera != null && Camera.current == hideAlignmentRayInCamera) return;
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawRay(_alignmentRayOrigin, _alignmentRayVector);
+    }
+#endif
 
 }
