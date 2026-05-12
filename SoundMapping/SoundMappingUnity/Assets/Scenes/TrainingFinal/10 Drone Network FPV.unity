@@ -1566,6 +1566,7 @@ GameObject:
   - component: {fileID: 519498114}
   - component: {fileID: 519498113}
   - component: {fileID: 519498112}
+  - component: {fileID: -577706554}
   m_Layer: 0
   m_Name: Path
   m_TagString: Obstacle
@@ -1629,7 +1630,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 13d23cf5dc8835a40b3ea705e280739e, type: 2}
+  - {fileID: 2100000, guid: e0a8a98e85fd0473797994fa4809609b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4914,3 +4915,24 @@ SceneRoots:
   - {fileID: 126339643}
   - {fileID: 990501869}
   - {fileID: 407463300}
+--- !u!114 &-577706554
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519498110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3cf256da881466998a8a2e5bf66a588, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useLocalMeshSize: 1
+  target: {fileID: 0}
+  metersPerTile: 1
+  autoMetersPerTileFromTexture: 1
+  pixelsPerMeter: 500
+  useMaterialTiling: 1
+  useMaterialOffset: 1
+  tilingMultiplier: {x: 1, y: 1}
+  offset: {x: 0, y: 0}

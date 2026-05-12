@@ -875,6 +875,7 @@ GameObject:
   - component: {fileID: 280321551}
   - component: {fileID: 280321550}
   - component: {fileID: 280321549}
+  - component: {fileID: -1477118243}
   m_Layer: 0
   m_Name: Path (1)
   m_TagString: Floor
@@ -938,7 +939,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 7e64793bb6f1a3e459e6b1dcb78346b5, type: 2}
+  - {fileID: 2100000, guid: e0a8a98e85fd0473797994fa4809609b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4185,6 +4186,7 @@ GameObject:
   - component: {fileID: 1037549985}
   - component: {fileID: 1037549984}
   - component: {fileID: 1037549983}
+  - component: {fileID: -1886542674}
   m_Layer: 0
   m_Name: Path
   m_TagString: Obstacle
@@ -4248,7 +4250,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 13d23cf5dc8835a40b3ea705e280739e, type: 2}
+  - {fileID: 2100000, guid: e0a8a98e85fd0473797994fa4809609b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4437,6 +4439,7 @@ GameObject:
   - component: {fileID: 1087056303}
   - component: {fileID: 1087056302}
   - component: {fileID: 1087056301}
+  - component: {fileID: -658234272}
   m_Layer: 0
   m_Name: Path
   m_TagString: Obstacle
@@ -4500,7 +4503,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 13d23cf5dc8835a40b3ea705e280739e, type: 2}
+  - {fileID: 2100000, guid: e0a8a98e85fd0473797994fa4809609b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8233,6 +8236,7 @@ GameObject:
   - component: {fileID: 1698558429}
   - component: {fileID: 1698558428}
   - component: {fileID: 1698558427}
+  - component: {fileID: -366163595}
   m_Layer: 0
   m_Name: Path
   m_TagString: Obstacle
@@ -8296,7 +8300,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 13d23cf5dc8835a40b3ea705e280739e, type: 2}
+  - {fileID: 2100000, guid: e0a8a98e85fd0473797994fa4809609b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -10018,6 +10022,7 @@ GameObject:
   - component: {fileID: 2090998171}
   - component: {fileID: 2090998170}
   - component: {fileID: 2090998169}
+  - component: {fileID: -1540470684}
   m_Layer: 0
   m_Name: Path
   m_TagString: Obstacle
@@ -10081,7 +10086,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 13d23cf5dc8835a40b3ea705e280739e, type: 2}
+  - {fileID: 2100000, guid: e0a8a98e85fd0473797994fa4809609b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -10339,3 +10344,108 @@ SceneRoots:
   - {fileID: 1457462852}
   - {fileID: 1637073326}
   - {fileID: 305529377}
+--- !u!114 &-1477118243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 280321547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3cf256da881466998a8a2e5bf66a588, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useLocalMeshSize: 1
+  autoMetersPerTileFromTexture: 1
+  pixelsPerMeter: 500
+  useMaterialTiling: 1
+  useMaterialOffset: 1
+  tilingMultiplier: {x: 1, y: 1}
+  offset: {x: 0, y: 0}
+  target: {fileID: 0}
+  metersPerTile: 1
+--- !u!114 &-658234272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1087056299}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3cf256da881466998a8a2e5bf66a588, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useLocalMeshSize: 1
+  target: {fileID: 0}
+  metersPerTile: 1
+  autoMetersPerTileFromTexture: 1
+  pixelsPerMeter: 500
+  useMaterialTiling: 1
+  useMaterialOffset: 1
+  tilingMultiplier: {x: 1, y: 1}
+  offset: {x: 0, y: 0}
+--- !u!114 &-1540470684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2090998167}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3cf256da881466998a8a2e5bf66a588, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useLocalMeshSize: 1
+  target: {fileID: 0}
+  metersPerTile: 1
+  autoMetersPerTileFromTexture: 1
+  pixelsPerMeter: 500
+  useMaterialTiling: 1
+  useMaterialOffset: 1
+  tilingMultiplier: {x: 1, y: 1}
+  offset: {x: 0, y: 0}
+--- !u!114 &-366163595
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1698558425}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3cf256da881466998a8a2e5bf66a588, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useLocalMeshSize: 1
+  target: {fileID: 0}
+  metersPerTile: 1
+  autoMetersPerTileFromTexture: 1
+  pixelsPerMeter: 500
+  useMaterialTiling: 1
+  useMaterialOffset: 1
+  tilingMultiplier: {x: 1, y: 1}
+  offset: {x: 0, y: 0}
+--- !u!114 &-1886542674
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1037549981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3cf256da881466998a8a2e5bf66a588, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useLocalMeshSize: 1
+  target: {fileID: 0}
+  metersPerTile: 1
+  autoMetersPerTileFromTexture: 1
+  pixelsPerMeter: 500
+  useMaterialTiling: 1
+  useMaterialOffset: 1
+  tilingMultiplier: {x: 1, y: 1}
+  offset: {x: 0, y: 0}
