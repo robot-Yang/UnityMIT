@@ -14,12 +14,17 @@ public class SimpleCollectibleScript : MonoBehaviour {
 
 	public float rotationSpeed;
 
+	public bool preserveInitialRotation;
+
 	public AudioClip collectSound;
 
 	public GameObject collectEffect;
 
 	// Use this for initialization
 	void Start () {
+		if (preserveInitialRotation)
+			return;
+
 		if(LevelConfiguration._startEmbodied)
 		{
 			transform.rotation = Quaternion.Euler(0, 0, 0);

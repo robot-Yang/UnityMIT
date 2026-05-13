@@ -62,6 +62,10 @@ public class SceneSelectorScriptEditor : Editor
         {
             ReplaceFpvObs2With("FPVObs_2_trial_2");
         }
+        if (GUILayout.Button("Use FPVObs_3d as FPVObs_2"))
+        {
+            ReplaceFpvObs2With("FPVObs_3d");
+        }
 
         // Find all scenes in "Assets/Scenes/Training"
         string[] sceneGuids = AssetDatabase.FindAssets("t:Scene", new[] { myScript.assetPathTraining });
